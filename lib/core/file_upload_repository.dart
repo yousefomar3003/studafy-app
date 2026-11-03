@@ -84,6 +84,37 @@ class StoredAttachment {
 
   bool get isReady => scanState == 'clean';
 
+  /// A document the server makes a PDF preview of: Word, PowerPoint,
+  /// Excel and CSV, old formats included.
+  bool get hasDocumentPreview {
+    final type = mediaType;
+    if (type != null && _previewedTypes.contains(type)) return true;
+    final dot = displayName.lastIndexOf('.');
+    return dot >= 0 &&
+        _previewedExtensions.contains(
+          displayName.substring(dot + 1).toLowerCase(),
+        );
+  }
+
+  static const _previewedTypes = {
+    'application/msword',
+    'application/vnd.ms-excel',
+    'application/vnd.ms-powerpoint',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'text/csv',
+  };
+  static const _previewedExtensions = {
+    'doc',
+    'docx',
+    'xls',
+    'xlsx',
+    'ppt',
+    'pptx',
+    'csv',
+  };
+
   /// The scan refused it after it was attached (or gave up on it, or an
   /// operator contained it), so it will never open: the server keeps it on
   /// the list as `rejected`, `error` or - once its bytes are gone -
@@ -148,6 +179,15 @@ class FileScanStatus {
 /// apart from [FileUploadRepository] so previews and test fakes need not.
 abstract interface class FileScanStatusSource {
   Future<FileScanStatus> scanStatus(String fileId);
+}
+
+/// Implemented by repositories that can fetch the PDF preview the server
+/// makes of a document (DL-078), for the in-app viewer. Kept apart from
+/// [FileUploadRepository] like [FileScanStatusSource].
+abstract interface class FilePreviewSource {
+  /// The PDF preview of [fileId], or null when it has none (yet): a picture
+  /// or PDF, a preview still being made, or a server that makes none.
+  Future<DownloadedFile?> downloadPreview(String fileId);
 }
 
 abstract interface class FileUploadRepository {

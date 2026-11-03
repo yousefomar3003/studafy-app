@@ -105,11 +105,24 @@ class OfflineFileCache {
 /// when it cannot be reached. A refusal is never covered up: a file the
 /// person may no longer open is not served from the device either.
 class CachingFileRepository
-    implements FileUploadRepository, FileScanStatusSource {
+    implements FileUploadRepository, FileScanStatusSource, FilePreviewSource {
   CachingFileRepository(this._inner, this._cache);
 
   final FileUploadRepository _inner;
   final OfflineFileCache _cache;
+
+  /// A preview is fetched fresh and never kept: offline, or on any failure,
+  /// there is none, and the document opens as it is.
+  @override
+  Future<DownloadedFile?> downloadPreview(String fileId) async {
+    final inner = _inner;
+    if (inner is! FilePreviewSource) return null;
+    try {
+      return await (inner as FilePreviewSource).downloadPreview(fileId);
+    } on Object {
+      return null;
+    }
+  }
 
   @override
   Future<DownloadedFile> download(String fileId) async {

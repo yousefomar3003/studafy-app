@@ -12,7 +12,7 @@ import 'signed_upload_transport.dart';
 typedef DeliveryFetcher = Future<Uint8List> Function(Uri url);
 
 class ApiFileUploadRepository
-    implements FileUploadRepository, FileScanStatusSource {
+    implements FileUploadRepository, FileScanStatusSource, FilePreviewSource {
   ApiFileUploadRepository(this._api, this._uploads, {this.fetch});
 
   final V1ApiClient _api;
@@ -112,6 +112,31 @@ class ApiFileUploadRepository
         idempotencyKey: newIdempotencyKey('file-download'),
       ),
     );
+    final bytes = await fetch(Uri.parse(grant.downloadUrl));
+    return DownloadedFile(
+      displayName: grant.displayName,
+      mediaType: grant.mediaType,
+      bytes: bytes,
+    );
+  }
+
+  @override
+  Future<DownloadedFile?> downloadPreview(String fileId) async {
+    final fetch = this.fetch;
+    if (fetch == null) return null;
+    final V1DownloadIntentResponseDto grant;
+    try {
+      grant = await _api.createFileDownloadIntent(
+        const V1DownloadIntentRequestDto(variant: 'preview'),
+        fileId: fileId,
+        // Single-use, like an original's grant.
+        idempotencyKey: newIdempotencyKey('file-preview'),
+      );
+    } on V1ApiException catch (error) {
+      if (error.code == 'PREVIEW_UNAVAILABLE') return null;
+      rethrow;
+    }
+    if (grant.mediaType != 'application/pdf') return null;
     final bytes = await fetch(Uri.parse(grant.downloadUrl));
     return DownloadedFile(
       displayName: grant.displayName,
