@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -157,6 +158,7 @@ class StoredAttachmentList extends StatefulWidget {
     required this.attachments,
     this.uploads,
     this.present = presentDownloadedFile,
+    this.pdfRenderer = pdfiumRenderer,
     this.color,
     this.dense = false,
   });
@@ -167,6 +169,9 @@ class StoredAttachmentList extends StatefulWidget {
   /// build has nowhere to fetch from, and the rows are shown but inert.
   final FileUploadRepository? uploads;
   final AttachmentPresenter present;
+
+  /// Draws a document's PDF preview; replaced in tests.
+  final PdfRendererBuilder pdfRenderer;
 
   /// Text and icon colour, for rows drawn on a coloured bubble.
   final Color? color;
@@ -196,6 +201,23 @@ class _StoredAttachmentListState extends State<StoredAttachmentList> {
     final failed = AppL10n.of(context).attachmentThatFileCouldNotBe2;
     final gone = AppL10n.of(context).downloadUnavailable;
     try {
+      // A Word, PowerPoint or Excel file opens in the app through the PDF
+      // preview the server made of it (DL-078); its share action still
+      // hands on the original. Without a preview it opens as before.
+      final preview = item.hasDocumentPreview && uploads is FilePreviewSource
+          ? await (uploads as FilePreviewSource).downloadPreview(item.id)
+          : null;
+      if (!mounted) return;
+      if (preview != null) {
+        await presentPdfDocument(
+          context,
+          title: item.displayName,
+          bytes: preview.bytes,
+          renderer: widget.pdfRenderer,
+          onShare: () => unawaited(_shareOriginal(uploads, item, failed)),
+        );
+        return;
+      }
       final file = await uploads.download(item.id);
       if (!mounted) return;
       await widget.present(context, file);
@@ -208,6 +230,19 @@ class _StoredAttachmentListState extends State<StoredAttachmentList> {
       );
     } finally {
       if (mounted) setState(() => _opening = null);
+    }
+  }
+
+  Future<void> _shareOriginal(
+    FileUploadRepository uploads,
+    StoredAttachment item,
+    String failed,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await shareDownloadedFile(await uploads.download(item.id));
+    } on Object {
+      messenger.showMessage(failed);
     }
   }
 
