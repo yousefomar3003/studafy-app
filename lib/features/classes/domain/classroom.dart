@@ -18,6 +18,7 @@ class ClassroomSummary {
     this.weeklySessions,
     this.termName,
     this.version = 1,
+    this.schoolId,
   });
 
   final ClassroomId id;
@@ -38,6 +39,11 @@ class ClassroomSummary {
   final int version;
   final int? weeklySessions;
   final String? termName;
+
+  /// The school the class is in: its teacher's workspace. A student in
+  /// several teachers' classes reads each class from its own school. Null
+  /// from the preview adapter.
+  final String? schoolId;
 }
 
 /// One weekly session slot of a new classroom draft.

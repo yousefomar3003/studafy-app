@@ -41,9 +41,19 @@ class MessagingScope extends InheritedWidget {
 /// hold no membership, so this returned null and the page rendered "no
 /// school" instead of the conversations the server was perfectly willing to
 /// serve them.
-({String userId, String? schoolId})? messagingIdentity() {
+///
+/// [schoolIds] is every school the person acts in, [schoolId] first. Only a
+/// student has more than one: each teacher's workspace is a school of its
+/// own, so a student in two teachers' classes reads both schools'
+/// announcements and may message people from either.
+({String userId, String? schoolId, List<String> schoolIds})?
+messagingIdentity() {
   final context = ActiveContextController.instance;
   final userId = context.profile?.id;
   if (userId == null) return null;
-  return (userId: userId, schoolId: context.activeSchoolId);
+  return (
+    userId: userId,
+    schoolId: context.activeSchoolId,
+    schoolIds: context.schoolIds,
+  );
 }

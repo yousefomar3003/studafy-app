@@ -35,6 +35,7 @@ import 'school_messaging_switch.dart';
 import 'student_helper_needs_class.dart';
 import 'student_lessons_page.dart';
 import 'student_no_class_yet.dart';
+import 'student_schools.dart';
 import 'student_study_actions.dart';
 import 'student_today_page.dart';
 
@@ -122,8 +123,14 @@ class _StudentShellState extends State<StudentShell>
 
   String? _member;
 
+  /// Every school the tabs read, and classes joined here: a new class is
+  /// read in beside the old ones, from another teacher's school or not.
+  late (String, int) _tabs = (studentSchoolsKey(), 0);
+
   void _contextChanged() {
     final member = ActiveContextController.instance.membership?.id;
+    final schools = studentSchoolsKey();
+    if (schools != _tabs.$1 && mounted) setState(() => _tabs = (schools, 0));
     if (member == _member || !mounted) return;
     _member = member;
     setState(() => index = 0);
@@ -303,6 +310,7 @@ class _StudentShellState extends State<StudentShell>
     );
     if (joined == null || !mounted) return;
     unawaited(_skipClassStep());
+    final was = _tabs;
     // The server made the membership; this is how the client learns of it.
     await widget.session?.completeRemoteLogin(
       role: StudafyRole.student,
@@ -312,23 +320,12 @@ class _StudentShellState extends State<StudentShell>
     // In a class now: the AI tools may be offered, and the class's school
     // says whether messaging is on.
     await _loadPlan();
-    if (mounted) setState(() {});
+    // A class in a school already read: the tabs are read again for it.
+    if (mounted && _tabs == was) setState(() => _tabs = (was.$1, was.$2 + 1));
   }
 
-  /// Supplies the class filter its options. Kept here rather than in the
-  /// academic slice because only the shell may reach across features.
-  Future<List<ClassChoice>> _classChoices() async {
-    final classes = widget.classes;
-    if (classes == null) return const [];
-    final result = await classes.loadClasses();
-    return result.fold(
-      onSuccess: (items) => [
-        for (final item in items)
-          ClassChoice(id: item.id.value, name: item.name),
-      ],
-      onFailure: (_) => const [],
-    );
-  }
+  /// The class filter's options, from every teacher's school.
+  Future<List<ClassChoice>> _classChoices() => classChoicesOf(widget.classes);
 
   /// System back does what the helper's back arrow does, takes any other
   /// tab back to Today, and leaves the app only from Today.
@@ -379,6 +376,7 @@ class _StudentShellState extends State<StudentShell>
     final study = widget.study;
     final actions = _actions;
     final today = StudentTodayPage(
+      key: ValueKey(_tabs),
       academic: repository,
       onWork: () => setState(() => index = 2),
       onNotebook: () => setState(() => index = 1),
@@ -412,6 +410,7 @@ class _StudentShellState extends State<StudentShell>
       // the student's own notebook for it.
       else if (widget.study != null && widget.classes != null)
         StudentLessonsPage(
+          key: ValueKey(_tabs),
           classes: widget.classes!,
           academic: repository,
           study: widget.study!,
@@ -431,7 +430,7 @@ class _StudentShellState extends State<StudentShell>
       if (!independent)
         AcademicOverviewPage(
           // Re-keyed when a notification picks the tab Work opens on.
-          key: ValueKey(_workFeed),
+          key: ValueKey((_workFeed, _tabs)),
           repository: repository,
           studentId: studentId,
           // A tab of its own, so a large title like the others, and no
@@ -465,8 +464,9 @@ class _StudentShellState extends State<StudentShell>
                   material: record.attachments,
                   links: record.links,
                   uploads: widget.fileUploads,
-                  schoolId:
-                      ActiveContextController.instance.membership?.schoolId,
+                  schoolId: ActiveContextController.instance.schoolFor(
+                    record.classroomId,
+                  ),
                   studentId: studentId,
                 ),
               ),

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../core/attachment_opener.dart';
+import '../../../core/every_school.dart';
 import '../../../core/failures.dart';
 import '../../../core/feedback.dart';
 import '../../../core/navigation.dart';
@@ -189,19 +190,25 @@ class _ConversationsPageState extends State<ConversationsPage>
     // verified - has no school to ask about, and is not blocked by one
     // either: their conversation list spans every school they are a
     // participant in.
-    // Both at once: neither waits on the other.
-    final enabledRead = schoolId == null
-        ? null
-        : interactor.messagingEnabled(schoolId);
+    // A student in several teachers' classes is in each teacher's school:
+    // a new conversation can start when any of them allows one.
+    // All at once: none waits on another.
+    final enabledReads = [
+      if (schoolId != null)
+        for (final id in identity.schoolIds) interactor.messagingEnabled(id),
+    ];
     final list = await interactor.conversations();
-    final enabled = await enabledRead;
+    final enabled = await Future.wait(enabledReads);
     if (!mounted) return;
     setState(() {
       _loading = false;
       // A school that has not switched messaging on still shows existing
       // conversations read-only, but offers no way to start a new one.
       _enabled =
-          enabled?.fold(onSuccess: (v) => v, onFailure: (_) => true) ?? true;
+          enabled.isEmpty ||
+          enabled.any(
+            (read) => read.fold(onSuccess: (v) => v, onFailure: (_) => true),
+          );
       list.fold(
         onSuccess: (items) {
           final role = widget.asRole;
@@ -235,9 +242,11 @@ class _ConversationsPageState extends State<ConversationsPage>
   }
 
   Future<void> _startNew(String schoolId, String myUserId) async {
+    final schoolIds = messagingIdentity()?.schoolIds ?? const <String>[];
     final created = await Navigator.of(context).pushOnce<Conversation>(
       MaterialPageRoute(
-        builder: (_) => NewConversationPage(schoolId: schoolId),
+        builder: (_) =>
+            NewConversationPage(schoolId: schoolId, schoolIds: schoolIds),
       ),
     );
     if (created != null && mounted) await _open(created, myUserId);
@@ -249,17 +258,24 @@ class _ConversationsPageState extends State<ConversationsPage>
   Future<List<Announcement>>? _announcements;
 
   Future<List<Announcement>> _loadAnnouncements() async {
-    final schoolId = messagingIdentity()?.schoolId;
+    final identity = messagingIdentity();
     // Announcements belong to a school. Someone acting in none - a guardian
     // before a link is verified - has none to read yet.
-    if (schoolId == null) return const [];
-    final result = await MessagingScope.of(context)
-        .announcements(schoolId: schoolId);
-    return result.fold(
-      onSuccess: (items) =>
-          [...items]..sort((a, b) => b.createdAt.compareTo(a.createdAt)),
-      onFailure: (failure) => throw failure,
+    if (identity?.schoolId == null) return const [];
+    final messaging = MessagingScope.of(context);
+    // Every teacher's school a student is in, together; one that cannot be
+    // read leaves the others' announcements up.
+    final items = await readEverySchool(
+      identity!.schoolIds,
+      (schoolId) async =>
+          (await messaging.announcements(schoolId: schoolId))
+              .fold(onSuccess: (items) => items, onFailure: (f) => throw f),
     );
+    final seen = <String>{};
+    return [
+      for (final item in items)
+        if (seen.add(item.id)) item,
+    ]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
   }
 
   void _openBlocked(String schoolId, String myUserId) =>
@@ -707,9 +723,18 @@ class AnnouncementCard extends StatelessWidget {
 }
 
 class NewConversationPage extends StatefulWidget {
-  const NewConversationPage({super.key, required this.schoolId});
+  const NewConversationPage({
+    super.key,
+    required this.schoolId,
+    this.schoolIds = const [],
+  });
 
   final String schoolId;
+
+  /// Every school the person may message in, when more than [schoolId]: a
+  /// student in several teachers' classes is in each teacher's school. Each
+  /// conversation is in one school, so the people chosen share one.
+  final List<String> schoolIds;
 
   @override
   State<NewConversationPage> createState() => _NewConversationPageState();
@@ -718,6 +743,14 @@ class NewConversationPage extends StatefulWidget {
 class _NewConversationPageState extends State<NewConversationPage> {
   List<MessagingContact> _contacts = const [];
   final Set<String> _selected = {};
+
+  /// The schools each contact can be messaged in, and the one the people
+  /// chosen so far share.
+  final Map<String, List<String>> _schoolsOf = {};
+  late String _school = widget.schoolId;
+
+  List<String> get _schools =>
+      widget.schoolIds.isEmpty ? [widget.schoolId] : widget.schoolIds;
   final _subject = TextEditingController();
   String _query = '';
   bool _loading = true;
@@ -738,25 +771,57 @@ class _NewConversationPageState extends State<NewConversationPage> {
 
   Future<void> _load() async {
     setState(() => _loading = true);
-    final result = await MessagingScope.of(context).contacts(widget.schoolId);
+    final messaging = MessagingScope.of(context);
+    final schools = _schools;
+    final results = await Future.wait([
+      for (final schoolId in schools) messaging.contacts(schoolId),
+    ]);
     if (!mounted) return;
     setState(() {
       _loading = false;
-      result.fold(
-        onSuccess: (list) {
-          _contacts = list;
-          _failure = null;
-        },
-        onFailure: (failure) => _failure = failure,
-      );
+      final contacts = <MessagingContact>[];
+      Failure? failure;
+      var anyRead = false;
+      _schoolsOf.clear();
+      for (final (index, result) in results.indexed) {
+        result.fold(
+          onSuccess: (list) {
+            anyRead = true;
+            for (final contact in list) {
+              final schools = _schoolsOf.putIfAbsent(contact.userId, () => []);
+              if (schools.isEmpty) contacts.add(contact);
+              schools.add(_schools[index]);
+            }
+          },
+          onFailure: (f) => failure ??= f,
+        );
+      }
+      // One school that cannot be read leaves the others' people listed.
+      _contacts = contacts;
+      _failure = anyRead ? null : failure;
     });
   }
+
+  /// Chooses [contact], or not. Someone in another school than the people
+  /// already chosen starts the choice again in theirs.
+  void _choose(MessagingContact contact, bool checked) => setState(() {
+    if (!checked) {
+      _selected.remove(contact.userId);
+      return;
+    }
+    final theirs = _schoolsOf[contact.userId] ?? [widget.schoolId];
+    if (!theirs.contains(_school)) {
+      _selected.clear();
+      _school = theirs.first;
+    }
+    _selected.add(contact.userId);
+  });
 
   Future<void> _start() async {
     if (_selected.isEmpty || _starting) return;
     setState(() => _starting = true);
     final result = await MessagingScope.of(context).startConversation(
-      schoolId: widget.schoolId,
+      schoolId: _school,
       participantIds: _selected.toList(),
       subject: _subject.text,
     );
@@ -863,13 +928,7 @@ class _NewConversationPageState extends State<NewConversationPage> {
                             name: contact.displayName,
                             detail: _detail(contact),
                             selected: _selected.contains(contact.userId),
-                            onChanged: (checked) => setState(() {
-                              if (checked) {
-                                _selected.add(contact.userId);
-                              } else {
-                                _selected.remove(contact.userId);
-                              }
-                            }),
+                            onChanged: (checked) => _choose(contact, checked),
                           ),
                         ],
                       ],

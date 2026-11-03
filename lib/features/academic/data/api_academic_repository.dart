@@ -1,3 +1,4 @@
+import '../../../core/every_school.dart';
 import '../../../core/failures.dart';
 import '../../../core/file_upload_repository.dart';
 import '../../../core/idempotency.dart';
@@ -35,16 +36,83 @@ class ApiAcademicRepository implements AcademicRepository {
     Future<void> Function(String key) command,
   ) => _keys.run('academic', fingerprint, command);
 
+  /// A student's feeds come from every teacher's school they are in, since
+  /// each teacher's workspace is a school of its own; one class's from that
+  /// class's school. Everyone else reads the one school they act in.
   @override
   Future<List<AcademicRecord>> load(
     AcademicFeed feed, {
     String? classroomId,
     String? studentId,
   }) async {
+    final primary = _schoolId;
+    final schools = _context.schoolIds;
+    if (classroomId != null || schools.length < 2) {
+      final schoolId = classroomId == null
+          ? primary
+          : await _schoolOfClassroom(classroomId, primary, schools);
+      return _loadIn(schoolId, feed, classroomId, studentId);
+    }
+    final records = await readEverySchool(
+      schools,
+      (schoolId) => _loadIn(schoolId, feed, null, studentId),
+    );
+    // Together, newest first; a record the same in two lists shows once.
+    final seen = <String>{};
+    return _stableNewestFirst([
+      for (final record in records)
+        if (seen.add(record.id)) record,
+    ]);
+  }
+
+  /// The school [classroomId] is in. A student's class lists say; a class
+  /// not listed yet is looked for among their schools before the active
+  /// school is assumed.
+  Future<String> _schoolOfClassroom(
+    String classroomId,
+    String primary,
+    List<String> schools,
+  ) async {
+    final known = _context.schoolOfClassroom(classroomId);
+    if (known != null || schools.length < 2) return known ?? primary;
+    await readEverySchool(schools, (schoolId) async {
+      String? cursor;
+      do {
+        final page = await _client.listClassrooms(
+          schoolId: schoolId,
+          cursor: cursor,
+          pageSize: 100,
+        );
+        for (final item in page.items) {
+          _context.rememberClassroomSchool(item.id, schoolId);
+        }
+        cursor = page.nextCursor;
+      } while (cursor != null);
+      return const <void>[];
+    });
+    return _context.schoolOfClassroom(classroomId) ?? primary;
+  }
+
+  /// Newest first by date, keeping each school's own order among equals.
+  static List<AcademicRecord> _stableNewestFirst(List<AcademicRecord> list) {
+    final order = [for (var i = 0; i < list.length; i++) i]
+      ..sort((a, b) {
+        final byDate = _newestFirst(list[a], list[b]);
+        return byDate != 0 ? byDate : a.compareTo(b);
+      });
+    return [for (final i in order) list[i]];
+  }
+
+  Future<List<AcademicRecord>> _loadIn(
+    String schoolId,
+    AcademicFeed feed,
+    String? classroomId,
+    String? studentId,
+  ) async {
     switch (feed) {
       case AcademicFeed.content:
         final page = await _client.listResources(
-          schoolId: _schoolId,
+          schoolId: schoolId,
           classroomId: classroomId,
           studentId: studentId,
           pageSize: 100,
@@ -68,7 +136,7 @@ class ApiAcademicRepository implements AcademicRepository {
         ];
       case AcademicFeed.assignments:
         final page = await _client.listAssignments(
-          schoolId: _schoolId,
+          schoolId: schoolId,
           classroomId: classroomId,
           studentId: studentId,
           pageSize: 100,
@@ -94,7 +162,7 @@ class ApiAcademicRepository implements AcademicRepository {
         ];
       case AcademicFeed.assessments:
         final page = await _client.listAssessments(
-          schoolId: _schoolId,
+          schoolId: schoolId,
           classroomId: classroomId,
           studentId: studentId,
           pageSize: 100,
@@ -124,7 +192,7 @@ class ApiAcademicRepository implements AcademicRepository {
         ];
       case AcademicFeed.grades:
         final page = await _client.listGradeResults(
-          schoolId: _schoolId,
+          schoolId: schoolId,
           classroomId: classroomId,
           studentId: studentId,
           pageSize: 100,
@@ -158,7 +226,7 @@ class ApiAcademicRepository implements AcademicRepository {
         ];
       case AcademicFeed.attendance:
         final page = await _client.listAttendance(
-          schoolId: _schoolId,
+          schoolId: schoolId,
           classroomId: classroomId,
           studentId: studentId,
           pageSize: 100,
@@ -178,7 +246,7 @@ class ApiAcademicRepository implements AcademicRepository {
         ]..sort(_newestFirst);
       case AcademicFeed.wellbeing:
         final page = await _client.listWellbeing(
-          schoolId: _schoolId,
+          schoolId: schoolId,
           classroomId: classroomId,
           studentId: studentId,
           pageSize: 100,

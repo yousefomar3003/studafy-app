@@ -227,9 +227,26 @@ class SessionInteractor {
           // An older server, or offline; the memberships decide later.
         }
       }
-      final membership = profile.memberships
-          .where((item) => item.active && item.role == role)
-          .firstOrNull;
+      // A student who joins another teacher's class gains a membership in
+      // that teacher's school. The school they were in stays the active one,
+      // so nothing they had moves underneath them; their classes from every
+      // school are shown together regardless (ActiveContextController
+      // .schoolIds).
+      final current = context.membership;
+      final membership =
+          profile.memberships
+              .where(
+                (item) =>
+                    role == StudafyRole.student &&
+                    context.profile?.id == profile.id &&
+                    item.active &&
+                    item.role == role &&
+                    item.id == current?.id,
+              )
+              .firstOrNull ??
+          profile.memberships
+              .where((item) => item.active && item.role == role)
+              .firstOrNull;
       if (membership == null) {
         // Having no row for this role and having a withdrawn one are opposite
         // situations. The first is every new account, and onboarding is the
