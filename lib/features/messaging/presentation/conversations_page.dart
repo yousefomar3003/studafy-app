@@ -19,6 +19,38 @@ import 'conversation_page.dart';
 import 'messaging_scope.dart';
 import 'messaging_strings.dart';
 
+/// Opens the conversation [conversationId] - what a tapped message
+/// notification is about - in whichever school it is. Returns false, opening
+/// nothing, when the person has no such conversation (any more), or there is
+/// no messaging here.
+Future<bool> openConversationById(
+  BuildContext context,
+  String conversationId,
+) async {
+  final userId = messagingIdentity()?.userId;
+  if (userId == null || !MessagingScope.isAvailable(context)) return false;
+  final listed = await MessagingScope.of(context).conversations();
+  final conversation = listed
+      .fold(onSuccess: (items) => items, onFailure: (_) => <Conversation>[])
+      .where((item) => item.id == conversationId)
+      .firstOrNull;
+  // Gone, or the account changed while looking: nothing of theirs opens.
+  if (conversation == null ||
+      !context.mounted ||
+      messagingIdentity()?.userId != userId) {
+    return false;
+  }
+  unawaited(
+    Navigator.of(context).pushOnce(
+      MaterialPageRoute<void>(
+        builder: (_) =>
+            ConversationPage(conversation: conversation, myUserId: userId),
+      ),
+    ),
+  );
+  return true;
+}
+
 /// Conversation list for every role, backed by authoritative `/v1`
 /// messaging (MOB-070, SAFE-043). Replaces the legacy SQLite chat screens.
 class ConversationsPage extends StatefulWidget {

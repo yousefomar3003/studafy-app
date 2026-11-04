@@ -70,7 +70,11 @@ describe("DL-053 channel senders", () => {
       token: "device-token-".padEnd(40, "x"),
       title: "New message",
       body: "You have a new message in Studafy.",
-      data: { templateKey: "communications.message", notificationId: "42" },
+      data: {
+        templateKey: "communications.message",
+        notificationId: "42",
+        recipientId: "c0ffee00-0000-4000-8000-0000000000a1",
+      },
     });
     expect(sent.providerMessageId).toBe("projects/studafy-test/messages/1");
     expect(calls[0]?.url).toBe(
@@ -89,6 +93,7 @@ describe("DL-053 channel senders", () => {
     expect(body.message.data).toEqual({
       templateKey: "communications.message",
       notificationId: "42",
+      recipientId: "c0ffee00-0000-4000-8000-0000000000a1",
     });
   });
 

@@ -4,10 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:studafy/app/account/account_switching.dart';
 import 'package:studafy/app/account/device_account_switcher.dart';
+import 'package:studafy/app/account/push_tap_accounts.dart';
+import 'package:studafy/app/push_binder.dart';
 import 'package:studafy/core/runtime_environment.dart';
 import 'package:studafy/core/studafy_domain.dart';
 import 'package:studafy/core/telemetry.dart';
 import 'package:studafy/features/accounts/domain/device_account.dart';
+import 'package:studafy/features/notifications/domain/notification_taps.dart';
+import 'package:studafy/features/notifications/domain/push_registrar.dart';
 import 'package:studafy/features/session/application/session_interactor.dart';
 import 'package:studafy/features/session/domain/session_repository.dart';
 
@@ -50,6 +54,7 @@ void main() {
     Map<String, String> tokens = const {},
     List<String>? forgotten,
     List<String>? events,
+    _PushServer? push,
   }) async {
     final sessions = _Sessions(signedIn);
     final vault = _Vault(DeviceAccountList(accounts: accounts, tokens: tokens));
@@ -60,19 +65,29 @@ void main() {
       telemetry: const NoopTelemetry(),
       runtimePolicy: const RuntimePolicy(StudafyEnvironment.development),
     );
+    // The phone's push registration, each call made with the session that
+    // is current at the time - as the real one's API calls are.
+    final registrar = push == null ? null : _PhonePush(push, sessions);
     final switcher = DeviceAccountSwitcher(
       session: interactor,
       vault: vault,
       managedChildren: children,
       forgetAccount: forgotten == null ? null : (id) async => forgotten.add(id),
-      beforeSignOut: events == null
-          ? null
-          : () async => events.add(
-              // Still signed in: the server call to drop the phone works.
-              'unregister while ${sessions.current ?? 'nobody'} is signed in',
-            ),
+      beforeSignOut:
+          registrar?.unregister ??
+          (events == null
+              ? null
+              : () async => events.add(
+                  // Still signed in: the server call to drop the phone works.
+                  'unregister while ${sessions.current ?? 'nobody'} is signed in',
+                )),
+      childrenAdded: registrar?.register,
       context: context,
     );
+    if (registrar != null) {
+      final binder = PushBinder(registrar: registrar, context: context);
+      addTearDown(binder.dispose);
+    }
     final role = accounts
         .where((a) => a.userId == signedIn)
         .map((a) => a.role)
@@ -328,6 +343,136 @@ void main() {
     expect(events, ['unregister while parent-1 is signed in']);
   });
 
+  group('push reaches every account on the phone (DL-082)', () {
+    test('each account is registered as itself when it is signed in, and a '
+        'switch takes nobody off', () async {
+      final push = _PushServer();
+      final (switcher, _, _, _) = await start(
+        signedIn: parent,
+        accounts: [parentAccount, otherAccount],
+        tokens: {parent: 'p', other: 'o'},
+        push: push,
+      );
+      await pumpEventQueue();
+      expect(push.calls, ['register as $parent']);
+
+      await switcher.switchTo(otherAccount, locale: 'en');
+      await pumpEventQueue();
+      await switcher.switchTo(parentAccount, locale: 'en');
+      await pumpEventQueue();
+
+      expect(push.calls, [
+        'register as $parent',
+        'register as $other',
+        'register as $parent',
+      ]);
+      expect(push.live, {parent, other});
+    });
+
+    test('signing an account out takes only that account off', () async {
+      final push = _PushServer();
+      final (switcher, _, _, _) = await start(
+        signedIn: parent,
+        accounts: [parentAccount, otherAccount],
+        tokens: {parent: 'p', other: 'o'},
+        push: push,
+      );
+      await switcher.switchTo(otherAccount, locale: 'en');
+      await pumpEventQueue();
+
+      await switcher.signOutCurrent();
+
+      expect(push.calls.last, 'unregister as $other');
+      expect(push.live, {parent});
+    });
+
+    test('a new child account registers the phone again, as the parent, '
+        'whose registration covers it', () async {
+      final push = _PushServer();
+      final (switcher, _, _, _) = await start(
+        signedIn: parent,
+        accounts: [parentAccount],
+        tokens: {parent: 'p'},
+        push: push,
+      );
+      await pumpEventQueue();
+
+      await switcher.createChild('Sara', locale: 'en');
+      await pumpEventQueue();
+
+      expect(push.calls, ['register as $parent', 'register as $parent']);
+    });
+  });
+
+  group('a tapped push for another account on the phone', () {
+    test('switches to that account and leaves the tap for its shell', () async {
+      final (switcher, sessions, _, _) = await start(
+        signedIn: parent,
+        accounts: [parentAccount, otherAccount],
+        tokens: {parent: 'p', other: 'o'},
+      );
+      final taps = NotificationTaps()..tapped('77', recipientId: other);
+      final tap = taps.consume()!;
+
+      await openTapForAccount(
+        tap,
+        taps: taps,
+        switcher: switcher,
+        switchTo: (account) =>
+            switcher.switchTo(account, locale: 'en').then((_) {}),
+      );
+
+      expect(sessions.current, other);
+      expect(context.profile?.id, other);
+      expect(taps.pending?.notificationId, '77');
+      expect(taps.pending?.recipientId, other);
+    });
+
+    test('is ignored when that account is no longer on the phone', () async {
+      final (switcher, sessions, _, _) = await start(
+        signedIn: parent,
+        accounts: [parentAccount],
+        tokens: {parent: 'p'},
+      );
+      final taps = NotificationTaps()..tapped('77', recipientId: 'gone-1');
+      var switched = 0;
+
+      await openTapForAccount(
+        taps.consume()!,
+        taps: taps,
+        switcher: switcher,
+        switchTo: (_) async => switched++,
+      );
+
+      expect(switched, 0);
+      expect(sessions.current, parent);
+      expect(taps.pending, isNull);
+    });
+
+    test(
+      'is dropped when the switch fails, so it is not tried again',
+      () async {
+        final (switcher, sessions, _, _) = await start(
+          signedIn: parent,
+          accounts: [parentAccount, otherAccount],
+          tokens: {parent: 'p'},
+        );
+        final taps = NotificationTaps()..tapped('77', recipientId: other);
+
+        await openTapForAccount(
+          taps.consume()!,
+          taps: taps,
+          switcher: switcher,
+          switchTo: (account) =>
+              switcher.switchTo(account, locale: 'en').then((_) {}),
+        );
+
+        expect(sessions.current, parent);
+        expect(taps.pending, isNull);
+      },
+    );
+  });
+
   test('leaving a child account goes back to its parent', () async {
     final (switcher, _, _, _) = await start(
       signedIn: parent,
@@ -340,6 +485,37 @@ void main() {
 
     expect(next?.userId, parent);
   });
+}
+
+/// The server's push registrations for one phone: one per account.
+class _PushServer {
+  final calls = <String>[];
+  final live = <String>{};
+}
+
+/// The phone's registrar: every call is made as the account whose session
+/// is current, the only one the API would accept it from.
+class _PhonePush implements PushRegistrar {
+  _PhonePush(this.server, this.sessions);
+
+  final _PushServer server;
+  final _Sessions sessions;
+
+  @override
+  Future<void> register() async {
+    final account = sessions.current;
+    if (account == null) return;
+    server.calls.add('register as $account');
+    server.live.add(account);
+  }
+
+  @override
+  Future<void> unregister() async {
+    final account = sessions.current;
+    if (account == null) return;
+    server.calls.add('unregister as $account');
+    server.live.remove(account);
+  }
 }
 
 /// A device's sessions: one current, the rest resumable by token.

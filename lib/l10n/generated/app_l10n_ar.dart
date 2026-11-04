@@ -3111,6 +3111,12 @@ class AppL10nAr extends AppL10n {
   String get notificationsFeedLoadMore => 'تحميل المزيد';
 
   @override
+  String get notificationGone => 'لم يعد هذا متاحًا.';
+
+  @override
+  String get notificationNothingToOpen => 'لا يوجد ما يمكن فتحه لهذا الإشعار.';
+
+  @override
   String get notificationCopyAcademicAssessmentPublishedTitle =>
       'تم نشر التقييم';
 

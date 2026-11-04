@@ -4,7 +4,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(23);
+select plan(37);
 
 \set school_id '11111111-1111-4111-8111-111111111111'
 \set teacher_user 'aaaa0000-0000-4000-8000-000000000001'
@@ -79,6 +79,70 @@ select is(private.channel_finish(
 select is(private.channel_finish(
   (select (e->>'deliveryId')::bigint from claimed, jsonb_array_elements(j) e where channel = 'push' limit 1),
   false, 'UNREGISTERED', true, null), 'failed', 'a terminal push failure stops retrying');
+-- DL-082: a phone signed in to several accounts is registered for each. The
+-- same token is live for several accounts at once; unregistering removes
+-- only the caller's row (and those of the child accounts the caller
+-- manages, which leave the phone with them); a dead token goes for all.
+create function pg_temp.push_command(p_actor uuid, p_operation text, p_token text)
+returns text language plpgsql as $$
+declare reservation jsonb;
+begin
+  perform set_config('request.jwt.claim.sub', p_actor::text, true);
+  perform set_config('studafy.school_id', '', true);
+  perform set_config('studafy.request_id', 'dl082-' || gen_random_uuid(), true);
+  reservation := private.api_idempotency_reserve(
+    null, 'v1.' || p_operation, 'dl082-' || gen_random_uuid(), repeat('b', 64));
+  return private.api042_command(p_operation, null,
+    jsonb_build_object('responseStatus', 200, 'body',
+      jsonb_build_object('platform', 'ios', 'token', p_token)),
+    (reservation->>'id')::uuid, (reservation->>'generation')::bigint)->>'outcome';
+end;
+$$;
+create function pg_temp.live_on(p_token text)
+returns uuid[] language sql as $$
+  select coalesce(array_agg(user_id order by user_id), '{}'::uuid[])
+  from public.push_devices where token = p_token and revoked_at is null;
+$$;
+
+\set shared_token 'dl082-shared-phone-token-0000000000000000'
+select is(pg_temp.push_command(:'teacher_user', 'registerPushDevice', :'shared_token'), 'ok',
+  'the first account on the phone registers');
+select is(pg_temp.push_command(:'guardian_user', 'registerPushDevice', :'shared_token'), 'ok',
+  'a second account on the same phone registers');
+select is(pg_temp.live_on(:'shared_token'), array[:'teacher_user', :'guardian_user']::uuid[],
+  'two accounts share the token and both stay registered');
+select is(pg_temp.push_command(:'teacher_user', 'registerPushDevice', :'shared_token'), 'ok',
+  'switching back registers the first account again');
+select is((select count(*) from public.push_devices where token = :'shared_token'
+    and user_id = :'teacher_user' and revoked_at is null), 1::bigint,
+  'registering again keeps one row per account');
+select is(pg_temp.push_command(:'teacher_user', 'unregisterPushDevice', :'shared_token'), 'ok',
+  'one account signs out of the phone');
+select is(pg_temp.live_on(:'shared_token'), array[:'guardian_user']::uuid[],
+  'only the account that signed out loses its registration');
+
+-- A parent's phone is their child account's phone: the child has no phone
+-- of their own and is only ever entered through the parent.
+insert into private.managed_accounts(child_id, guardian_id)
+  values (:'student_user', :'guardian_user');
+-- (Each command is asserted, not just run: a bare row would read as TAP.)
+select is(pg_temp.push_command(:'teacher_user', 'registerPushDevice', :'shared_token'), 'ok',
+  'the first account registers again');
+select is(pg_temp.push_command(:'guardian_user', 'registerPushDevice', :'shared_token'), 'ok',
+  'the parent registers again');
+-- Ordered by id: teacher aaaa..., student bbbb..., guardian cccc....
+select is(pg_temp.live_on(:'shared_token'),
+  array[:'teacher_user', :'student_user', :'guardian_user']::uuid[],
+  'a parent registering covers the child accounts they manage');
+select is(pg_temp.push_command(:'guardian_user', 'unregisterPushDevice', :'shared_token'), 'ok',
+  'the parent signs out of the phone');
+select is(pg_temp.live_on(:'shared_token'), array[:'teacher_user']::uuid[],
+  'the parent signing out takes their child accounts off the phone, and nobody else');
+select is(pg_temp.push_command(:'guardian_user', 'registerPushDevice', :'shared_token'), 'ok',
+  'the parent signs in on the phone again');
+select is(private.push_device_revoke_token(:'shared_token'), 3,
+  'a token the provider reports dead is revoked for every account on the phone');
+
 select is(private.push_device_revoke_token(repeat('g', 40)), 1, 'an unregistered token is revoked');
 
 update public.profiles set status = 'deleted' where id = :'student_user';

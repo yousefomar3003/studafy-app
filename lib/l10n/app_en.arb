@@ -1800,6 +1800,8 @@
   "notificationsFeedEmptyMessage": "You'll see updates here as they happen.",
   "notificationsFeedLoading": "Loading…",
   "notificationsFeedLoadMore": "Load more",
+  "notificationGone": "This is no longer available.",
+  "notificationNothingToOpen": "There is nothing more to open for this notification.",
   "notificationCopyAcademicAssessmentPublishedTitle": "Assessment published",
   "notificationCopyAcademicAssessmentPublishedDetail": "A new assessment is ready for one of your classes.",
   "notificationCopyAcademicAssignmentPublishedTitle": "Assignment published",

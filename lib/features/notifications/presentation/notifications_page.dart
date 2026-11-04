@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/feedback.dart';
 import '../../../core/studafy_components.dart';
 import '../../../core/studafy_design.dart';
 import '../../../core/studafy_formatting.dart';
@@ -113,13 +114,20 @@ class _NotificationsPageState extends State<NotificationsPage> {
     await NotificationsScope.of(context).markAllRead();
   }
 
-  /// Marks the item read, then opens what it is about when the host can.
+  /// Marks the item read, then opens what it is about when the host can -
+  /// and says so when there is nothing more to open, rather than leaving
+  /// the tap looking ignored. (What is opened and then found gone says that
+  /// itself.)
   Future<void> _open(NotificationItem item) async {
     unawaited(_markRead(item));
     final open = widget.onOpen;
-    if (open != null && open(item) && mounted) {
-      Navigator.of(context).maybePop();
+    if (open != null && open(item)) {
+      if (mounted) unawaited(Navigator.of(context).maybePop());
+      return;
     }
+    if (!mounted) return;
+    ScaffoldMessenger.maybeOf(context)
+        ?.showMessage(AppL10n.of(context).notificationNothingToOpen);
   }
 
   Future<void> _markRead(NotificationItem item) async {

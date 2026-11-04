@@ -3094,6 +3094,13 @@ class AppL10nEn extends AppL10n {
   String get notificationsFeedLoadMore => 'Load more';
 
   @override
+  String get notificationGone => 'This is no longer available.';
+
+  @override
+  String get notificationNothingToOpen =>
+      'There is nothing more to open for this notification.';
+
+  @override
   String get notificationCopyAcademicAssessmentPublishedTitle =>
       'Assessment published';
 

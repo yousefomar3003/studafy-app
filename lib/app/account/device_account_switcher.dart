@@ -44,6 +44,7 @@ class DeviceAccountSwitcher extends ChangeNotifier {
     this.managedChildren,
     this.forgetAccount,
     this.beforeSignOut,
+    this.childrenAdded,
     ActiveContextController? context,
   }) : context = context ?? ActiveContextController.instance {
     _tokens = session.sessionTokens.listen(_onToken);
@@ -63,8 +64,16 @@ class DeviceAccountSwitcher extends ChangeNotifier {
   final Future<void> Function(String userId)? forgetAccount;
 
   /// Runs while the account is still signed in, just before it signs out -
-  /// taking this phone off its push notifications.
+  /// taking this phone off its push notifications. Only that account's (and
+  /// the child accounts that leave with it): the phone's other accounts keep
+  /// theirs (DL-082).
   final Future<void> Function()? beforeSignOut;
+
+  /// Runs when child accounts join the device, created here or brought from
+  /// the server, while their parent is current - registering this phone for
+  /// their push notifications, which the server covers with the parent's
+  /// registration (DL-082).
+  final Future<void> Function()? childrenAdded;
   final ActiveContextController context;
 
   late final StreamSubscription<SessionToken> _tokens;
@@ -80,6 +89,9 @@ class DeviceAccountSwitcher extends ChangeNotifier {
   Future<void> _writes = Future.value();
 
   List<DeviceAccount> get accounts => _accounts;
+
+  /// Completes once the device's saved accounts are read.
+  Future<void> get ready => _ready;
   bool get switching => _switching;
 
   /// The account whose session is current, when it is one the device keeps.
@@ -186,6 +198,9 @@ class DeviceAccountSwitcher extends ChangeNotifier {
       return;
     }
     final listed = {for (final child in children) child.childId: child};
+    final added = children.any(
+      (child) => !_accounts.any((account) => account.userId == child.childId),
+    );
     _accounts = [
       for (final account in _accounts)
         if (account.managedBy != parent.id ||
@@ -203,6 +218,12 @@ class DeviceAccountSwitcher extends ChangeNotifier {
     ];
     _persist();
     notifyListeners();
+    if (added) _childrenAdded();
+  }
+
+  void _childrenAdded() {
+    final hook = childrenAdded;
+    if (hook != null) unawaited(hook().catchError((Object _) {}));
   }
 
   /// Creates a child account managed by the current account.
@@ -231,6 +252,7 @@ class DeviceAccountSwitcher extends ChangeNotifier {
     ];
     _persist();
     notifyListeners();
+    _childrenAdded();
     return child;
   }
 

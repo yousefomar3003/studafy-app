@@ -1,5 +1,9 @@
 import 'package:flutter/foundation.dart';
 
+import 'notification_target.dart';
+
+export 'notification_target.dart';
+
 /// A single notification, already resolved from the server's templated
 /// `{templateKey, payload}` shape into display-ready fields (MOB-070). The
 /// raw payload map never crosses into presentation — the data adapter is
@@ -23,11 +27,15 @@ class NotificationItem {
   final DateTime createdAt;
 
   /// Deep-link-style destination the notification should open when tapped,
-  /// e.g. `assignment:<id>`. Null when the template has no destination.
+  /// e.g. `assignment:<id>` ([NotificationTarget.route]). Null when the
+  /// template has no destination.
   final String? route;
   final DateTime? readAt;
 
   bool get isRead => readAt != null;
+
+  /// What a tap opens, read from [route]; null when it opens nothing more.
+  NotificationTarget? get target => NotificationTarget.parse(route);
 
   NotificationItem copyWith({DateTime? readAt}) => NotificationItem(
     id: id,

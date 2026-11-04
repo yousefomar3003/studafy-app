@@ -5341,6 +5341,18 @@ abstract class AppL10n {
   /// **'Load more'**
   String get notificationsFeedLoadMore;
 
+  /// No description provided for @notificationGone.
+  ///
+  /// In en, this message translates to:
+  /// **'This is no longer available.'**
+  String get notificationGone;
+
+  /// No description provided for @notificationNothingToOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'There is nothing more to open for this notification.'**
+  String get notificationNothingToOpen;
+
   /// No description provided for @notificationCopyAcademicAssessmentPublishedTitle.
   ///
   /// In en, this message translates to:
