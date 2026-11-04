@@ -12,6 +12,9 @@ export class ChannelSendError extends Error {
     readonly code: string,
     readonly terminal: boolean,
     readonly invalidTarget = false,
+    /** The provider's own short reason (e.g. FCM's THIRD_PARTY_AUTH_ERROR),
+     * for diagnosis only; never a token, address or message text. */
+    readonly detail: string | null = null,
   ) {
     super(code);
     this.name = "ChannelSendError";
@@ -51,6 +54,26 @@ function classifyHttp(status: number): ChannelSendError {
     return new ChannelSendError(`PROVIDER_AUTH_${status}`, false);
   }
   return new ChannelSendError(`PROVIDER_REFUSED_${status}`, true);
+}
+
+/**
+ * FCM's reason for a refusal, from its error body: the `errorCode` of its
+ * FcmError detail (THIRD_PARTY_AUTH_ERROR means APNs refused the app's key;
+ * SENDER_ID_MISMATCH a token from another Firebase project), else the
+ * error status. Only an upper-case code is kept; nothing else of the body.
+ */
+export function fcmReason(body: unknown): string | null {
+  const error = (body as { error?: Record<string, unknown> } | null)?.error;
+  if (!error) return null;
+  const details = Array.isArray(error["details"]) ? error["details"] : [];
+  const codes = [
+    ...details.map((d) => (d as Record<string, unknown>)?.["errorCode"]),
+    error["status"],
+  ];
+  const code = codes.find((c) =>
+    typeof c === "string" && /^[A-Z][A-Z0-9_]{1,59}$/.test(c)
+  );
+  return typeof code === "string" ? code : null;
 }
 
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
@@ -181,7 +204,15 @@ export class FcmPushSender implements PushSender {
       // FCM's UNREGISTERED: the app was uninstalled or the token rotated.
       throw new ChannelSendError("UNREGISTERED", true, true);
     }
-    if (!response.ok) throw classifyHttp(response.status);
+    if (!response.ok) {
+      const refused = classifyHttp(response.status);
+      throw new ChannelSendError(
+        refused.code,
+        refused.terminal,
+        refused.invalidTarget,
+        fcmReason(await response.json().catch(() => null)),
+      );
+    }
     const body = await response.json().catch(() => ({})) as {
       name?: unknown;
     };
