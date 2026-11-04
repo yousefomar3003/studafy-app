@@ -989,12 +989,18 @@ class FlashcardFlip extends StatelessWidget {
     required this.back,
     required this.showBack,
     required this.onTap,
+    this.scrollsInside = true,
   });
 
   final String front;
   final String back;
   final bool showBack;
   final VoidCallback onTap;
+
+  /// A long side scrolls inside the card. Off where the card sits in a
+  /// scrolling page as a short example (the plans page): a finger on it
+  /// must scroll the page, not stop on the card.
+  final bool scrollsInside;
 
   @override
   Widget build(BuildContext context) {
@@ -1054,6 +1060,9 @@ class FlashcardFlip extends StatelessWidget {
                       Expanded(
                         child: Center(
                           child: SingleChildScrollView(
+                            physics: scrollsInside
+                                ? null
+                                : const NeverScrollableScrollPhysics(),
                             child: UserContentText(
                               backSide ? back : front,
                               style:

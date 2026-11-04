@@ -297,6 +297,7 @@ class _StudyMaxExampleState extends State<StudyMaxExample> {
           SizedBox(
             height: 190,
             child: FlashcardFlip(
+              scrollsInside: false,
               front: l10n.practiceExampleFront,
               back: l10n.practiceExampleBack,
               showBack: _back,

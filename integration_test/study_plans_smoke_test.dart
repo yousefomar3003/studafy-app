@@ -72,22 +72,23 @@ void main() {
                 axisDirectionToAxis(widget.axisDirection) == Axis.vertical,
           )
           .first;
-      for (final name in ['Studafy Plus', 'Studafy Max']) {
-        await tester.scrollUntilVisible(
-          // The plan card, below that plan's example.
-          find.textContaining(name).last,
-          300,
-          scrollable: scrollable,
-        );
-        expect(find.textContaining(name), findsWidgets);
+      // Scrolls down until [finder] has been built: a long, lazily built
+      // page has nothing to find below the screen until it is reached.
+      Future<void> scrollTo(Finder finder) async {
+        for (var i = 0; i < 60 && finder.evaluate().isEmpty; i++) {
+          await tester.drag(scrollable, const Offset(0, -300));
+          await tester.pumpAndSettle();
+        }
+        expect(finder, findsWidgets);
       }
+
+      // The plan names appear in the worked examples and in the plan cards
+      // below them (value-first page, 2026-11-04), and in Arabic inside
+      // left-to-right isolates.
+      await scrollTo(find.textContaining('Studafy Plus'));
+      await scrollTo(find.textContaining('Studafy Max'));
       // The store's price is on the page whatever the layout.
-      await tester.scrollUntilVisible(
-        find.textContaining(r'$5.99').first,
-        300,
-        scrollable: scrollable,
-      );
-      expect(find.textContaining(r'$5.99'), findsWidgets);
+      await scrollTo(find.textContaining(r'$5.99'));
       expect(tester.takeException(), isNull);
       await binding.takeScreenshot('study-plans-$language');
     }
