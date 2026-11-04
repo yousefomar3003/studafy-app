@@ -105,7 +105,9 @@ describe("push payload", () => {
       "recipientId",
       "templateKey",
     ]);
-    expect(pushData({ templateKey: "x", notificationId: "", recipientId: null }))
+    expect(
+      pushData({ templateKey: "x", notificationId: "", recipientId: null }),
+    )
       .toEqual({ templateKey: "x" });
   });
 
