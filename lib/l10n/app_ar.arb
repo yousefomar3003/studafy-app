@@ -872,6 +872,8 @@
   "notificationsFeedEmptyMessage": "ستظهر هنا التحديثات فور حدوثها.",
   "notificationsFeedLoading": "جارٍ التحميل…",
   "notificationsFeedLoadMore": "تحميل المزيد",
+  "notificationGone": "لم يعد هذا متاحًا.",
+  "notificationNothingToOpen": "لا يوجد ما يمكن فتحه لهذا الإشعار.",
   "notificationCopyAcademicAssessmentPublishedTitle": "تم نشر التقييم",
   "notificationCopyAcademicAssessmentPublishedDetail": "أصبح تقييم جديد متاحًا لأحد صفوفك.",
   "notificationCopyAcademicAssignmentPublishedTitle": "تم نشر الواجب",

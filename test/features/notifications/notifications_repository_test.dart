@@ -121,6 +121,35 @@ void main() {
     expect(transport.idempotencyKeys[0], transport.idempotencyKeys[1]);
   });
 
+  test('each item says what a tap opens, from its payload ids alone, online '
+      'and from the cache', () async {
+    transport.nextPage = _page([
+      _notification(
+        id: 'n1',
+        templateKey: 'communications.message_sent',
+        payload: {'conversationId': 'c-1', 'messageId': 'm-1'},
+      ),
+      _notification(
+        id: 'n2',
+        templateKey: 'academic.assessment_published',
+        payload: {'entityId': 'a-9'},
+      ),
+      _notification(id: 'n3', templateKey: 'invitations.issued'),
+    ]);
+
+    final live = await repository.list();
+    transport.failNextGet = true;
+    final cached = await repository.list();
+
+    expect(cached.isFromCache, isTrue);
+    for (final page in [live, cached]) {
+      expect(
+        {for (final item in page.items) item.id: item.route},
+        {'n1': 'conversation:c-1', 'n2': 'assessment:a-9', 'n3': null},
+      );
+    }
+  });
+
   test('airplane mode falls back to the cache instead of throwing', () async {
     transport.nextPage = _page([
       _notification(id: 'n1', templateKey: 'academic.grade_published'),
@@ -291,10 +320,11 @@ Map<String, dynamic> _notification({
   required String id,
   required String templateKey,
   String? readAt,
+  Map<String, dynamic> payload = const {},
 }) => {
   'id': id,
   'templateKey': templateKey,
-  'payload': <String, dynamic>{},
+  'payload': payload,
   'createdAt': '2026-01-01T00:00:00Z',
   'readAt': readAt,
 };

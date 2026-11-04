@@ -11,27 +11,45 @@ renewed"); the app shows the details after sign-in.
   an account switch, it initialises Firebase, asks for notification
   permission, and registers the FCM token with
   `POST /v1/me/push-devices`. It re-registers when Firebase
-  rotates the token. On sign-out it unregisters the token.
-- **Server:** tokens are stored in `public.push_devices`, which has RLS on
-  and no client or runtime grants; it is reached only through the API's
-  functions. The worker (`NOTIFICATION_CHANNELS_ENABLED=true`) fans each
-  in-app notification out to the recipient's phones. Push is on by default
-  and can be turned off per category. Tokens Firebase reports dead are
-  revoked.
-- **Payload:** the visible text is fixed per category. The data carries
-  only `templateKey` and `notificationId`, the id of the in-app
-  notification (the recipient's in-app delivery; migration
-  `202610180010` adds it to `private.channel_claim`). Never a
-  conversation, school or person.
+  rotates the token, and (as the parent) when a child account joins the
+  phone. On sign-out it unregisters the token for that account only.
+- **Every account on the phone (DL-082):** the phone stays registered for
+  each account that has been signed in on it - a switch takes nobody off -
+  so every account kept in the account switcher gets its own pushes. Each
+  registration is made as the account it is for, while it is the current
+  one: the app never spends another account's saved session in the
+  background (each use rotates it). A parent's registration also covers the
+  child accounts they manage, which live only on the parent's phones, and
+  unregistering as the parent removes theirs too. An account added before
+  DL-082, or one whose token Firebase replaced while another account was
+  open, is registered again the next time it is opened.
+- **Server:** tokens are stored in `public.push_devices`, one live row per
+  account and token (migration `202611040040`), with RLS on and no client
+  or runtime grants; it is reached only through the API's functions. The
+  worker (`NOTIFICATION_CHANNELS_ENABLED=true`) fans each in-app
+  notification out to the recipient's phones. Push is on by default and can
+  be turned off per category. Tokens Firebase reports dead are revoked for
+  every account.
+- **Payload:** the visible text is fixed per category, the same whichever
+  account on the phone it is for. The data carries only `templateKey`,
+  `notificationId`, the id of the in-app notification (the recipient's
+  in-app delivery; migration `202610180010` adds it to
+  `private.channel_claim`), and `recipientId`, the id of the account it was
+  sent to (migration `202611040040`). Never a name, conversation, school or
+  content.
 - **Tap:** `getInitialMessage` (cold start) and `onMessageOpenedApp`
-  (background) hand the id to `NotificationTaps`. The signed-in shell
-  (`NotificationTapOpener`) looks it up in that account's feed, marks it
-  read and opens it through the same routing as a tap in the in-app list
-  (a message opens the Messages tab, an assessment opens Work at
-  Assessments). With no id, or one this account cannot find, it opens the
-  notifications list; a teacher always gets the list. During an account
-  switch the outgoing shell leaves the tap for the incoming one, and an
-  open dialog is never covered.
+  (background) hand the ids to `NotificationTaps`. A tap for another
+  account on the phone switches to that account first
+  (`lib/app/account/push_tap_accounts.dart`); one for an account no longer
+  on the phone is ignored. The signed-in shell (`NotificationTapOpener`)
+  then looks it up in that account's feed, marks it read and opens exactly
+  what it is about through the same routing as a tap in the in-app list
+  (`lib/app/notification_routes.dart`): the conversation, the piece of
+  work to hand in or its submissions, the test, the mark, the plan; falling
+  back to the tab it is in, and saying "This is no longer available" when
+  it is gone. With no id, or one this account cannot find, it opens the
+  notifications list. During an account switch the outgoing shell leaves
+  the tap for the incoming one, and an open dialog is never covered.
 - **Android channel:** `MainActivity` creates `studafy_notifications`
   ("Studafy notifications" / "إشعارات ستودافاي") at start-up; the manifest
   names it Firebase's default and the worker sets

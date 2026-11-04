@@ -244,6 +244,46 @@ void main() {
     expect(taps.pending?.notificationId, '101');
   });
 
+  testWidgets('a push for another account on the phone is never opened as '
+      'this one: it goes to the app to switch accounts', (tester) async {
+    signIn('parent');
+    final handed = <NotificationTap>[];
+    taps.anotherAccount = (tap) async => handed.add(tap);
+    await tester.pumpWidget(app());
+    taps.tapped('101', recipientId: 'child');
+    await tester.pumpAndSettle();
+
+    expect(opened, isEmpty);
+    expect(repository.lookups, 0, reason: "the parent's feed is not read");
+    expect(find.byType(NotificationsPage), findsNothing);
+    expect(handed.single.notificationId, '101');
+    expect(handed.single.recipientId, 'child');
+  });
+
+  testWidgets('a push for this account opens here, named or not', (
+    tester,
+  ) async {
+    signIn('student');
+    await tester.pumpWidget(app());
+    taps.tapped('101', recipientId: 'student');
+    await tester.pumpAndSettle();
+
+    expect(opened.map((item) => item.id), ['101']);
+  });
+
+  testWidgets('with nobody to switch to, another account\'s push is dropped', (
+    tester,
+  ) async {
+    signIn('parent');
+    await tester.pumpWidget(app());
+    taps.tapped('101', recipientId: 'someone-else');
+    await tester.pumpAndSettle();
+
+    expect(opened, isEmpty);
+    expect(find.byType(NotificationsPage), findsNothing);
+    expect(taps.pending, isNull);
+  });
+
   testWidgets('nothing opens while nobody is signed in', (tester) async {
     await tester.pumpWidget(app());
     taps.tapped('101');

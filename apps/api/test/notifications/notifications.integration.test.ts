@@ -201,7 +201,7 @@ suite("API-042 S6 notifications over the real /v1 stack", () => {
       .toBe(true);
   });
 
-  test("a device registers for push and moves with the signed-in account", async () => {
+  test("a phone registers for every account signed in on it (DL-082)", async () => {
     const registered = await request("/v1/me/push-devices", {
       method: "POST",
       subject: USER_A,
@@ -209,29 +209,43 @@ suite("API-042 S6 notifications over the real /v1 stack", () => {
     });
     expect(registered.status).toBe(200);
 
+    const live = async () =>
+      (await sql<{ user_id: string }[]>`
+        select user_id from public.push_devices
+        where token = ${TOKEN} and revoked_at is null order by user_id
+      `).map((r) => r.user_id);
+
     // Someone else cannot remove A's registration.
     await request("/v1/me/push-devices/unregister", {
       method: "POST",
       subject: USER_B,
       body: { token: TOKEN },
     });
-    const stillA = await sql<{ user_id: string }[]>`
-      select user_id from public.push_devices
-      where token = ${TOKEN} and revoked_at is null
-    `;
-    expect(stillA.map((r) => r.user_id)).toEqual([USER_A]);
+    expect(await live()).toEqual([USER_A]);
 
-    // Signing in as B on the same device moves the token to B.
+    // B signs in on the same phone: both accounts keep their pushes.
     await request("/v1/me/push-devices", {
       method: "POST",
       subject: USER_B,
       body: { platform: "android", token: TOKEN },
     });
-    const nowB = await sql<{ user_id: string }[]>`
-      select user_id from public.push_devices
-      where token = ${TOKEN} and revoked_at is null
-    `;
-    expect(nowB.map((r) => r.user_id)).toEqual([USER_B]);
+    expect(await live()).toEqual([USER_A, USER_B]);
+
+    // A registering again (switching back) changes nothing for B.
+    await request("/v1/me/push-devices", {
+      method: "POST",
+      subject: USER_A,
+      body: { platform: "android", token: TOKEN },
+    });
+    expect(await live()).toEqual([USER_A, USER_B]);
+
+    // A signs out of the phone: only A's registration goes.
+    await request("/v1/me/push-devices/unregister", {
+      method: "POST",
+      subject: USER_A,
+      body: { token: TOKEN },
+    });
+    expect(await live()).toEqual([USER_B]);
 
     const removed = await request("/v1/me/push-devices/unregister", {
       method: "POST",

@@ -322,6 +322,9 @@ class AppDependencies {
                 await ProfilePhotos.delete(userId);
               },
               beforeSignOut: pushRegistrar.unregister,
+              // The parent's registration covers their child accounts on
+              // the server; registering again picks up a new child.
+              childrenAdded: pushRegistrar.register,
               context: context,
             ),
       classes: ClassListInteractor(

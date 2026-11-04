@@ -164,6 +164,40 @@ void main() {
     expect(taps.pending, isNull);
   });
 
+  test('a tap says which account on the phone the push was for', () async {
+    final taps = NotificationTaps();
+    final opened = StreamController<RemoteMessage>();
+    addTearDown(opened.close);
+    final run = build(
+      _Messaging(token: token),
+      taps: taps,
+      opened: opened.stream,
+    );
+    await run.registrar.register();
+
+    opened.add(
+      const RemoteMessage(
+        data: {
+          'notificationId': '42',
+          'recipientId': 'c0ffee00-0000-4000-8000-0000000000a1',
+        },
+      ),
+    );
+    await pumpEventQueue();
+    final tap = taps.consume()!;
+    expect(tap.notificationId, '42');
+    expect(tap.recipientId, 'c0ffee00-0000-4000-8000-0000000000a1');
+
+    // Anything but a plain id is no account at all.
+    opened.add(
+      const RemoteMessage(
+        data: {'notificationId': '43', 'recipientId': '../x'},
+      ),
+    );
+    await pumpEventQueue();
+    expect(taps.consume()!.recipientId, isNull);
+  });
+
   test('taps are handed on even when the person said no to push', () async {
     final taps = NotificationTaps();
     final run = build(

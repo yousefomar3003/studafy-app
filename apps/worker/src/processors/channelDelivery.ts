@@ -16,6 +16,12 @@ interface ChannelJob {
   tokens?: string[] | null;
   /** Push only: the id of the in-app notification, which a tap opens. */
   notificationId?: string | null;
+  /**
+   * Push only: the account the push is for. A phone can be signed in to
+   * several accounts and registered for each (DL-082); a tap opens the
+   * notification as this one.
+   */
+  recipientId?: string | null;
 }
 
 export interface ChannelDeliveryRuntime {
@@ -190,16 +196,19 @@ export function startChannelDelivery(
 }
 
 /**
- * A push's data payload: the template key, and the id of the in-app
- * notification it was sent for, so a tap opens that notification. Both are
- * opaque; the app reads what the notification is about through the API
- * after sign-in. Nothing else (no conversation, school or person) goes in a
- * push. A job claimed before the id existed sends the template key alone.
+ * A push's data payload: the template key, the id of the in-app
+ * notification it was sent for, so a tap opens that notification, and the
+ * id of the account it is for, so a phone signed in to several accounts
+ * opens it as that one (DL-082). All three are opaque; the app reads what the
+ * notification is about through the API, as the recipient. Nothing else (no
+ * name, conversation, school or content) goes in a push. A job claimed
+ * before an id existed sends without it.
  */
 export function pushData(
-  job: Pick<ChannelJob, "templateKey" | "notificationId">,
+  job: Pick<ChannelJob, "templateKey" | "notificationId" | "recipientId">,
 ): Record<string, string> {
-  return job.notificationId
-    ? { templateKey: job.templateKey, notificationId: job.notificationId }
-    : { templateKey: job.templateKey };
+  const data: Record<string, string> = { templateKey: job.templateKey };
+  if (job.notificationId) data["notificationId"] = job.notificationId;
+  if (job.recipientId) data["recipientId"] = job.recipientId;
+  return data;
 }

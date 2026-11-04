@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollDirection;
 
 import '../core/device_settings.dart';
-import '../core/feedback.dart';
 import '../core/file_upload_repository.dart';
 import '../core/lazy_indexed_stack.dart';
 import '../core/navigation.dart';
@@ -14,9 +13,9 @@ import '../core/studafy_domain.dart';
 import '../core/tab_back_scope.dart';
 import '../features/academic/domain/academic_repository.dart';
 import '../features/academic/presentation/academic_overview_page.dart';
-import '../features/academic/presentation/submit_work_page.dart';
 import '../features/classes/application/class_list_interactor.dart';
 import '../features/classes/presentation/join_class_page.dart';
+import '../features/family/presentation/student_family_page.dart';
 import '../features/messaging/domain/messaging.dart';
 import '../features/messaging/presentation/conversations_page.dart';
 import '../features/messaging/presentation/messaging_scope.dart';
@@ -31,6 +30,7 @@ import '../l10n/generated/app_l10n.dart';
 import 'account_hub_page.dart';
 import 'app_dependencies.dart';
 import 'assessment_navigation.dart';
+import 'notification_routes.dart';
 import 'school_messaging_switch.dart';
 import 'student_helper_needs_class.dart';
 import 'student_lessons_page.dart';
@@ -185,36 +185,41 @@ class _StudentShellState extends State<StudentShell>
   /// Any AI study tool, and so the plans that sell them.
   bool get _aiOn => widget.study != null && (_plan?.anyToolOn ?? false);
 
-  /// The tab Work opens on; a notification about marks opens Grades.
+  /// The tab Work opens on, and the piece of work a notification opens.
   AcademicFeed _workFeed = AcademicFeed.assignments;
+  FeedTarget? _workTarget;
 
-  /// Opens what a notification is about, in this student's app.
+  void _tab(int to, [FeedTarget? work]) => setState(() {
+    index = to;
+    if (work != null) {
+      _workFeed = work.feed;
+      _workTarget = work;
+    }
+    _navCompact.value = false;
+  });
+
+  /// Opens exactly what a notification is about, in this student's app. In
+  /// no class there is no work, no lessons and no inbox: only the family
+  /// links and the plans.
   bool _openNotification(NotificationItem item) {
-    // In no class there is no work, no lessons and no inbox to open.
-    if (_independent) return false;
-    final key = item.templateKey;
-    final messagesIndex = 3 + (_helperTab ? 1 : 0);
-    final (int, AcademicFeed?)? target = switch (key.split('.').first) {
-      'academic' when key.contains('grade') => (2, AcademicFeed.grades),
-      'academic' when key.contains('assessment') => (
-        2,
-        AcademicFeed.assessments,
+    final inClass = !_independent;
+    final actions = _actions;
+    return openNotificationIn(
+      context,
+      item,
+      NotificationDestinations(
+        feed: inClass ? (target) => _tab(2, target) : null,
+        lessons: inClass ? (_) => _tab(1) : null,
+        messages: inClass && MessagingScope.isAvailable(context)
+            ? () => _tab(3 + (_helperTab ? 1 : 0))
+            : null,
+        meetings: inClass ? () => _tab(0) : null,
+        family: () => Navigator.of(context).pushOnce(
+          MaterialPageRoute<void>(builder: (_) => const StudentFamilyPage()),
+        ),
+        plans: actions == null ? null : (_) => actions.openPlans(context),
       ),
-      'academic' when key.contains('resource') => (1, null),
-      'academic' => (2, AcademicFeed.assignments),
-      'communications' when MessagingScope.isAvailable(context) => (
-        messagesIndex,
-        null,
-      ),
-      _ => null,
-    };
-    if (target == null) return false;
-    setState(() {
-      index = target.$1;
-      if (target.$2 case final feed?) _workFeed = feed;
-      _navCompact.value = false;
-    });
-    return true;
+    );
   }
 
   /// The bar is compact while the student scrolls down a page, and full
@@ -429,8 +434,10 @@ class _StudentShellState extends State<StudentShell>
         ),
       if (!independent)
         AcademicOverviewPage(
-          // Re-keyed when a notification picks the tab Work opens on.
-          key: ValueKey((_workFeed, _tabs)),
+          // Re-keyed when a notification picks the feed and the work to open.
+          key: ValueKey((_workFeed, _tabs, _workTarget)),
+          openRecordId: _workTarget?.id,
+          onRecordMissing: () => showNotificationGone(context),
           repository: repository,
           studentId: studentId,
           // A tab of its own, so a large title like the others, and no
@@ -448,33 +455,13 @@ class _StudentShellState extends State<StudentShell>
           loadClassChoices: widget.classes == null ? null : _classChoices,
           onOpenAssessment: (id, title, _) =>
               openAssessmentForLearner(context, repository, id, title),
-          // Only published work can be handed in; a draft is not the
-          // student's to see as open.
-          onOpenRecord: (record) async {
-            final messenger = ScaffoldMessenger.of(context);
-            final done = await Navigator.of(context).pushOnce<String>(
-              MaterialPageRoute<String>(
-                builder: (_) => SubmitWorkPage(
-                  repository: repository,
-                  assignmentId: record.id,
-                  assignmentTitle: record.title,
-                  canSubmit: record.state == 'published',
-                  deadline: record.deadline,
-                  instructions: record.detail,
-                  material: record.attachments,
-                  links: record.links,
-                  uploads: widget.fileUploads,
-                  schoolId: ActiveContextController.instance.schoolFor(
-                    record.classroomId,
-                  ),
-                  studentId: studentId,
-                ),
-              ),
-            );
-            if (done != null) {
-              messenger.showMessage(done);
-            }
-          },
+          onOpenRecord: (record) => openStudentHandIn(
+            context,
+            repository,
+            record,
+            uploads: widget.fileUploads,
+            studentId: studentId,
+          ),
         ),
       if (assistant != null)
         StudyAssistantPage(

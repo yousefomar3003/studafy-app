@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../core/attachment_field.dart';
@@ -44,6 +46,8 @@ class AcademicOverviewPage extends StatefulWidget {
     this.onOpenStudentRecord,
     this.onOpenAssessment,
     this.feedBanner,
+    this.openRecordId,
+    this.onRecordMissing,
   });
 
   final AcademicRepository repository;
@@ -52,6 +56,16 @@ class AcademicOverviewPage extends StatefulWidget {
   /// chosen (null for all of them): Family+ on a child's marks. Null, or
   /// a null result, shows nothing.
   final Widget? Function(AcademicFeed feed, String? studentId)? feedBanner;
+
+  /// A row to open as soon as the feed has loaded, as if it were tapped -
+  /// what a tapped notification is about. Matched by the row's id, or the
+  /// assessment or assignment it is the mark of. A row that opens nothing
+  /// is simply in view.
+  final String? openRecordId;
+
+  /// Called when [openRecordId] is not in the loaded feed: deleted,
+  /// withdrawn, or no longer this person's.
+  final VoidCallback? onRecordMissing;
 
   /// The children a guardian follows. With more than one, the page offers
   /// "All children" and each child; with one, it is simply that child.
@@ -146,6 +160,35 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
     selectedStudentId = _studentFrom(widget);
     future = _watched();
     _loadChoices();
+    final target = widget.openRecordId;
+    if (target != null) unawaited(_openWhenLoaded(target, future));
+  }
+
+  /// Opens [id]'s row from the first load, as a tap on it would.
+  Future<void> _openWhenLoaded(
+    String id,
+    Future<List<AcademicRecord>> load,
+  ) async {
+    final List<AcademicRecord> records;
+    try {
+      records = await load;
+    } on Object {
+      return; // The page shows the failure and a retry.
+    }
+    if (!mounted) return;
+    final record = records
+        .where(
+          (record) =>
+              record.id == id ||
+              record.assessmentId == id ||
+              record.markedAssignmentId == id,
+        )
+        .firstOrNull;
+    if (record == null) {
+      widget.onRecordMissing?.call();
+      return;
+    }
+    _openerFor(record)?.call(record);
   }
 
   static String? _studentFrom(AcademicOverviewPage page) =>
@@ -665,17 +708,15 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
         '${studafyTimeOfDay(context, TimeOfDay.fromDateTime(startsAt))}';
   }
 
-  Widget _recordCard(
-    BuildContext context,
-    List<AcademicRecord> items,
-    int index,
-  ) {
-    final item = items[index];
-    final l10n = AppL10n.of(context);
-    // Only an assignment opens anything. Every caller hands the record to
-    // an assignment screen - hand-in for a student or guardian, the roster
-    // for a teacher - so a grade or an assessment tapped here used to open
-    // "hand in work" with an id that is not an assignment's.
+  /// What a tap on [item] does in the feed on show, or null when it opens
+  /// nothing.
+  ///
+  /// Only an assignment or an online assessment opens anything. Every
+  /// caller hands an assignment to an assignment screen - hand-in for a
+  /// student or guardian, the roster for a teacher - so a grade or an
+  /// assessment tapped here used to open "hand in work" with an id that is
+  /// not an assignment's.
+  void Function(AcademicRecord)? _openerFor(AcademicRecord item) {
     final onOpenStudent = widget.onOpenStudentRecord;
     final openAssessment = widget.onOpenAssessment;
     final assessmentId = switch (feed) {
@@ -683,8 +724,7 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
       AcademicFeed.grades when item.delivery == 'online' => item.assessmentId,
       _ => null,
     };
-    final void Function(AcademicRecord)? onOpen =
-        assessmentId != null && openAssessment != null
+    return assessmentId != null && openAssessment != null
         ? (record) =>
               openAssessment(assessmentId, record.title, _owners[record])
         : feed != AcademicFeed.assignments
@@ -692,6 +732,16 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
         : onOpenStudent != null
         ? (record) => onOpenStudent(record, _owners[record])
         : widget.onOpenRecord;
+  }
+
+  Widget _recordCard(
+    BuildContext context,
+    List<AcademicRecord> items,
+    int index,
+  ) {
+    final item = items[index];
+    final l10n = AppL10n.of(context);
+    final onOpen = _openerFor(item);
     // In the combined view each row says whose it is, and where.
     final owner = _combined ? _owners[item] : null;
     final grades = feed == AcademicFeed.grades;

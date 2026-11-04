@@ -12,8 +12,9 @@ import '../domain/notification_taps.dart';
 import '../domain/push_registrar.dart';
 
 /// Push through Firebase Cloud Messaging, which relays to Apple's service on
-/// iPhone. The server keeps the token against the signed-in account and
-/// drops it when Firebase says it is dead.
+/// iPhone. The server keeps the token against each account that registers
+/// it - every account signed in on the phone keeps its own registration
+/// (DL-082) - and drops it when Firebase says it is dead.
 ///
 /// On when the build carries Firebase's config, off without it
 /// ([pushEnabledFor]). The config comes from one of two places
@@ -38,7 +39,8 @@ import '../domain/push_registrar.dart';
 /// It also hands taps on a notification to [NotificationTaps]: the one that
 /// started the app, and any while it runs. They are read once someone is
 /// signed in, because a push carries only the in-app notification's id and
-/// the app looks it up as the signed-in account.
+/// the id of the account it was sent to, and the app looks it up as that
+/// account.
 class FirebasePushRegistrar implements PushRegistrar {
   /// [messaging] and [openedApp] stand in for Firebase in tests.
   FirebasePushRegistrar(
@@ -142,21 +144,22 @@ class FirebasePushRegistrar implements PushRegistrar {
   Future<void> _listenForTaps(FirebaseMessaging messaging) async {
     final taps = _taps;
     if (taps == null || _opened != null) return;
-    _opened = _openedApp().listen(
-      (message) => taps.tapped(_notificationId(message)),
-      onError: (Object _) {},
+    void tapped(RemoteMessage message) => taps.tapped(
+      _field(message, 'notificationId'),
+      recipientId: _field(message, 'recipientId'),
     );
+    _opened = _openedApp().listen(tapped, onError: (Object _) {});
     try {
       final initial = await messaging.getInitialMessage();
-      if (initial != null) taps.tapped(_notificationId(initial));
+      if (initial != null) tapped(initial);
     } on Object {
       // A launch tap that cannot be read opens nothing; the app still starts.
     }
   }
 
-  static String? _notificationId(RemoteMessage message) {
-    final id = message.data['notificationId'];
-    return id is String ? id : null;
+  static String? _field(RemoteMessage message, String key) {
+    final value = message.data[key];
+    return value is String ? value : null;
   }
 
   @override

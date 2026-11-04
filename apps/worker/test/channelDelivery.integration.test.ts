@@ -174,7 +174,9 @@ suite("DL-053 channel delivery", () => {
     expect(pushes[0]?.title).toBe("تحديث مدرسي جديد");
     expect(JSON.stringify([...emails, ...pushes])).not.toContain("secret");
     // A tap opens the notification: the push names the in-app delivery the
-    // app's list knows it by, beside the template key, and nothing more.
+    // app's list knows it by and the account it is for (a phone can be
+    // signed in to several, DL-082), beside the template key, and nothing
+    // more.
     const inApp = await sql<{ id: string }[]>`
       select id::text from public.notification_deliveries
       where school_id = ${SCHOOL}::uuid and recipient_id = ${PUSH_USER}::uuid
@@ -183,6 +185,7 @@ suite("DL-053 channel delivery", () => {
     expect(pushes[0]?.data).toEqual({
       templateKey: "academic.grade_published",
       notificationId: inApp[0]!.id,
+      recipientId: PUSH_USER,
     });
 
     const states = await sql<{ channel: string; state: string }[]>`

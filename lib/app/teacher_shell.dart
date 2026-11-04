@@ -17,19 +17,22 @@ import '../features/academic/presentation/class_roster_page.dart';
 import '../features/academic/presentation/class_schedule_page.dart';
 import '../features/academic/presentation/class_sections_page.dart';
 import '../features/academic/presentation/gradebook_home_page.dart';
+import '../features/academic/presentation/marking_plan_page.dart';
 import '../features/academic/presentation/paper_gradebook_page.dart';
-import '../features/academic/presentation/submissions_page.dart';
 import '../features/classes/domain/classroom.dart';
 import '../features/classes/presentation/classes_page.dart';
 import '../features/messaging/domain/messaging.dart';
 import '../features/messaging/presentation/conversations_page.dart';
 import '../features/messaging/presentation/messaging_scope.dart';
+import '../features/notifications/domain/notification.dart';
 import '../features/notifications/presentation/notification_tap_opener.dart';
 import '../features/notifications/presentation/notifications_page.dart';
 import '../l10n/generated/app_l10n.dart';
 import 'app_dependencies.dart';
 import 'assessment_navigation.dart';
+import 'notification_routes.dart';
 import 'school_messaging_switch.dart';
+import 'tab_header.dart';
 import 'teacher_create_actions.dart';
 import 'teacher_today_page.dart';
 
@@ -115,18 +118,11 @@ class _TeacherShellState extends State<TeacherShell>
           ),
           // Tapping a piece of work shows who has handed it in. Students
           // can submit now, so without this the loop has no other end.
-          onOpenRecord: (record) => Navigator.of(context).pushOnce(
-            MaterialPageRoute<void>(
-              builder: (_) => SubmissionsPage(
-                repository: academic,
-                assignmentId: record.id,
-                assignmentTitle: record.title,
-                classroomId: classroom.id.value,
-                graded: record.maximumScore != null,
-                assignmentVersion: record.version,
-                timeZone: record.timeZone,
-              ),
-            ),
+          onOpenRecord: (record) => openSubmissionsForTeacher(
+            context,
+            academic,
+            record,
+            classroomId: classroom.id.value,
           ),
           // No row of tools across the class: attendance and marks are in
           // the "+" menu and the Gradebook tab, as everything else is. What
@@ -292,20 +288,34 @@ class _TeacherShellState extends State<TeacherShell>
     if (mounted) setState(() => _classesKey = UniqueKey());
   }
 
-  Future<void> _openSubmissions(AcademicRecord record) async {
-    final classroomId = record.classroomId;
-    if (classroomId == null) return;
-    await Navigator.of(context).pushOnce(
-      MaterialPageRoute<void>(
-        builder: (_) => SubmissionsPage(
-          repository: widget.dependencies.academic,
-          assignmentId: record.id,
-          assignmentTitle: record.title,
-          classroomId: classroomId,
-          graded: record.maximumScore != null,
-          assignmentVersion: record.version,
-          timeZone: record.timeZone,
-        ),
+  Future<void> _openSubmissions(AcademicRecord record) =>
+      openSubmissionsForTeacher(context, widget.dependencies.academic, record);
+
+  /// The Teaching tab's feed, and the work a notification opens in it.
+  FeedTarget? _teaching;
+
+  /// Opens exactly what a notification is about: the class's work, test or
+  /// lesson in Teaching (what was handed in, or the marking), marks in the
+  /// Gradebook, the conversation, or the inbox.
+  bool _openNotification(NotificationItem item) {
+    void tab(int to) => setState(() {
+      index = to;
+      _navCompact.value = false;
+    });
+    return openNotificationIn(
+      context,
+      item,
+      NotificationDestinations(
+        feed: (target) => target.feed == AcademicFeed.grades
+            ? tab(3)
+            : setState(() {
+                _teaching = target;
+                tab(2);
+              }),
+        messages: () => tab(4),
+        announcements: () => tab(4),
+        meetings: () => tab(0),
+        plans: (_) => openMarkingPlan(context, widget.dependencies.marking),
       ),
     );
   }
@@ -370,6 +380,7 @@ class _TeacherShellState extends State<TeacherShell>
   /// Back from any other tab goes to Today; from Today it leaves the app.
   @override
   Widget build(BuildContext c) => NotificationTapOpener(
+    onOpen: _openNotification,
     child: TabBackScope(
       atFirstTab: index == 0,
       onBack: () => setState(() => index = 0),
@@ -405,7 +416,8 @@ class _TeacherShellState extends State<TeacherShell>
           onOpenLessons: (classroom) =>
               _openClassroom(classroom, feed: AcademicFeed.content),
           // No messages button here: the Inbox tab is the one way in.
-          onOpenNotifications: () => open(const NotificationsPage()),
+          onOpenNotifications: () =>
+              open(NotificationsPage(onOpen: _openNotification)),
           onSeeAllClasses: () => setState(() => index = 1),
           quickActions: [
             TodayQuickAction(
@@ -444,15 +456,19 @@ class _TeacherShellState extends State<TeacherShell>
         key: ValueKey(('classes', _classesKey)),
         classes: widget.dependencies.classes,
         onOpenClassroom: _openClassroom,
-        header: _TabHeader(title: l10n.teacherShellClasses),
+        header: TabHeader(title: l10n.teacherShellClasses),
       ),
       // Teaching content lives here; every mark lives in the Gradebook.
       AcademicOverviewPage(
+        // Re-keyed when a notification picks the feed and the work to open.
+        key: ValueKey(_teaching),
+        openRecordId: _teaching?.id,
+        onRecordMissing: () => showNotificationGone(context),
         title: l10n.navTeaching,
         repository: widget.dependencies.academic,
         teacherTools: true,
         aiReading: _aiToolsOn,
-        initialFeed: AcademicFeed.content,
+        initialFeed: _teaching?.feed ?? AcademicFeed.content,
         availableFeeds: const [
           AcademicFeed.content,
           AcademicFeed.assignments,
@@ -560,36 +576,6 @@ class _TeacherShellState extends State<TeacherShell>
       ),
     );
   }
-}
-
-/// A large page title, as in iOS, with nothing competing with it.
-class _TabHeader extends StatelessWidget {
-  const _TabHeader({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) => SafeArea(
-    bottom: false,
-    child: Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(20, 14, 20, 4),
-      child: Align(
-        alignment: AlignmentDirectional.centerStart,
-        child: Semantics(
-          header: true,
-          child: Text(
-            title,
-            style: const TextStyle(
-              color: studafyInk,
-              fontSize: 30,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -.8,
-            ),
-          ),
-        ),
-      ),
-    ),
-  );
 }
 
 /// A signal with nothing to carry: something was created or changed.

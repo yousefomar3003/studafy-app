@@ -93,6 +93,14 @@ class _NotificationTapOpenerState extends State<NotificationTapOpener> {
     if (tap == null) return;
     _opening = true;
     try {
+      final recipient = tap.recipientId;
+      if (recipient != null && recipient != account) {
+        // Another account on this phone was sent it (DL-082). Never opened
+        // here: the app switches to that account, whose shell opens it, or
+        // drops it when the account is no longer on the phone.
+        await taps.anotherAccount?.call(tap);
+        return;
+      }
       await _show(tap, taps, shell);
     } finally {
       _opening = false;

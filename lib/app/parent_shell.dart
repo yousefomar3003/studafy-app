@@ -36,6 +36,7 @@ import 'account/account_switching.dart';
 import 'account/managed_children_section.dart';
 import 'account_hub_page.dart';
 import 'assessment_navigation.dart';
+import 'notification_routes.dart';
 
 /// The parent's app: their children's day, schoolwork, Family+ insights,
 /// announcements and messages. Composed here because it draws on several
@@ -165,22 +166,51 @@ class _ParentShellState extends State<ParentShell> {
     unawaited(_loadUnread());
   }
 
+  /// The feed Learning opens on, and the piece of work a notification opens.
+  FeedTarget? _learningTarget;
+
+  /// Opens exactly what a notification is about: the piece of work, test or
+  /// mark (for whichever child it is), the conversation, or the tab.
   bool _openNotification(NotificationItem item) {
-    final key = item.templateKey;
-    final tab = switch (key.split('.').first) {
-      'academic' => _Tab.learning,
-      'communications' when key.contains('announcement') => _Tab.announcements,
-      'communications' when _messagingOn => _Tab.messages,
-      'billing' when widget.insights != null => _Tab.familyPlus,
-      _ => _Tab.today,
-    };
-    if (tab == _Tab.learning && _verified.length > 1) {
-      // The notification names no child, so show them all, each labelled.
-      setState(() => _learningShowsAll = true);
-    }
-    _go(tab);
-    return true;
+    VoidCallback? tab(_Tab tab) => _tabs.contains(tab) ? () => _go(tab) : null;
+    return openNotificationIn(
+      context,
+      item,
+      NotificationDestinations(
+        feed: (target) {
+          // The notification names no child, so Learning shows them all,
+          // each labelled - and finds the work whoever's it is.
+          setState(() {
+            _learningShowsAll = _verified.length > 1;
+            _learningTarget = _learningFeeds.contains(target.feed)
+                ? target
+                : null;
+          });
+          _go(_Tab.learning);
+        },
+        messages: tab(_Tab.messages),
+        announcements: tab(_Tab.announcements),
+        meetings: tab(_Tab.today),
+        family: tab(_Tab.today),
+        plans: switch (tab(_Tab.familyPlus)) {
+          final open? => (_) => open(),
+          null => null,
+        },
+      ),
+    );
   }
+
+  /// What a guardian sees, bar wellbeing: those notes can record concerns
+  /// about the home, and are not shared with guardians. Work comes first: a
+  /// guardian of a young child is not only reading the record, they are the
+  /// one handing the work in.
+  static const _learningFeeds = [
+    AcademicFeed.assignments,
+    AcademicFeed.assessments,
+    AcademicFeed.content,
+    AcademicFeed.grades,
+    AcademicFeed.attendance,
+  ];
 
   bool _onScroll(UserScrollNotification notification) {
     if (notification.metrics.axis != Axis.vertical) return false;
@@ -342,9 +372,15 @@ class _ParentShellState extends State<ParentShell> {
         _NoChildYet(title: l10n.navLearning)
       else
         AcademicOverviewPage(
-          // Only a different set of children starts the page afresh. A child
-          // chosen elsewhere is followed in place, keeping the open feed.
-          key: ValueKey([for (final child in verified) child.studentId].join()),
+          // Only a different set of children, or a notification to open,
+          // starts the page afresh. A child chosen elsewhere is followed in
+          // place, keeping the open feed.
+          key: ValueKey((
+            [for (final child in verified) child.studentId].join(),
+            _learningTarget,
+          )),
+          openRecordId: _learningTarget?.id,
+          onRecordMissing: () => showNotificationGone(context),
           title: l10n.navLearning,
           subtitle: l10n.learningSubtitle,
           repository: widget.academic,
@@ -362,18 +398,8 @@ class _ParentShellState extends State<ParentShell> {
             _learningShowsAll = child == null;
             if (child != null) _selectChild(child);
           },
-          initialFeed: AcademicFeed.assignments,
-          // Work comes first: a guardian of a young child is not only
-          // reading the record, they are the one handing the work in. What
-          // the child sees, bar wellbeing: those notes can record concerns
-          // about the home, and are not shared with guardians.
-          availableFeeds: const [
-            AcademicFeed.assignments,
-            AcademicFeed.assessments,
-            AcademicFeed.content,
-            AcademicFeed.grades,
-            AcademicFeed.attendance,
-          ],
+          initialFeed: _learningTarget?.feed ?? AcademicFeed.assignments,
+          availableFeeds: _learningFeeds,
           onOpenStudentRecord: _handIn,
           feedBanner: widget.insights == null ? null : _familyPlusNudge,
           // Read-only: a parent sees the child's results, never sits it.

@@ -118,6 +118,7 @@ class ApiNotificationsRepository implements NotificationsRepository {
           title: _titleKey(item.templateKey),
           detail: _detailKey(item.templateKey),
           createdAt: DateTime.parse(item.createdAt),
+          route: _route(item.templateKey, item.payload),
           readAt: readAt == null ? null : DateTime.parse(readAt),
         ),
       );
@@ -223,9 +224,17 @@ class ApiNotificationsRepository implements NotificationsRepository {
       title: _titleKey(templateKey),
       detail: _detailKey(templateKey),
       createdAt: DateTime.parse(entity.payload['createdAt'] as String),
+      route: _route(templateKey, entity.payload['payload']),
       readAt: readAt == null ? null : DateTime.parse(readAt),
     );
   }
+
+  /// Where a tap leads, from the ids in the server payload. Only the ids
+  /// leave this adapter, never the payload itself.
+  static String? _route(String templateKey, Object? payload) =>
+      payload is Map<String, dynamic>
+      ? NotificationTarget.fromPayload(templateKey, payload)?.route
+      : null;
 }
 
 /// Every `template_key` the server can currently emit (notification_outbox
