@@ -61,14 +61,22 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Studafy Plus'), findsOne);
+      // The plan names appear in the plan cards and again in the worked
+      // examples above them (value-first page, 2026-11-04).
+      expect(find.text('Studafy Plus', skipOffstage: false), findsWidgets);
       // On a smaller screen (the Android emulator) Max is further down.
       await tester.scrollUntilVisible(
-        find.text('Studafy Max'),
+        find.text('Studafy Max').first,
         200,
         scrollable: find.byType(Scrollable).first,
       );
-      expect(find.text('Studafy Max'), findsOne);
+      expect(find.text('Studafy Max'), findsWidgets);
+      // The price, from the store, is on the page whatever the layout.
+      await tester.scrollUntilVisible(
+        find.textContaining(r'$5.99').first,
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.textContaining(r'$5.99'), findsWidgets);
       expect(tester.takeException(), isNull);
       await binding.takeScreenshot('study-plans-$language');
