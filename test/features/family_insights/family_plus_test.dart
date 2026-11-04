@@ -250,6 +250,9 @@ class _Store implements ParentSubscriptionRepository {
   final _listeners = <EntitlementChanged>[];
   int restored = 0;
 
+  @override
+  bool get sellsFamilyPlus => true;
+
   void notify() {
     for (final listener in List.of(_listeners)) {
       listener();

@@ -37,6 +37,7 @@ class HelperPlan {
     this.allowance,
     this.upgradeTo,
     this.upgradeBenefits = const [],
+    this.upgradePitch,
   });
 
   final String name;
@@ -50,6 +51,11 @@ class HelperPlan {
   /// What the next plan adds, in the reader's language.
   final List<String> upgradeBenefits;
 
+  /// What to say once most of the allowance is used ("You've used most of
+  /// this week's AI. Studafy Plus gives you..."). Null where the next plan
+  /// cannot be bought here, and the usage line is shown as it always was.
+  final String? upgradePitch;
+
   bool get limitReached => allowance?.exhausted ?? false;
 
   HelperPlan withAllowance(HelperAllowance value) => HelperPlan(
@@ -57,6 +63,7 @@ class HelperPlan {
     allowance: value,
     upgradeTo: upgradeTo,
     upgradeBenefits: upgradeBenefits,
+    upgradePitch: upgradePitch,
   );
 }
 
@@ -149,6 +156,13 @@ class StudyAssistantPage extends StatefulWidget {
 
   /// Opens the plans. Null offers no upgrade.
   final Future<void> Function()? onUpgrade;
+
+  /// The next plan, said once most of the allowance is used; hidden by the
+  /// student until the app closes.
+  static bool _pitchHidden = false;
+
+  @visibleForTesting
+  static void showPitchAgain() => _pitchHidden = false;
 
   /// Leaves the helper. Set where it is shown full screen, without the tab
   /// bar, and the page then offers a back arrow.
@@ -1095,6 +1109,23 @@ class _StudyAssistantPageState extends State<StudyAssistantPage> {
                   onAction: _canUpgrade ? _upgrade : null,
                 ),
               )
+            else if (plan?.upgradePitch case final pitch?
+                when (plan!.allowance?.low ?? false) &&
+                    _canUpgrade &&
+                    !_off &&
+                    !StudyAssistantPage._pitchHidden)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _Banner(
+                  icon: Icons.workspace_premium_outlined,
+                  text: pitch,
+                  actionLabel: l10n.nbSeePlans,
+                  onAction: _upgrade,
+                  hideLabel: l10n.planPromptHide,
+                  onHide: () =>
+                      setState(() => StudyAssistantPage._pitchHidden = true),
+                ),
+              )
             else if (plan?.allowance case final allowance?
                 when allowance.low && !_off)
               Padding(
@@ -1278,12 +1309,18 @@ class _Banner extends StatelessWidget {
     required this.text,
     this.actionLabel,
     this.onAction,
+    this.hideLabel,
+    this.onHide,
   });
 
   final IconData icon;
   final String text;
   final String? actionLabel;
   final VoidCallback? onAction;
+
+  /// A close button, when the banner may be hidden.
+  final String? hideLabel;
+  final VoidCallback? onHide;
 
   @override
   Widget build(BuildContext context) => Semantics(
@@ -1321,6 +1358,13 @@ class _Banner extends StatelessWidget {
               child: Text(actionLabel!),
             ),
           ],
+          if (onHide case final hide?)
+            IconButton(
+              tooltip: hideLabel,
+              visualDensity: VisualDensity.compact,
+              onPressed: hide,
+              icon: const Icon(Icons.close_rounded, size: 18),
+            ),
         ],
       ),
     ),

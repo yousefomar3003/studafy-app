@@ -45,7 +45,12 @@ class StudentTodayPage extends StatefulWidget {
     this.onOpenTutor,
     this.onOpenNotebook,
     this.onPractise,
+    this.planCard,
   });
+
+  /// The next study plan up, under the study tools (it hides itself on
+  /// Max and where nothing is sold). Null in shells without plans.
+  final Widget? planCard;
 
   /// In no class: no work, lessons or meetings to show.
   final bool independent;
@@ -202,6 +207,7 @@ class _StudentTodayPageState extends State<StudentTodayPage> {
               icon: Icons.wb_sunny_outlined,
             ),
             ..._studyTools(l10n),
+            ?widget.planCard,
             if (widget.independent) ..._independent(l10n),
             if (!widget.independent) ..._inClass(l10n, classes),
           ],

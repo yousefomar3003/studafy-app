@@ -104,6 +104,11 @@ class FamilyPlusStatus {
 }
 
 abstract interface class ParentSubscriptionRepository {
+  /// Whether this build can sell Family+: a store on this device and a
+  /// server behind it. Elsewhere (the web, desktop) it is described, not
+  /// sold, and nothing invites the parent to it.
+  bool get sellsFamilyPlus;
+
   /// Whether this linked child's Family+ insights are unlocked: covered by
   /// the parent's family plan, or by a per-child subscription bought before
   /// Family+ became a family plan.

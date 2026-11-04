@@ -43,9 +43,15 @@ class AcademicOverviewPage extends StatefulWidget {
     this.onStudentChanged,
     this.onOpenStudentRecord,
     this.onOpenAssessment,
+    this.feedBanner,
   });
 
   final AcademicRepository repository;
+
+  /// A line from the host above a feed, for the feed shown and the child
+  /// chosen (null for all of them): Family+ on a child's marks. Null, or
+  /// a null result, shows nothing.
+  final Widget? Function(AcademicFeed feed, String? studentId)? feedBanner;
 
   /// The children a guardian follows. With more than one, the page offers
   /// "All children" and each child; with one, it is simply that child.
@@ -580,6 +586,7 @@ class _AcademicOverviewPageState extends State<AcademicOverviewPage> {
               future = _watched();
             }),
           ),
+          ?widget.feedBanner?.call(feed, selectedStudentId),
           if (canAddWellbeing)
             Padding(
               padding: const EdgeInsetsDirectional.fromSTEB(16, 10, 16, 0),

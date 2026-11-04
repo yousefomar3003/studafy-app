@@ -488,6 +488,63 @@ void main() {
     expect(find.textContaining('5,000'), findsNothing);
   });
 
+  group('running low where the next plan is sold', () {
+    const pitch =
+        "You've used most of this week's AI. Studafy Plus gives you a "
+        'monthly allowance and notes from photos.';
+    setUp(StudyAssistantPage.showPitchAgain);
+
+    testWidgets('says what the next plan gives, opens the plans, and can '
+        'be hidden until the app closes', (tester) async {
+      var upgrades = 0;
+      Widget low() => page(
+        _Recording(),
+        plan: HelperPlan(
+          name: 'Studafy Free',
+          allowance: tokens(5000),
+          upgradeTo: 'Studafy Plus',
+          upgradePitch: pitch,
+        ),
+        onUpgrade: () async => upgrades++,
+      );
+      await tester.pumpWidget(low());
+      await tester.pumpAndSettle();
+      expect(find.text(pitch), findsOne);
+      await tester.tap(find.widgetWithText(FilledButton, 'See plans'));
+      await tester.pumpAndSettle();
+      expect(upgrades, 1);
+
+      await tester.tap(find.byTooltip('Hide'));
+      await tester.pumpAndSettle();
+      expect(find.text(pitch), findsNothing);
+      // The usage itself is still said, as before.
+      expect(find.text('Running low · resets Mon, Oct 12'), findsWidgets);
+
+      // Hidden for the session, not only on this screen.
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpWidget(low());
+      await tester.pumpAndSettle();
+      expect(find.text(pitch), findsNothing);
+    });
+
+    testWidgets('not while plenty is left', (tester) async {
+      await tester.pumpWidget(
+        page(
+          _Recording(),
+          plan: HelperPlan(
+            name: 'Studafy Free',
+            allowance: tokens(30000),
+            upgradeTo: 'Studafy Plus',
+            upgradePitch: pitch,
+          ),
+          onUpgrade: () async {},
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text(pitch), findsNothing);
+    });
+  });
+
   testWidgets('an answer from class material shows its sources', (
     tester,
   ) async {

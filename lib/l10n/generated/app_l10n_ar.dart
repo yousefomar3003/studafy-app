@@ -3319,10 +3319,6 @@ class AppL10nAr extends AppL10n {
   }
 
   @override
-  String get familyPlusIntro =>
-      'اشتراك واحد للعائلة. اعرف كيف يسير كل طفل فعلًا، وأين يحتاج إلى المساعدة، وما الذي يمكنك فعله هذا الأسبوع.';
-
-  @override
   String get familyPlusFeatureTrends =>
       'ما الذي تغيّر هذا الفصل، مع السجلات التي تثبت كل ملاحظة';
 
@@ -5163,9 +5159,6 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get parentLinkSearching => 'جارٍ التحقق…';
-
-  @override
-  String get familyPlusNoPlan => 'لا توجد خطة ⁦Family+⁩ بعد';
 
   @override
   String familyPlusCoveredCount(int count) {
@@ -8260,4 +8253,199 @@ class AppL10nAr extends AppL10n {
   @override
   String get photoConvertFailed =>
       'تعذّر تجهيز هذه الصورة للإرسال. جرّب صورة أخرى، أو التقط لقطة شاشة لها وأرسلها.';
+
+  @override
+  String get planExampleLabel => 'مثال';
+
+  @override
+  String get planPromptHide => 'إخفاء';
+
+  @override
+  String get studyLandingTitle => 'استفد أكثر من ملاحظاتك ودروسك';
+
+  @override
+  String get studyLandingPromise =>
+      'يحوّل ⁦Studafy Plus⁩ صورة السبورة إلى ملاحظات مرتّبة، ويصنع ⁦Studafy Max⁩ اختبارات وبطاقات مراجعة من ملاحظاتك ودروسك.';
+
+  @override
+  String get studyLandingPlusTitle => '⁦Studafy Plus⁩: ملاحظات من صورة';
+
+  @override
+  String get studyLandingPlusLead =>
+      'التقط صورة للسبورة أو لواجبك أو لصفحة من كتاب، فيكتبها Plus ملاحظات مرتّبة في دفترك.';
+
+  @override
+  String get studyExamplePlusNote => 'صورة نموذجية والملاحظات المصنوعة منها.';
+
+  @override
+  String get studyExamplePhoto => 'صورة السبورة';
+
+  @override
+  String get studyExampleNoteTitle => 'البناء الضوئي';
+
+  @override
+  String get studyExampleNoteLine1 =>
+      'تصنع النباتات غذاءها، الجلوكوز، باستخدام الضوء';
+
+  @override
+  String get studyExampleNoteLine2 =>
+      'تحتاج إلى الضوء والماء وثاني أكسيد الكربون';
+
+  @override
+  String get studyExampleNoteLine3 => 'تُطلق الأكسجين';
+
+  @override
+  String get studyIncludesPlusPhotos =>
+      'ملاحظات من الصور ولقطات الشاشة: السبورة أو واجبك أو صفحة من كتاب';
+
+  @override
+  String get studyIncludesPlusLessons =>
+      'ملاحظات ودفاتر دراسية مصنوعة من دروسك';
+
+  @override
+  String studyIncludesPlusAllowance(String times) {
+    return 'رصيد شهري للذكاء الاصطناعي، حجمه $times ضعف الرصيد الأسبوعي في الخطة المجانية';
+  }
+
+  @override
+  String get studyLandingMaxTitle => '⁦Studafy Max⁩: اختبارات وبطاقات مراجعة';
+
+  @override
+  String get studyLandingMaxLead =>
+      'يصنع Max اختبارات وبطاقات مراجعة من ملاحظاتك ودروسك، لتختبر نفسك قبل الامتحان.';
+
+  @override
+  String get studyExampleMaxNote => 'سؤال وبطاقة نموذجيان عن النباتات.';
+
+  @override
+  String get studyExampleQuizQuestion =>
+      'ما الغاز الذي تأخذه النباتات لتصنع غذاءها؟';
+
+  @override
+  String get studyExampleQuizOxygen => 'الأكسجين';
+
+  @override
+  String get studyExampleQuizCarbon => 'ثاني أكسيد الكربون';
+
+  @override
+  String get studyExampleQuizNitrogen => 'النيتروجين';
+
+  @override
+  String get studyExampleQuizWhy =>
+      'تأخذ النباتات ثاني أكسيد الكربون وتُطلق الأكسجين.';
+
+  @override
+  String get studyIncludesMaxQuizzes =>
+      'اختبارات تتحقق من إجاباتك وتشرح الإجابة الصحيحة';
+
+  @override
+  String get studyIncludesMaxCards =>
+      'بطاقات مراجعة تقلبها، مع عدّ ما عرفته منها';
+
+  @override
+  String get studyIncludesMaxAllowance =>
+      'كل ما في Plus، مع ضعف رصيده الشهري للذكاء الاصطناعي';
+
+  @override
+  String get studyTrustTitle => 'من المهم أن تعرف';
+
+  @override
+  String get studyTrustNames =>
+      'تُستبدل الأسماء التي يعرفها ستودافاي قبل إرسال أي شيء إلى الذكاء الاصطناعي. تُرسل الصور كما هي، فلا تصوّر فيها أسماءً أو وجوهًا.';
+
+  @override
+  String get studyTrustCheck =>
+      'قد يخطئ الذكاء الاصطناعي. تحقّق مما يصنعه، ولا تسلّمه أبدًا على أنه عملك.';
+
+  @override
+  String get studyTrustAds =>
+      'بلا إعلانات. لا تُباع بياناتك ولا تُستخدم لتدريب الذكاء الاصطناعي.';
+
+  @override
+  String get studyHomeCardFreeTitle => 'أنجز أكثر مع ⁦Studafy Plus⁩ أو Max';
+
+  @override
+  String get studyHomeCardFreeBody =>
+      'يحوّل Plus صورة السبورة إلى ملاحظات مرتّبة، ويضيف Max اختبارات وبطاقات مراجعة.';
+
+  @override
+  String get studyHomeCardPlusTitle => 'اختبر نفسك مع ⁦Studafy Max⁩';
+
+  @override
+  String get studyHomeCardPlusBody =>
+      'اختبارات وبطاقات مراجعة من ملاحظاتك ودروسك، وضعف رصيدك الشهري للذكاء الاصطناعي.';
+
+  @override
+  String get studyPromptWeekLow =>
+      'استخدمت معظم رصيد الذكاء الاصطناعي لهذا الأسبوع. يمنحك ⁦Studafy Plus⁩ رصيدًا شهريًا وملاحظات من الصور.';
+
+  @override
+  String get studyPromptMonthLow =>
+      'استخدمت معظم رصيد الذكاء الاصطناعي لهذا الشهر. يضاعف ⁦Studafy Max⁩ رصيدك الشهري ويضيف اختبارات وبطاقات مراجعة.';
+
+  @override
+  String familyLandingTitle(String name) {
+    return 'تابِع مستوى $name الحقيقي';
+  }
+
+  @override
+  String get familyLandingPromise =>
+      'يحوّل ⁦Family+⁩ الدرجات والحضور والواجبات التي تراها أصلًا إلى اتجاهات وإلى ما يجب التركيز عليه هذا الأسبوع.';
+
+  @override
+  String get familyExampleTitle => 'كيف تبدو الرؤى';
+
+  @override
+  String get familyExampleNote => 'طفل نموذجي، وليست سجلات حقيقية.';
+
+  @override
+  String get familyExampleMaths => 'الرياضيات';
+
+  @override
+  String get familyExampleScience => 'العلوم';
+
+  @override
+  String get familyLandingHowTitle => 'كيف يعمل';
+
+  @override
+  String get familyLandingStep1 =>
+      'اربط طفلك باستخدام معرّف Studafy الخاص به، ويوافق على الطلب من جهازه.';
+
+  @override
+  String get familyLandingStep2 =>
+      'يجمع ⁦Family+⁩ الدرجات والحضور والواجبات التي تراها أصلًا.';
+
+  @override
+  String get familyLandingStep3 =>
+      'شاهد اتجاهاته وما يجب التركيز عليه هذا الأسبوع، صفًا بصف.';
+
+  @override
+  String get familyIncludesSizes =>
+      'تغطي الخطة الواحدة حتى 4 أو حتى 8 أطفال مرتبطين، بدءًا بأقدمهم ربطًا.';
+
+  @override
+  String get familyTrustTitle => 'عادل وخاص';
+
+  @override
+  String get familyTrustNoAi =>
+      'لا يستخدم الذكاء الاصطناعي. كل رؤية محسوبة من سجلات المدرسة نفسها، مع عرض السجلات التي تستند إليها.';
+
+  @override
+  String get familyTrustOwnRecord =>
+      'يقارن الطفل بسجله السابق فقط، ولا يقارنه أبدًا بأطفال آخرين.';
+
+  @override
+  String get familyTrustSeeable => 'يعرض فقط ما يمكنك رؤيته أصلًا، ملخّصًا.';
+
+  @override
+  String get familyHomeCardBody =>
+      'الاتجاهات والواجبات الفائتة وما يجب التركيز عليه هذا الأسبوع، لكل طفل من أطفالك.';
+
+  @override
+  String get familyHomeCardAction => 'اطّلع على ⁦Family+⁩';
+
+  @override
+  String familyPlusNudge(String name) {
+    return 'اطّلع على اتجاهات $name وما يجب التركيز عليه مع ⁦Family+⁩';
+  }
 }

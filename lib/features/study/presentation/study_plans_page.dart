@@ -10,8 +10,15 @@ import '../../../l10n/generated/app_l10n.dart';
 import '../domain/study.dart';
 import 'cancel_subscription_sheet.dart';
 import 'study_plan_copy.dart';
+import 'study_plan_explainer.dart';
 
 /// The three plans, what each unlocks, and where the student stands.
+///
+/// What the paid plans do comes first (2026-11-04): a headline, then for
+/// each plan the student does not have a worked example, what it includes
+/// and why to trust it ([StudyPlanExplainer]). The plans, the store's
+/// prices, the renewal terms and the Terms and Privacy links follow on the
+/// same screen, unchanged.
 ///
 /// Prices come from the store listing, in the student's own currency. When
 /// the store cannot be reached the US list price is shown, labelled as such:
@@ -32,7 +39,11 @@ class StudyPlansPage extends StatefulWidget {
     this.openLink,
     this.termsUrl = const String.fromEnvironment('STUDAFY_TERMS_URL'),
     this.privacyUrl = const String.fromEnvironment('STUDAFY_PRIVACY_URL'),
+    this.focus,
   });
+
+  /// Opens at this plan's example: the plan a card or prompt spoke of.
+  final StudyPlanTier? focus;
 
   final StudyRepository study;
 
@@ -63,6 +74,11 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
   bool _loading = true;
   bool _busy = false;
   String? _message;
+
+  /// Each paid plan's heading, to open the page at [StudyPlansPage.focus].
+  final _plusKey = GlobalKey();
+  final _maxKey = GlobalKey();
+  bool _focused = false;
 
   String get _terms => widget.termsUrl;
   String get _privacy => widget.privacyUrl;
@@ -132,6 +148,29 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
         ..addAll(offers);
       _paymentsOff = paymentsOff;
       _loading = false;
+    });
+    _scrollToFocus();
+  }
+
+  /// Once, after the first load: brings the plan asked for into view.
+  void _scrollToFocus() {
+    if (_focused) return;
+    _focused = true;
+    final key = switch (widget.focus) {
+      StudyPlanTier.plus => _plusKey,
+      StudyPlanTier.max => _maxKey,
+      _ => null,
+    };
+    if (key == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final target = key.currentContext;
+      if (target == null || !target.mounted) return;
+      Scrollable.ensureVisible(
+        target,
+        duration: MediaQuery.disableAnimationsOf(target)
+            ? Duration.zero
+            : const Duration(milliseconds: 300),
+      );
     });
   }
 
@@ -470,6 +509,7 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
     final subscriptions = widget.subscriptions;
     final store = _store;
     final small = Theme.of(context).textTheme.bodySmall;
+    final held = plan?.tier ?? StudyPlanTier.free;
     return Scaffold(
       appBar: AppBar(title: Text(l10n.studentLessonsPlans)),
       body: _loading
@@ -479,6 +519,17 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
+                  // The promise first, for a student with a plan to gain.
+                  if (held != StudyPlanTier.max)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 18),
+                      child: StudafyHero(
+                        eyebrow: l10n.studentLessonsPlans,
+                        title: l10n.studyLandingTitle,
+                        subtitle: l10n.studyLandingPromise,
+                        icon: Icons.workspace_premium_rounded,
+                      ),
+                    ),
                   if (plan != null)
                     Card(
                       margin: const EdgeInsets.only(bottom: 18),
@@ -488,6 +539,15 @@ class _StudyPlansPageState extends State<StudyPlansPage> {
                       ),
                     ),
                   if (subscription != null) _subscriptionCard(subscription),
+                  // What each plan does, before what it costs (App Review
+                  // 3.1.2 keeps the price, renewal terms and links below,
+                  // on this same screen).
+                  StudyPlanExplainer(
+                    held: held,
+                    plusKey: _plusKey,
+                    maxKey: _maxKey,
+                  ),
+                  if (held != StudyPlanTier.max) const SizedBox(height: 20),
                   for (final tier in StudyPlanTier.values) _planCard(tier),
                   // Who takes the payment, under the paid plans.
                   if (store != null)

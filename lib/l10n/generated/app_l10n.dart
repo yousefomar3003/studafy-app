@@ -5683,12 +5683,6 @@ abstract class AppL10n {
   /// **'Family+ for {name}'**
   String familyPlusHeadline(String name);
 
-  /// No description provided for @familyPlusIntro.
-  ///
-  /// In en, this message translates to:
-  /// **'One subscription for the family. See how each child is really doing, where they need help, and what to do about it this week.'**
-  String get familyPlusIntro;
-
   /// No description provided for @familyPlusFeatureTrends.
   ///
   /// In en, this message translates to:
@@ -8862,12 +8856,6 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Checking…'**
   String get parentLinkSearching;
-
-  /// No description provided for @familyPlusNoPlan.
-  ///
-  /// In en, this message translates to:
-  /// **'No Family+ plan yet'**
-  String get familyPlusNoPlan;
 
   /// No description provided for @familyPlusCoveredCount.
   ///
@@ -14004,6 +13992,330 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'This photo could not be prepared for sending. Try another one, or take a screenshot of it and send that.'**
   String get photoConvertFailed;
+
+  /// Plan pages (Studafy Plus and Max, Family+): the label on a worked example, so it is never taken for real work or records.
+  ///
+  /// In en, this message translates to:
+  /// **'Example'**
+  String get planExampleLabel;
+
+  /// A plan card or prompt: hides it until the app is closed.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide'**
+  String get planPromptHide;
+
+  /// Student plans page: the headline at the top, for a student not on Studafy Max.
+  ///
+  /// In en, this message translates to:
+  /// **'Get more from your notes and lessons'**
+  String get studyLandingTitle;
+
+  /// Student plans page: the one-line promise under the headline. Plan names stay in Latin letters.
+  ///
+  /// In en, this message translates to:
+  /// **'Studafy Plus turns a photo of the board into tidy notes. Studafy Max makes quizzes and flashcards from your notes and lessons.'**
+  String get studyLandingPromise;
+
+  /// Student plans page: heading of the Studafy Plus example.
+  ///
+  /// In en, this message translates to:
+  /// **'Studafy Plus: notes from a photo'**
+  String get studyLandingPlusTitle;
+
+  /// Student plans page: one line under the Studafy Plus heading.
+  ///
+  /// In en, this message translates to:
+  /// **'Take a photo of the board, your homework or a page of a book. Plus writes it up as tidy notes in your notebook.'**
+  String get studyLandingPlusLead;
+
+  /// Student plans page, Plus example: under the Example label.
+  ///
+  /// In en, this message translates to:
+  /// **'A sample photo and the notes made from it.'**
+  String get studyExamplePlusNote;
+
+  /// Student plans page, Plus example: the caption of the sample photo (drawn, not a real photo).
+  ///
+  /// In en, this message translates to:
+  /// **'Photo of the board'**
+  String get studyExamplePhoto;
+
+  /// Student plans page, Plus example: the title of the sample note.
+  ///
+  /// In en, this message translates to:
+  /// **'Photosynthesis'**
+  String get studyExampleNoteTitle;
+
+  /// Student plans page, Plus example: first line of the sample note.
+  ///
+  /// In en, this message translates to:
+  /// **'Plants make their own food, glucose, using light'**
+  String get studyExampleNoteLine1;
+
+  /// Student plans page, Plus example: second line of the sample note.
+  ///
+  /// In en, this message translates to:
+  /// **'They need light, water and carbon dioxide'**
+  String get studyExampleNoteLine2;
+
+  /// Student plans page, Plus example: third line of the sample note.
+  ///
+  /// In en, this message translates to:
+  /// **'They give off oxygen'**
+  String get studyExampleNoteLine3;
+
+  /// Student plans page: what Studafy Plus includes, notes from photos.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes from photos and screenshots: the board, your homework or a book page'**
+  String get studyIncludesPlusPhotos;
+
+  /// Student plans page: what Studafy Plus includes, study notes and notebooks from lessons.
+  ///
+  /// In en, this message translates to:
+  /// **'Study notes and notebooks made from your lessons'**
+  String get studyIncludesPlusLessons;
+
+  /// Student plans page: Studafy Plus's AI allowance compared with Free's. {times} is a formatted number (75), worked out from the real limits.
+  ///
+  /// In en, this message translates to:
+  /// **'A monthly AI allowance, {times} times the size of Free\'s weekly one'**
+  String studyIncludesPlusAllowance(String times);
+
+  /// Student plans page: heading of the Studafy Max example.
+  ///
+  /// In en, this message translates to:
+  /// **'Studafy Max: quizzes and flashcards'**
+  String get studyLandingMaxTitle;
+
+  /// Student plans page: one line under the Studafy Max heading.
+  ///
+  /// In en, this message translates to:
+  /// **'Max makes quizzes and flashcards from your notes and lessons, so you can test yourself before a test.'**
+  String get studyLandingMaxLead;
+
+  /// Student plans page, Max example: under the Example label.
+  ///
+  /// In en, this message translates to:
+  /// **'A sample question and card about plants.'**
+  String get studyExampleMaxNote;
+
+  /// Student plans page, Max example: the sample quiz question.
+  ///
+  /// In en, this message translates to:
+  /// **'Which gas do plants take in to make their food?'**
+  String get studyExampleQuizQuestion;
+
+  /// Student plans page, Max example: a wrong option.
+  ///
+  /// In en, this message translates to:
+  /// **'Oxygen'**
+  String get studyExampleQuizOxygen;
+
+  /// Student plans page, Max example: the right option, shown as chosen and correct.
+  ///
+  /// In en, this message translates to:
+  /// **'Carbon dioxide'**
+  String get studyExampleQuizCarbon;
+
+  /// Student plans page, Max example: a wrong option.
+  ///
+  /// In en, this message translates to:
+  /// **'Nitrogen'**
+  String get studyExampleQuizNitrogen;
+
+  /// Student plans page, Max example: the explanation under the checked question.
+  ///
+  /// In en, this message translates to:
+  /// **'Plants take in carbon dioxide and give off oxygen.'**
+  String get studyExampleQuizWhy;
+
+  /// Student plans page: what Studafy Max includes, quizzes.
+  ///
+  /// In en, this message translates to:
+  /// **'Quizzes that check your answers and explain the right one'**
+  String get studyIncludesMaxQuizzes;
+
+  /// Student plans page: what Studafy Max includes, flashcards.
+  ///
+  /// In en, this message translates to:
+  /// **'Flashcards to turn over, counting the ones you knew'**
+  String get studyIncludesMaxCards;
+
+  /// Student plans page: Studafy Max includes Plus, and its allowance is twice Plus's (from the real limits).
+  ///
+  /// In en, this message translates to:
+  /// **'Everything in Plus, with twice its monthly AI allowance'**
+  String get studyIncludesMaxAllowance;
+
+  /// Student plans page: heading of the trust lines.
+  ///
+  /// In en, this message translates to:
+  /// **'Good to know'**
+  String get studyTrustTitle;
+
+  /// Student plans page: trust line, as the privacy policy says.
+  ///
+  /// In en, this message translates to:
+  /// **'Names Studafy knows are replaced before anything is sent to the AI. Photos are sent as they are, so keep names and faces out of them.'**
+  String get studyTrustNames;
+
+  /// Student plans page: trust line, answers can be wrong.
+  ///
+  /// In en, this message translates to:
+  /// **'AI can be wrong. Check what it makes, and never hand it in as your own work.'**
+  String get studyTrustCheck;
+
+  /// Student plans page: trust line, as the privacy policy says.
+  ///
+  /// In en, this message translates to:
+  /// **'No ads. Your data is never sold or used to train AI.'**
+  String get studyTrustAds;
+
+  /// Student Today: the plans card's title for a student on Studafy Free.
+  ///
+  /// In en, this message translates to:
+  /// **'Do more with Studafy Plus or Max'**
+  String get studyHomeCardFreeTitle;
+
+  /// Student Today: the plans card's one benefit line, Studafy Free.
+  ///
+  /// In en, this message translates to:
+  /// **'Plus turns a photo of the board into tidy notes. Max adds quizzes and flashcards.'**
+  String get studyHomeCardFreeBody;
+
+  /// Student Today: the plans card's title for a student on Studafy Plus.
+  ///
+  /// In en, this message translates to:
+  /// **'Test yourself with Studafy Max'**
+  String get studyHomeCardPlusTitle;
+
+  /// Student Today: the plans card's one benefit line, Studafy Plus.
+  ///
+  /// In en, this message translates to:
+  /// **'Quizzes and flashcards from your notes and lessons, and twice your monthly AI allowance.'**
+  String get studyHomeCardPlusBody;
+
+  /// AI Tutor and Today, a Studafy Free student who has used most of the weekly AI allowance.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve used most of this week\'s AI. Studafy Plus gives you a monthly allowance and notes from photos.'**
+  String get studyPromptWeekLow;
+
+  /// AI Tutor and Today, a Studafy Plus student who has used most of the monthly AI allowance.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve used most of this month\'s AI. Studafy Max doubles your monthly allowance and adds quizzes and flashcards.'**
+  String get studyPromptMonthLow;
+
+  /// Family+ page: the headline at the top, for a parent without Family+. {name} is the child's name.
+  ///
+  /// In en, this message translates to:
+  /// **'See how {name} is really doing'**
+  String familyLandingTitle(String name);
+
+  /// Family+ page: the one-line promise under the headline.
+  ///
+  /// In en, this message translates to:
+  /// **'Family+ turns the marks, attendance and work you can already see into trends and what to focus on this week.'**
+  String get familyLandingPromise;
+
+  /// Family+ page: heading of the worked example.
+  ///
+  /// In en, this message translates to:
+  /// **'What an insight looks like'**
+  String get familyExampleTitle;
+
+  /// Family+ page example: under the Example label.
+  ///
+  /// In en, this message translates to:
+  /// **'A sample child, not real records.'**
+  String get familyExampleNote;
+
+  /// Family+ page example: a sample class name.
+  ///
+  /// In en, this message translates to:
+  /// **'Maths'**
+  String get familyExampleMaths;
+
+  /// Family+ page example: a sample class name, the one to focus on.
+  ///
+  /// In en, this message translates to:
+  /// **'Science'**
+  String get familyExampleScience;
+
+  /// Family+ page: heading of the three steps.
+  ///
+  /// In en, this message translates to:
+  /// **'How it works'**
+  String get familyLandingHowTitle;
+
+  /// Family+ page: step 1, linking a child.
+  ///
+  /// In en, this message translates to:
+  /// **'Link your child with their Studafy ID. They approve it on their own device.'**
+  String get familyLandingStep1;
+
+  /// Family+ page: step 2.
+  ///
+  /// In en, this message translates to:
+  /// **'Family+ brings together the marks, attendance and work you can already see.'**
+  String get familyLandingStep2;
+
+  /// Family+ page: step 3.
+  ///
+  /// In en, this message translates to:
+  /// **'See their trends and what to focus on this week, class by class.'**
+  String get familyLandingStep3;
+
+  /// Family+ page: what each plan size covers, as the privacy policy says.
+  ///
+  /// In en, this message translates to:
+  /// **'One plan covers up to 4 or up to 8 linked children, earliest linked first.'**
+  String get familyIncludesSizes;
+
+  /// Family+ page: heading of the trust lines.
+  ///
+  /// In en, this message translates to:
+  /// **'Fair and private'**
+  String get familyTrustTitle;
+
+  /// Family+ page: trust line, as the privacy policy says (Family+ uses no AI).
+  ///
+  /// In en, this message translates to:
+  /// **'Uses no AI. Every insight is worked out from the school\'s own records, with the records behind it shown.'**
+  String get familyTrustNoAi;
+
+  /// Family+ page: trust line, as the privacy policy says.
+  ///
+  /// In en, this message translates to:
+  /// **'Compares a child only with their own earlier record, never with other children.'**
+  String get familyTrustOwnRecord;
+
+  /// Family+ page: trust line, as the privacy policy says.
+  ///
+  /// In en, this message translates to:
+  /// **'Shows only what you can already see, summarised.'**
+  String get familyTrustSeeable;
+
+  /// Parent Today: the Family+ card's one benefit line.
+  ///
+  /// In en, this message translates to:
+  /// **'Trends, missing work and what to focus on this week, for each of your children.'**
+  String get familyHomeCardBody;
+
+  /// Parent Today and Learning: opens the Family+ page.
+  ///
+  /// In en, this message translates to:
+  /// **'See Family+'**
+  String get familyHomeCardAction;
+
+  /// Parent Learning, a child's marks or attendance without Family+. {name} is the child's name.
+  ///
+  /// In en, this message translates to:
+  /// **'See trends and what to focus on for {name} with Family+'**
+  String familyPlusNudge(String name);
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

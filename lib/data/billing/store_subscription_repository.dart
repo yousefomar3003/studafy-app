@@ -531,6 +531,9 @@ class StoreSubscriptionRepository
   }
 
   @override
+  bool get sellsFamilyPlus => _isRemote && purchaseStore != null;
+
+  @override
   Future<FamilyPlusStatus> familyPlan() async {
     final access = await _familyAccess();
     if (access != null) return access.status;

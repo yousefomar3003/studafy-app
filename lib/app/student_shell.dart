@@ -396,9 +396,9 @@ class _StudentShellState extends State<StudentShell>
           ? null
           : (kind) =>
                 actions.openPractice(context, kind, inClass: !independent),
+      planCard: _aiOn ? actions?.homeCard() : null,
     );
-    // Today, Lessons, Work, then the two optional tabs in that order; in no
-    // class, Today, the Notebook and the AI Tutor.
+    // Today, Lessons, Work, the optional tabs; or Today, Notebook, Tutor.
     final messagesIndex = 3 + (helperTab ? 1 : 0);
     final pages = <Widget>[
       today,

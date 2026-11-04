@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'studafy_design.dart';
+import 'studafy_formatting.dart';
 
 /// Shared building blocks of the redesigned screens. Every screen composes
 /// these rather than styling its own, so spacing, corners, icons and states
@@ -958,4 +959,217 @@ class PlanSummaryCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Ticked lines: what a plan includes, or why to trust it. Every plan page
+/// lists them this way (AI Marking, Studafy Plus and Max, Family+).
+class PlanChecklist extends StatelessWidget {
+  const PlanChecklist({
+    super.key,
+    required this.items,
+    this.icon = Icons.check_circle_rounded,
+  });
+
+  final List<String> items;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      for (final item in items)
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, size: 18, color: studafyTeal),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  item,
+                  style: const TextStyle(color: studafyInk, height: 1.35),
+                ),
+              ),
+            ],
+          ),
+        ),
+    ],
+  );
+}
+
+/// "How it works" on a plan page: numbered steps in one card.
+class PlanSteps extends StatelessWidget {
+  const PlanSteps({super.key, required this.steps});
+
+  final List<String> steps;
+
+  @override
+  Widget build(BuildContext context) => FeatureCard(
+    child: Column(
+      children: [
+        for (final (index, step) in steps.indexed)
+          Padding(
+            padding: EdgeInsets.only(top: index == 0 ? 0 : 14),
+            child: _PlanStep(number: index + 1, text: step),
+          ),
+      ],
+    ),
+  );
+}
+
+/// One numbered step, read out as "1. Write what a good answer contains".
+class _PlanStep extends StatelessWidget {
+  const _PlanStep({required this.number, required this.text});
+
+  final int number;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final shown = studafyNumber(context, number);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ExcludeSemantics(
+          child: Container(
+            width: 28,
+            height: 28,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(
+              color: studafyNavy,
+              shape: BoxShape.circle,
+            ),
+            child: Text(
+              shown,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 13,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Semantics(
+              label: '$shown. $text',
+              excludeSemantics: true,
+              child: Text(
+                text,
+                style: const TextStyle(color: studafyInk, height: 1.35),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// The top of a worked example on a plan page: an "Example" pill, so it is
+/// never taken for real work or real records, and a line saying what it is.
+class PlanExampleHeader extends StatelessWidget {
+  const PlanExampleHeader({super.key, required this.label, required this.note});
+
+  final String label;
+  final String note;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      StatusPill(label: label, icon: Icons.visibility_outlined),
+      const SizedBox(width: 8),
+      Expanded(
+        child: Text(
+          note,
+          style: const TextStyle(color: studafyMuted, fontSize: 12.5),
+        ),
+      ),
+    ],
+  );
+}
+
+/// A plan offered on a home screen: what it does in one line, and the way
+/// to its page. With [onHide], a close button hides it for now.
+class PlanOfferCard extends StatelessWidget {
+  const PlanOfferCard({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.body,
+    required this.actionLabel,
+    required this.onAction,
+    this.onHide,
+    this.hideLabel,
+  });
+
+  final IconData icon;
+  final String title;
+  final String body;
+  final String actionLabel;
+  final VoidCallback onAction;
+  final VoidCallback? onHide;
+
+  /// The close button's accessible name ("Hide").
+  final String? hideLabel;
+
+  @override
+  Widget build(BuildContext context) => FeatureCard(
+    tint: studafySky,
+    padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 8, 16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            IconBadge(icon: icon, size: 40),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: studafyInk,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    body,
+                    style: const TextStyle(
+                      color: studafyMuted,
+                      fontSize: 13,
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (onHide case final hide?)
+              IconButton(
+                tooltip: hideLabel,
+                visualDensity: VisualDensity.compact,
+                onPressed: hide,
+                icon: const Icon(Icons.close_rounded, size: 18),
+              )
+            else
+              const SizedBox(width: 8),
+          ],
+        ),
+        const SizedBox(height: 12),
+        StudafyPillButton(
+          icon: Icons.visibility_outlined,
+          label: actionLabel,
+          onPressed: onAction,
+        ),
+      ],
+    ),
+  );
 }

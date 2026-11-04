@@ -61,15 +61,34 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Studafy Plus'), findsOne);
-      // On a smaller screen (the Android emulator) Max is further down.
-      await tester.scrollUntilVisible(
-        find.text('Studafy Max'),
-        200,
-        scrollable: find.byType(Scrollable).first,
-      );
-      expect(find.text('Studafy Max'), findsOne);
-      expect(find.textContaining(r'$5.99'), findsWidgets);
+      // The plan names appear in the worked examples and in the plan cards
+      // below them (value-first page, 2026-11-04), and in Arabic inside
+      // left-to-right isolates; on a small screen the cards are built only
+      // once scrolled to.
+      final scrollable = find
+          .byWidgetPredicate(
+            (widget) =>
+                widget is Scrollable &&
+                axisDirectionToAxis(widget.axisDirection) == Axis.vertical,
+          )
+          .first;
+      // Scrolls down until [finder] has been built: a long, lazily built
+      // page has nothing to find below the screen until it is reached.
+      Future<void> scrollTo(Finder finder) async {
+        for (var i = 0; i < 60 && finder.evaluate().isEmpty; i++) {
+          await tester.drag(scrollable, const Offset(0, -300));
+          await tester.pumpAndSettle();
+        }
+        expect(finder, findsWidgets);
+      }
+
+      // The plan names appear in the worked examples and in the plan cards
+      // below them (value-first page, 2026-11-04), and in Arabic inside
+      // left-to-right isolates.
+      await scrollTo(find.textContaining('Studafy Plus'));
+      await scrollTo(find.textContaining('Studafy Max'));
+      // The store's price is on the page whatever the layout.
+      await scrollTo(find.textContaining(r'$5.99'));
       expect(tester.takeException(), isNull);
       await binding.takeScreenshot('study-plans-$language');
     }
