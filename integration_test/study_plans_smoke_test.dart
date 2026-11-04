@@ -61,21 +61,31 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      // The plan names appear in the plan cards and again in the worked
-      // examples above them (value-first page, 2026-11-04).
-      expect(find.text('Studafy Plus', skipOffstage: false), findsWidgets);
-      // On a smaller screen (the Android emulator) Max is further down.
-      await tester.scrollUntilVisible(
-        find.text('Studafy Max').first,
-        200,
-        scrollable: find.byType(Scrollable).first,
-      );
-      expect(find.text('Studafy Max'), findsWidgets);
-      // The price, from the store, is on the page whatever the layout.
+      // The plan names appear in the worked examples and in the plan cards
+      // below them (value-first page, 2026-11-04), and in Arabic inside
+      // left-to-right isolates; on a small screen the cards are built only
+      // once scrolled to.
+      final scrollable = find
+          .byWidgetPredicate(
+            (widget) =>
+                widget is Scrollable &&
+                axisDirectionToAxis(widget.axisDirection) == Axis.vertical,
+          )
+          .first;
+      for (final name in ['Studafy Plus', 'Studafy Max']) {
+        await tester.scrollUntilVisible(
+          // The plan card, below that plan's example.
+          find.textContaining(name).last,
+          300,
+          scrollable: scrollable,
+        );
+        expect(find.textContaining(name), findsWidgets);
+      }
+      // The store's price is on the page whatever the layout.
       await tester.scrollUntilVisible(
         find.textContaining(r'$5.99').first,
-        200,
-        scrollable: find.byType(Scrollable).first,
+        300,
+        scrollable: scrollable,
       );
       expect(find.textContaining(r'$5.99'), findsWidgets);
       expect(tester.takeException(), isNull);
