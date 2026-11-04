@@ -54,6 +54,19 @@ final Map<StudyPlanTier, StudyPlanCopy> studyPlanCopy = {
   ),
 };
 
+/// Each plan's AI allowance, in the tokens the server meters, exactly as
+/// `private.ai_plan_limits()` sets them (supabase/migrations/
+/// 202610070001_grounded_material_and_token_allowances.sql; a test checks
+/// they still match): Free 40,000 a week, Plus 3,000,000 a month, Max
+/// 6,000,000 a month.
+///
+/// The app never shows a count - usage is a bar - so the plans page says
+/// only how the allowances compare, which these make exact: Plus's month
+/// is 75 times Free's week, and Max's month is twice Plus's.
+const studyAllowanceFreeWeekly = 40000;
+const studyAllowancePlusMonthly = 3000000;
+const studyAllowanceMaxMonthly = 6000000;
+
 String storeName(SubscriptionStore store) => switch (store) {
   SubscriptionStore.appStore => 'App Store',
   SubscriptionStore.playStore => 'Google Play',

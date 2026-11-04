@@ -14,6 +14,7 @@ import 'package:studafy/features/classes/application/class_list_interactor.dart'
 import 'package:studafy/features/classes/data/preview_classroom_repository.dart';
 import 'package:studafy/features/study/domain/study.dart';
 import 'package:studafy/features/study/presentation/practice_page.dart';
+import 'package:studafy/features/study/presentation/study_plan_home_card.dart';
 import 'package:studafy/features/study_assistant/application/study_assistant_interactor.dart';
 import 'package:studafy/features/study_assistant/domain/study_assistant_repository.dart';
 
@@ -406,4 +407,41 @@ void main() {
       expect(button.subscription!.restorePurchases, isNotNull);
     },
   );
+
+  testWidgets('Today offers the next plan only where a store sells it', (
+    tester,
+  ) async {
+    StudyPlanHomeCard.showAgain();
+    final settings = InMemoryDeviceSettings({
+      DeviceSettingKeys.studentClassStepDone('user-indep'): '1',
+    });
+    tester.view.physicalSize = const Size(400, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    // No billing in this build: nothing is offered.
+    await tester.pumpWidget(_shell(study: _Study(), settings: settings));
+    await tester.pumpAndSettle();
+    expect(find.text('Do more with Studafy Plus or Max'), findsNothing);
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpWidget(
+      _shell(study: _Study(), settings: settings, plans: _Plans()),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Do more with Studafy Plus or Max'), findsOne);
+    expect(find.text('See plans'), findsOne);
+
+    // On Max there is nothing above to offer.
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpWidget(
+      _shell(
+        study: _Study()..tier = StudyPlanTier.max,
+        settings: settings,
+        plans: _Plans(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('See plans'), findsNothing);
+  });
 }

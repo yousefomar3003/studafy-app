@@ -7,6 +7,7 @@ import '../../../core/studafy_design.dart';
 import '../../../core/studafy_formatting.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/parent_subscription_repository.dart';
+import 'family_plus_explainer.dart';
 
 /// Family+ for one child: the insights when that child has it, the offer
 /// when not.
@@ -116,6 +117,11 @@ class _FamilyPlusGateState extends State<FamilyPlusGate> {
 }
 
 /// What Family+ is, what the two family plans cost, and the way to buy one.
+///
+/// Without a plan, the value comes first (2026-11-04): a headline, a worked
+/// example drawn with the real insight cards, how it works, what each plan
+/// covers and why to trust it ([FamilyPlusExplainer]); then the plans. With
+/// a plan, where the parent stands comes first, then the plans.
 ///
 /// Follows the stores' subscription rules: the price shown is the store's
 /// own, buying only happens over store-confirmed terms and working terms and
@@ -355,24 +361,30 @@ class _FamilyPlusOfferState extends State<FamilyPlusOffer> {
     return ListView(
       padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 32),
       children: [
-        // Where the parent stands, first: the plan they have, or none.
-        PlanSummaryCard(
-          eyebrow: l10n.familyPlusCurrentPlan,
-          planName: held == null
-              ? l10n.familyPlusNoPlan
-              : '${studafyPlanName('Family+')} · '
-                    '${l10n.familyPlusPlanName(held.seats)}',
-          detail: held == null
-              ? l10n.familyPlusIntro
-              : [
-                  l10n.familyPlusCoveredCount(_status.coveredStudentIds.length),
-                  if (_status.granted) l10n.familyPlusGranted,
-                  if (ends != null)
-                    l10n.familyPlusEnds(
-                      studafyMediumDate(context, ends.toLocal()),
-                    ),
-                ].join(' · '),
-        ),
+        if (held == null) ...[
+          StudafyHero(
+            eyebrow: l10n.insightsTitle,
+            title: l10n.familyLandingTitle(widget.childName),
+            subtitle: l10n.familyLandingPromise,
+            icon: Icons.insights_rounded,
+          ),
+          // What it does, before what it costs (App Store 3.1.2 keeps the
+          // prices, renewal terms and links below, on this same screen).
+          const FamilyPlusExplainer(),
+        ] else
+          // Where the parent stands, first: the plan they have.
+          PlanSummaryCard(
+            eyebrow: l10n.familyPlusCurrentPlan,
+            planName:
+                '${studafyPlanName('Family+')} · '
+                '${l10n.familyPlusPlanName(held.seats)}',
+            detail: [
+              l10n.familyPlusCoveredCount(_status.coveredStudentIds.length),
+              if (_status.granted) l10n.familyPlusGranted,
+              if (ends != null)
+                l10n.familyPlusEnds(studafyMediumDate(context, ends.toLocal())),
+            ].join(' · '),
+          ),
         if (held != null && !_status.covers(widget.studentId))
           Padding(
             padding: const EdgeInsets.only(top: 12),
@@ -382,48 +394,25 @@ class _FamilyPlusOfferState extends State<FamilyPlusOffer> {
               message: l10n.familyPlusNotCovered(held.seats, widget.childName),
             ),
           ),
-        // The plans, straight away - nothing to scroll past to find them.
+        // The plans: after what Family+ does, or straight after the plan
+        // held, with nothing to scroll past to find them.
         SectionHeader(l10n.familyPlusPlansTitle),
         for (final plan in FamilyPlusPlan.values) _planCard(plan),
-        SectionHeader(l10n.familyPlusWhatYouGet),
-        FeatureCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              for (final feature in [
+        if (held != null) ...[
+          SectionHeader(l10n.familyPlusWhatYouGet),
+          FeatureCard(
+            child: PlanChecklist(
+              items: [
                 l10n.familyPlusFeatureFocus,
                 l10n.familyPlusFeatureClasses,
                 l10n.familyPlusFeatureChart,
                 l10n.familyPlusFeatureMissing,
                 l10n.familyPlusFeatureTrends,
                 l10n.familyPlusFeatureSchool,
-              ])
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(
-                        Icons.check_circle_rounded,
-                        size: 18,
-                        color: studafyTeal,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          feature,
-                          style: const TextStyle(
-                            color: studafyInk,
-                            height: 1.35,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-            ],
+              ],
+            ),
           ),
-        ),
+        ],
         const SizedBox(height: 12),
         if (subscriptions == null)
           Padding(

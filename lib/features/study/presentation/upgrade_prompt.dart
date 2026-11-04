@@ -5,6 +5,7 @@ import '../../../core/studafy_formatting.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/study.dart';
 import 'study_plan_copy.dart';
+import 'study_plan_explainer.dart';
 
 /// Which limit of the student's plan was reached.
 enum UpgradeReason {
@@ -23,8 +24,9 @@ UpgradeReason? upgradeReasonFor(StudyRefusal refusal) => switch (refusal) {
   _ => null,
 };
 
-/// Tells a student which limit they reached and what the next plan adds,
-/// with an Upgrade button that opens the Plans screen. It only explains:
+/// Tells a student which limit they reached and what the next plan adds -
+/// with the same worked example the Plans screen shows for it - and an
+/// Upgrade button that opens the Plans screen. It only explains:
 /// the Plans screen shows the store's price and terms before anything is
 /// bought. On Studafy Max there is nothing to upgrade to, so it says so.
 ///
@@ -96,57 +98,73 @@ class UpgradePrompt extends StatelessWidget {
       ),
     };
     return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Icon(
-              Icons.workspace_premium_rounded,
-              size: 36,
-              color: studafyCyan,
-            ),
-            const SizedBox(height: 10),
-            Text(
-              title,
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(body),
-            if (copy != null) ...[
-              const SizedBox(height: 16),
-              Text(
-                l10n.upgradeWhatUnlocks(copy.name),
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 6),
-              for (final feature in copy.adds)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 3),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(
-                        Icons.check_circle_rounded,
-                        size: 18,
-                        color: studafyCyan,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(child: Text(feature(l10n))),
-                    ],
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Flexible(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.workspace_premium_rounded,
+                    size: 36,
+                    color: studafyCyan,
                   ),
-                ),
-            ] else ...[
-              const SizedBox(height: 12),
-              Text(l10n.upgradeTopPlan, style: theme.textTheme.bodySmall),
-            ],
-            const SizedBox(height: 20),
-            Row(
+                  const SizedBox(height: 10),
+                  Text(
+                    title,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(body),
+                  if (copy != null) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      l10n.upgradeWhatUnlocks(copy.name),
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    for (final feature in copy.adds)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 3),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(
+                              Icons.check_circle_rounded,
+                              size: 18,
+                              color: studafyCyan,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(child: Text(feature(l10n))),
+                          ],
+                        ),
+                      ),
+                    // What it looks like, as the Plans screen shows it.
+                    const SizedBox(height: 14),
+                    if (target == StudyPlanTier.max)
+                      const StudyMaxExample()
+                    else
+                      const StudyPlusExample(),
+                  ] else ...[
+                    const SizedBox(height: 12),
+                    Text(l10n.upgradeTopPlan, style: theme.textTheme.bodySmall),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          // The way on stays in view however long the explanation is.
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+            child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 if (copy != null) ...[
@@ -169,8 +187,8 @@ class UpgradePrompt extends StatelessWidget {
                   ),
               ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

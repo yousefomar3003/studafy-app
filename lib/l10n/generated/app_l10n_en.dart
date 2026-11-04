@@ -3313,10 +3313,6 @@ class AppL10nEn extends AppL10n {
   }
 
   @override
-  String get familyPlusIntro =>
-      'One subscription for the family. See how each child is really doing, where they need help, and what to do about it this week.';
-
-  @override
   String get familyPlusFeatureTrends =>
       'What changed this term, with the records behind every claim';
 
@@ -5175,9 +5171,6 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get parentLinkSearching => 'Checking…';
-
-  @override
-  String get familyPlusNoPlan => 'No Family+ plan yet';
 
   @override
   String familyPlusCoveredCount(int count) {
@@ -8247,4 +8240,201 @@ class AppL10nEn extends AppL10n {
   @override
   String get photoConvertFailed =>
       'This photo could not be prepared for sending. Try another one, or take a screenshot of it and send that.';
+
+  @override
+  String get planExampleLabel => 'Example';
+
+  @override
+  String get planPromptHide => 'Hide';
+
+  @override
+  String get studyLandingTitle => 'Get more from your notes and lessons';
+
+  @override
+  String get studyLandingPromise =>
+      'Studafy Plus turns a photo of the board into tidy notes. Studafy Max makes quizzes and flashcards from your notes and lessons.';
+
+  @override
+  String get studyLandingPlusTitle => 'Studafy Plus: notes from a photo';
+
+  @override
+  String get studyLandingPlusLead =>
+      'Take a photo of the board, your homework or a page of a book. Plus writes it up as tidy notes in your notebook.';
+
+  @override
+  String get studyExamplePlusNote =>
+      'A sample photo and the notes made from it.';
+
+  @override
+  String get studyExamplePhoto => 'Photo of the board';
+
+  @override
+  String get studyExampleNoteTitle => 'Photosynthesis';
+
+  @override
+  String get studyExampleNoteLine1 =>
+      'Plants make their own food, glucose, using light';
+
+  @override
+  String get studyExampleNoteLine2 =>
+      'They need light, water and carbon dioxide';
+
+  @override
+  String get studyExampleNoteLine3 => 'They give off oxygen';
+
+  @override
+  String get studyIncludesPlusPhotos =>
+      'Notes from photos and screenshots: the board, your homework or a book page';
+
+  @override
+  String get studyIncludesPlusLessons =>
+      'Study notes and notebooks made from your lessons';
+
+  @override
+  String studyIncludesPlusAllowance(String times) {
+    return 'A monthly AI allowance, $times times the size of Free\'s weekly one';
+  }
+
+  @override
+  String get studyLandingMaxTitle => 'Studafy Max: quizzes and flashcards';
+
+  @override
+  String get studyLandingMaxLead =>
+      'Max makes quizzes and flashcards from your notes and lessons, so you can test yourself before a test.';
+
+  @override
+  String get studyExampleMaxNote => 'A sample question and card about plants.';
+
+  @override
+  String get studyExampleQuizQuestion =>
+      'Which gas do plants take in to make their food?';
+
+  @override
+  String get studyExampleQuizOxygen => 'Oxygen';
+
+  @override
+  String get studyExampleQuizCarbon => 'Carbon dioxide';
+
+  @override
+  String get studyExampleQuizNitrogen => 'Nitrogen';
+
+  @override
+  String get studyExampleQuizWhy =>
+      'Plants take in carbon dioxide and give off oxygen.';
+
+  @override
+  String get studyIncludesMaxQuizzes =>
+      'Quizzes that check your answers and explain the right one';
+
+  @override
+  String get studyIncludesMaxCards =>
+      'Flashcards to turn over, counting the ones you knew';
+
+  @override
+  String get studyIncludesMaxAllowance =>
+      'Everything in Plus, with twice its monthly AI allowance';
+
+  @override
+  String get studyTrustTitle => 'Good to know';
+
+  @override
+  String get studyTrustNames =>
+      'Names Studafy knows are replaced before anything is sent to the AI. Photos are sent as they are, so keep names and faces out of them.';
+
+  @override
+  String get studyTrustCheck =>
+      'AI can be wrong. Check what it makes, and never hand it in as your own work.';
+
+  @override
+  String get studyTrustAds =>
+      'No ads. Your data is never sold or used to train AI.';
+
+  @override
+  String get studyHomeCardFreeTitle => 'Do more with Studafy Plus or Max';
+
+  @override
+  String get studyHomeCardFreeBody =>
+      'Plus turns a photo of the board into tidy notes. Max adds quizzes and flashcards.';
+
+  @override
+  String get studyHomeCardPlusTitle => 'Test yourself with Studafy Max';
+
+  @override
+  String get studyHomeCardPlusBody =>
+      'Quizzes and flashcards from your notes and lessons, and twice your monthly AI allowance.';
+
+  @override
+  String get studyPromptWeekLow =>
+      'You\'ve used most of this week\'s AI. Studafy Plus gives you a monthly allowance and notes from photos.';
+
+  @override
+  String get studyPromptMonthLow =>
+      'You\'ve used most of this month\'s AI. Studafy Max doubles your monthly allowance and adds quizzes and flashcards.';
+
+  @override
+  String familyLandingTitle(String name) {
+    return 'See how $name is really doing';
+  }
+
+  @override
+  String get familyLandingPromise =>
+      'Family+ turns the marks, attendance and work you can already see into trends and what to focus on this week.';
+
+  @override
+  String get familyExampleTitle => 'What an insight looks like';
+
+  @override
+  String get familyExampleNote => 'A sample child, not real records.';
+
+  @override
+  String get familyExampleMaths => 'Maths';
+
+  @override
+  String get familyExampleScience => 'Science';
+
+  @override
+  String get familyLandingHowTitle => 'How it works';
+
+  @override
+  String get familyLandingStep1 =>
+      'Link your child with their Studafy ID. They approve it on their own device.';
+
+  @override
+  String get familyLandingStep2 =>
+      'Family+ brings together the marks, attendance and work you can already see.';
+
+  @override
+  String get familyLandingStep3 =>
+      'See their trends and what to focus on this week, class by class.';
+
+  @override
+  String get familyIncludesSizes =>
+      'One plan covers up to 4 or up to 8 linked children, earliest linked first.';
+
+  @override
+  String get familyTrustTitle => 'Fair and private';
+
+  @override
+  String get familyTrustNoAi =>
+      'Uses no AI. Every insight is worked out from the school\'s own records, with the records behind it shown.';
+
+  @override
+  String get familyTrustOwnRecord =>
+      'Compares a child only with their own earlier record, never with other children.';
+
+  @override
+  String get familyTrustSeeable =>
+      'Shows only what you can already see, summarised.';
+
+  @override
+  String get familyHomeCardBody =>
+      'Trends, missing work and what to focus on this week, for each of your children.';
+
+  @override
+  String get familyHomeCardAction => 'See Family+';
+
+  @override
+  String familyPlusNudge(String name) {
+    return 'See trends and what to focus on for $name with Family+';
+  }
 }

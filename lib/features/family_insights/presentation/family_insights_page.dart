@@ -100,7 +100,7 @@ class _FamilyInsightsPageState extends State<FamilyInsightsPage> {
                     message: l10n.insightsNothingYetBody,
                   ),
                 for (final signal in data.signals) ...[
-                  _SignalCard(signal: signal),
+                  InsightSignalCard(signal: signal),
                   const SizedBox(height: 12),
                 ],
                 if (data.timeline.length >= 2) ...[
@@ -113,7 +113,7 @@ class _FamilyInsightsPageState extends State<FamilyInsightsPage> {
                   const SizedBox(height: 20),
                   _SectionTitle(l10n.insightsByClass),
                   const SizedBox(height: 8),
-                  for (final line in data.classes) _ClassCard(line: line),
+                  for (final line in data.classes) InsightClassCard(line: line),
                 ] else if (data.subjects.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   _SectionTitle(l10n.insightsBySubject),
@@ -403,8 +403,10 @@ class _TimelineChart extends StatelessWidget {
   }
 }
 
-class _ClassCard extends StatelessWidget {
-  const _ClassCard({required this.line});
+/// One class: its average, trend against the child's own earlier marks,
+/// attendance and work. Also draws the example on the Family+ page.
+class InsightClassCard extends StatelessWidget {
+  const InsightClassCard({super.key, required this.line});
 
   final ClassInsight line;
 
@@ -566,8 +568,10 @@ class _Stat extends StatelessWidget {
   );
 }
 
-class _SignalCard extends StatelessWidget {
-  const _SignalCard({required this.signal});
+/// One thing to focus on, with the records behind it and how many. Also
+/// draws the example on the Family+ page.
+class InsightSignalCard extends StatelessWidget {
+  const InsightSignalCard({super.key, required this.signal});
 
   final InsightSignal signal;
 

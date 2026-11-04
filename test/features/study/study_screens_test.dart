@@ -33,8 +33,10 @@ void main() {
     available: available,
   );
 
+  // Tall enough for the plans screen to build in full: what each plan does
+  // comes before the plans and the store's terms (2026-11-04).
   void tall(WidgetTester tester) {
-    tester.view.physicalSize = const Size(1200, 2600);
+    tester.view.physicalSize = const Size(1200, 6000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
   }

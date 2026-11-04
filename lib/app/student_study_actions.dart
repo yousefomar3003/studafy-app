@@ -11,6 +11,7 @@ import '../features/study/presentation/note_page.dart';
 import '../features/study/presentation/notebook_home_page.dart';
 import '../features/study/presentation/practice_page.dart';
 import '../features/study/presentation/study_plan_copy.dart';
+import '../features/study/presentation/study_plan_home_card.dart';
 import '../features/study/presentation/study_plans_page.dart';
 import '../features/study/presentation/study_set_pages.dart';
 import '../features/study/presentation/upgrade_prompt.dart';
@@ -43,13 +44,47 @@ class StudentStudyActions {
   /// Buying Studafy Plus / Max. Null without billing.
   final StudyPlanSubscriptionRepository? studyPlans;
 
-  /// Opens the Plans screen, from wherever a plan is mentioned.
-  Future<void> openPlans(BuildContext context) async {
+  /// Opens the Plans screen, from wherever a plan is mentioned - at
+  /// [focus]'s example when a card or prompt spoke of one plan.
+  Future<void> openPlans(BuildContext context, {StudyPlanTier? focus}) async {
     await Navigator.of(context).pushOnce(
       MaterialPageRoute<void>(
-        builder: (_) => StudyPlansPage(study: study, subscriptions: studyPlans),
+        builder: (_) => StudyPlansPage(
+          study: study,
+          subscriptions: studyPlans,
+          focus: focus,
+        ),
       ),
     );
+  }
+
+  /// The next plan up, on Today; it hides itself where nothing is sold.
+  Widget homeCard() => Builder(
+    builder: (context) => StudyPlanHomeCard(
+      study: study,
+      subscriptions: studyPlans,
+      onOpen: (focus) => openPlans(context, focus: focus),
+    ),
+  );
+
+  /// What the AI Tutor says when most of the allowance is used: the next
+  /// plan, only where a store sells it and the student may buy it (not a
+  /// plan a parent pays for).
+  Future<String?> _lowAllowancePitch(AppL10n l10n, StudyPlan plan) async {
+    final plans = studyPlans;
+    final next = plan.tier.next;
+    if (next == null || plans == null || plans.purchaseStore == null) {
+      return null;
+    }
+    try {
+      final current = await plans.subscription();
+      if (current != null && !current.paidByMe) return null;
+    } on Object {
+      // Unknown: the Plans screen says if the plan cannot be changed.
+    }
+    return next == StudyPlanTier.plus
+        ? l10n.studyPromptWeekLow
+        : l10n.studyPromptMonthLow;
   }
 
   /// The Notebook over the current tab - for a student in a class, whose
@@ -163,6 +198,7 @@ class StudentStudyActions {
     final l10n = AppL10n.of(context);
     final plan = await study.plan();
     final next = plan.tier.next;
+    final pitch = await _lowAllowancePitch(l10n, plan);
     return HelperPlan(
       name: studyPlanCopy[plan.tier]!.name,
       allowance: HelperAllowance(
@@ -176,6 +212,7 @@ class StudentStudyActions {
       upgradeBenefits: next == null
           ? const []
           : [for (final line in studyPlanCopy[next]!.adds) line(l10n)],
+      upgradePitch: pitch,
     );
   }
 
@@ -189,15 +226,20 @@ class StudentStudyActions {
       plan = null;
     }
     if (!context.mounted) return;
+    final used = code == StudyAssistantFailure.allowanceUsed;
     await showUpgradePrompt(
       context,
-      reason: code == StudyAssistantFailure.allowanceUsed
-          ? UpgradeReason.tokensUsed
-          : UpgradeReason.feature,
+      reason: used ? UpgradeReason.tokensUsed : UpgradeReason.feature,
       plan: plan,
       // Photos to the AI Tutor are Studafy Plus.
       needs: StudyPlanTier.plus,
-      onUpgrade: () => openPlans(context),
+      // The Plans screen opens at the plan the prompt offered.
+      onUpgrade: () => openPlans(
+        context,
+        focus: used
+            ? (plan?.tier ?? StudyPlanTier.free).next
+            : StudyPlanTier.plus,
+      ),
     );
   }
 

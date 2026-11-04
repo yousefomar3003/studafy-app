@@ -21,6 +21,7 @@ import '../features/family_insights/application/family_insights_interactor.dart'
 import '../features/family_insights/domain/parent_subscription_repository.dart';
 import '../features/family_insights/presentation/family_insights_page.dart';
 import '../features/family_insights/presentation/family_plus_gate.dart';
+import '../features/family_insights/presentation/family_plus_prompts.dart';
 import '../features/meetings/presentation/upcoming_meetings_section.dart';
 import '../features/messaging/domain/messaging.dart';
 import '../features/messaging/presentation/announcements_page.dart';
@@ -223,6 +224,28 @@ class _ParentShellState extends State<ParentShell> {
     if (done != null) messenger.showMessage(done);
   }
 
+  /// The Family+ tab, for [child] - or the child chosen, or the first.
+  void _openFamilyPlus([GuardianChild? child]) {
+    final chosen = ActiveContextController.instance.selectedStudent;
+    child ??= chosen == null ? _verified.firstOrNull : null;
+    if (child != null) _selectChild(child);
+    _go(_Tab.familyPlus);
+  }
+
+  /// Family+ on a child's marks and attendance, when it is not theirs yet.
+  Widget? _familyPlusNudge(AcademicFeed feed, String? id) {
+    final child = _verified.where((c) => c.studentId == id).firstOrNull;
+    const progress = {AcademicFeed.grades, AcademicFeed.attendance};
+    if (child == null || !progress.contains(feed)) return null;
+    return FamilyPlusNudge(
+      key: ValueKey(id),
+      subscriptions: widget.familyPlus,
+      studentId: child.studentId,
+      childName: child.studentName,
+      onOpen: () => _openFamilyPlus(child),
+    );
+  }
+
   /// System back takes any other tab back to Today, and leaves the app
   /// only from Today.
   void _back() => setState(() {
@@ -296,9 +319,18 @@ class _ParentShellState extends State<ParentShell> {
         onChildrenChanged: (children) {
           if (mounted) setState(() => _children = children);
         },
-        // Meetings with the teacher, on Google Meet; and the child
-        // accounts this parent created.
-        sections: const [UpcomingMeetingsSection(), ManagedChildrenSection()],
+        // Family+ while no child has it; meetings with the teacher, on
+        // Google Meet; and the child accounts this parent created.
+        sections: [
+          if (widget.insights != null)
+            FamilyPlusHomeCard(
+              subscriptions: widget.familyPlus,
+              studentIds: [for (final child in verified) child.studentId],
+              onOpen: _openFamilyPlus,
+            ),
+          const UpcomingMeetingsSection(),
+          const ManagedChildrenSection(),
+        ],
         onOpenChild: _selectChild,
         onCreateChildAccount: switch (DeviceAccountsScope.maybeOf(context)) {
           final switcher? when switcher.canCreateChild =>
@@ -343,6 +375,7 @@ class _ParentShellState extends State<ParentShell> {
             AcademicFeed.attendance,
           ],
           onOpenStudentRecord: _handIn,
+          feedBanner: widget.insights == null ? null : _familyPlusNudge,
           // Read-only: a parent sees the child's results, never sits it.
           onOpenAssessment: (id, title, student) => openAssessmentForLearner(
             context,

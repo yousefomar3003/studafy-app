@@ -585,7 +585,7 @@ class _QuizPageState extends State<QuizPage> {
           ],
           const SizedBox(height: 14),
           for (var i = 0; i < count; i++)
-            _QuestionCard(
+            QuizQuestionCard(
               number: i + 1,
               count: count,
               question: widget.questions[i],
@@ -621,8 +621,11 @@ class _QuizPageState extends State<QuizPage> {
   }
 }
 
-class _QuestionCard extends StatelessWidget {
-  const _QuestionCard({
+/// One quiz question and its options; once [checked], right or wrong and
+/// why. Also draws the worked example on the plans page.
+class QuizQuestionCard extends StatelessWidget {
+  const QuizQuestionCard({
+    super.key,
     required this.number,
     required this.count,
     required this.question,
@@ -917,7 +920,7 @@ class _FlashcardsPageState extends State<FlashcardsPage> {
                     ),
                     const SizedBox(height: 16),
                     Expanded(
-                      child: _FlipCard(
+                      child: FlashcardFlip(
                         key: ValueKey(_index),
                         front: _deck[_index].front,
                         back: _deck[_index].back,
@@ -979,8 +982,8 @@ class _FlashcardsPageState extends State<FlashcardsPage> {
 }
 
 /// A card that turns over, front to back, in a quarter of a second.
-class _FlipCard extends StatelessWidget {
-  const _FlipCard({
+class FlashcardFlip extends StatelessWidget {
+  const FlashcardFlip({
     super.key,
     required this.front,
     required this.back,

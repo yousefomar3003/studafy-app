@@ -55,26 +55,18 @@ class MarkingPlanExplainer extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SectionHeader(l10n.markingLandingHowTitle),
-        FeatureCard(
-          child: Column(
-            children: [
-              for (final (index, step) in [
-                l10n.markingLandingStep1,
-                l10n.markingLandingStep2,
-                l10n.markingLandingStep3,
-              ].indexed)
-                Padding(
-                  padding: EdgeInsets.only(top: index == 0 ? 0 : 14),
-                  child: _Step(number: index + 1, text: step),
-                ),
-            ],
-          ),
+        PlanSteps(
+          steps: [
+            l10n.markingLandingStep1,
+            l10n.markingLandingStep2,
+            l10n.markingLandingStep3,
+          ],
         ),
         SectionHeader(l10n.markingExampleTitle),
         const MarkingExampleCard(),
         SectionHeader(l10n.markingPlanWhatYouGet),
         FeatureCard(
-          child: _Checklist(
+          child: PlanChecklist(
             items: [
               l10n.markingIncludedOnline,
               l10n.markingIncludedHandIns,
@@ -87,7 +79,7 @@ class MarkingPlanExplainer extends StatelessWidget {
         ),
         SectionHeader(l10n.markingTrustTitle),
         FeatureCard(
-          child: _Checklist(
+          child: PlanChecklist(
             icon: Icons.verified_user_outlined,
             items: [
               l10n.markingPlanFeatureDecide,
@@ -100,89 +92,6 @@ class MarkingPlanExplainer extends StatelessWidget {
       ],
     );
   }
-}
-
-/// One numbered step of "How it works".
-class _Step extends StatelessWidget {
-  const _Step({required this.number, required this.text});
-
-  final int number;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) => Row(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      ExcludeSemantics(
-        child: Container(
-          width: 28,
-          height: 28,
-          alignment: Alignment.center,
-          decoration: const BoxDecoration(
-            color: studafyNavy,
-            shape: BoxShape.circle,
-          ),
-          child: Text(
-            studafyNumber(context, number),
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w800,
-              fontSize: 13,
-            ),
-          ),
-        ),
-      ),
-      const SizedBox(width: 12),
-      Expanded(
-        child: Padding(
-          padding: const EdgeInsets.only(top: 4),
-          child: Semantics(
-            label: '${studafyNumber(context, number)}. $text',
-            excludeSemantics: true,
-            child: Text(
-              text,
-              style: const TextStyle(color: studafyInk, height: 1.35),
-            ),
-          ),
-        ),
-      ),
-    ],
-  );
-}
-
-/// Ticked lines, as the plan's features have always been listed.
-class _Checklist extends StatelessWidget {
-  const _Checklist({
-    required this.items,
-    this.icon = Icons.check_circle_rounded,
-  });
-
-  final List<String> items;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      for (final item in items)
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(icon, size: 18, color: studafyTeal),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  item,
-                  style: const TextStyle(color: studafyInk, height: 1.35),
-                ),
-              ),
-            ],
-          ),
-        ),
-    ],
-  );
 }
 
 /// A worked example, labelled as one: a question, the teacher's key
@@ -212,20 +121,9 @@ class MarkingExampleCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              StatusPill(
-                label: l10n.markingExampleLabel,
-                icon: Icons.visibility_outlined,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  l10n.markingExampleNote,
-                  style: const TextStyle(color: studafyMuted, fontSize: 12.5),
-                ),
-              ),
-            ],
+          PlanExampleHeader(
+            label: l10n.markingExampleLabel,
+            note: l10n.markingExampleNote,
           ),
           const SizedBox(height: 12),
           MarkingAnswerReview(
