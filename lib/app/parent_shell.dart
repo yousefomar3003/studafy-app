@@ -16,11 +16,8 @@ import '../features/academic/presentation/academic_overview_page.dart';
 import '../features/academic/presentation/submit_work_page.dart';
 import '../features/family/domain/family.dart';
 import '../features/family/presentation/family_home_page.dart';
-import '../features/family/presentation/linked_child_switcher.dart';
 import '../features/family_insights/application/family_insights_interactor.dart';
 import '../features/family_insights/domain/parent_subscription_repository.dart';
-import '../features/family_insights/presentation/family_insights_page.dart';
-import '../features/family_insights/presentation/family_plus_gate.dart';
 import '../features/family_insights/presentation/family_plus_prompts.dart';
 import '../features/meetings/presentation/upcoming_meetings_section.dart';
 import '../features/messaging/domain/messaging.dart';
@@ -37,6 +34,7 @@ import 'account/managed_children_section.dart';
 import 'account_hub_page.dart';
 import 'assessment_navigation.dart';
 import 'notification_routes.dart';
+import 'parent_insights_tab.dart';
 
 /// The parent's app: their children's day, schoolwork, Family+ insights,
 /// announcements and messages. Composed here because it draws on several
@@ -413,7 +411,7 @@ class _ParentShellState extends State<ParentShell> {
           ),
         ),
       if (widget.insights != null)
-        _InsightsTab(
+        ParentInsightsTab(
           insights: widget.insights!,
           familyPlus: widget.familyPlus,
           childName: selected?.displayName ?? '',
@@ -528,91 +526,6 @@ class _NoChildYet extends StatelessWidget {
                 icon: Icons.family_restroom_rounded,
                 title: l10n.learningNoChildrenTitle,
                 message: l10n.learningNoChildrenBody,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// The Family+ tab.
-///
-/// With no child selected there is nothing to report on, which is a different
-/// state from "you have not paid" and says so.
-class _InsightsTab extends StatelessWidget {
-  const _InsightsTab({
-    required this.insights,
-    required this.familyPlus,
-    required this.childName,
-    required this.studentId,
-    required this.onSelectChild,
-    required this.severalChildren,
-  });
-
-  final FamilyInsightsInteractor insights;
-  final ParentSubscriptionRepository? familyPlus;
-  final String childName;
-  final String? studentId;
-  final ValueChanged<GuardianChild> onSelectChild;
-  final bool severalChildren;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppL10n.of(context);
-    final id = studentId;
-    if (id == null) {
-      return Scaffold(
-        body: Column(
-          children: [
-            StudafyLargeTitle(title: l10n.insightsTitle),
-            Expanded(
-              child: Center(
-                child: StudafyEmptyState(
-                  icon: Icons.child_care_outlined,
-                  title: l10n.insightsNoChildTitle,
-                  message: l10n.insightsNoChildBody,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-    // No profile button here: it is on Today. Which child, when there are
-    // several - and, once subscribed, the plan.
-    final switcher = [
-      if (severalChildren) LinkedChildSwitcher(onSelect: onSelectChild),
-    ];
-    // Keyed by child, so switching child checks that child's Family+.
-    return FamilyPlusGate(
-      key: ValueKey(id),
-      subscriptions: familyPlus,
-      studentId: id,
-      childName: childName,
-      actions: switcher,
-      insights: FamilyInsightsPage(
-        insights: insights,
-        studentId: id,
-        actions: [
-          ...switcher,
-          Padding(
-            padding: const EdgeInsetsDirectional.only(end: 8),
-            child: StudafyPillButton(
-              icon: Icons.workspace_premium_rounded,
-              label: l10n.familyPlusManagePlan,
-              onPressed: () => Navigator.of(context).pushOnce(
-                MaterialPageRoute<void>(
-                  builder: (_) => Scaffold(
-                    appBar: AppBar(title: Text(l10n.insightsTitle)),
-                    body: FamilyPlusOffer(
-                      subscriptions: familyPlus,
-                      studentId: id,
-                      childName: childName,
-                    ),
-                  ),
-                ),
               ),
             ),
           ),
