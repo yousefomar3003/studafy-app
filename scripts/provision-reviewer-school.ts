@@ -89,16 +89,21 @@ export interface ReviewerAccount {
 export const GRANT_REASON = "App store reviewer account";
 
 /**
- * The paid plans each reviewer account is given without a purchase: every
- * account Studafy Max, and the parent Family+ for up to 8 children too.
+ * The paid plans each reviewer account is given without a purchase. App
+ * Review must find and buy every subscription (in the sandbox, at no cost),
+ * and the app hides the buy button of a plan already held, so each
+ * subscription stays buyable on one account: the student buys Plus or Max
+ * (only students have that page), the parent Family+, the teacher AI
+ * Marking. The teacher holds Max so every teacher screen shows as it does
+ * for a paying teacher.
  */
 export const REVIEWER_GRANTS: Record<
   ReviewerRole,
-  { studyPlan: "max"; familyPlus: "family_plus_large" | null }
+  { studyPlan: "max" | null; familyPlus: "family_plus_large" | null }
 > = {
   teacher: { studyPlan: "max", familyPlus: null },
-  student: { studyPlan: "max", familyPlus: null },
-  parent: { studyPlan: "max", familyPlus: "family_plus_large" },
+  student: { studyPlan: null, familyPlus: null },
+  parent: { studyPlan: null, familyPlus: null },
 };
 
 export const ACCOUNTS: Record<ReviewerRole, ReviewerAccount> = {
@@ -895,6 +900,9 @@ async function ensureAccounts(
  * - exactly as docs/deployment/study-plans.md describes for an operator.
  * Idempotent: nothing is added while the account holds the same grant for
  * this reason with more than 30 days left; nearer its end a new year starts.
+ * A reviewer grant of a plan the account should no longer hold (an earlier
+ * run gave every account Max and the parent Family+) is ended now, so that
+ * plan can be bought again.
  */
 export async function ensureGrants(
   sql: postgres.Sql,
@@ -903,6 +911,29 @@ export async function ensureGrants(
   for (const role of ROLES) {
     const id = ids[role];
     const { studyPlan, familyPlus } = REVIEWER_GRANTS[role];
+    const endedPlans = await sql`
+      update private.study_plan_grants
+      set ends_at = greatest(now(), starts_at + interval '1 second')
+      where user_id = ${id}::uuid and reason = ${GRANT_REASON}
+        and ends_at > now() and plan is distinct from ${studyPlan}
+    `;
+    const endedFamily = await sql`
+      update private.family_plus_grants
+      set ends_at = greatest(now(), starts_at + interval '1 second')
+      where user_id = ${id}::uuid and reason = ${GRANT_REASON}
+        and ends_at > now() and tier is distinct from ${familyPlus}
+    `;
+    if (endedPlans.count + endedFamily.count > 0) {
+      log(
+        `  ${role}: ended ${
+          endedPlans.count + endedFamily.count
+        } earlier reviewer plan(s).`,
+      );
+    }
+    if (!studyPlan) {
+      log(`  ${role}: no plan given; every plan can be bought.`);
+      continue;
+    }
     const plan = await sql`
       insert into private.study_plan_grants (user_id, plan, reason, ends_at)
       select ${id}::uuid, ${studyPlan}, ${GRANT_REASON}, now() + interval '1 year'

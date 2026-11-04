@@ -1,6 +1,6 @@
 # Reviewer access: demo accounts for Google Play and App Review
 
-Written 2026-10-15. Both stores need working demo accounts with full access
+Written 2026-10-15, plans updated 2026-11-04. Both stores need working demo accounts with full access
 before they will review the app:
 
 - **Google Play:** Play Console → *App content* → *App access*.
@@ -30,46 +30,43 @@ The school is called **Cedar Grove Review School**. Its classes are *Grade 8
 Science* and *Grade 8 Mathematics*. Every person and school in it is
 invented.
 
-### Paid plans, without a purchase
+### Paid plans: every subscription can be bought
 
-A reviewer must reach every paid screen without buying anything, so the
-script gives each account its plans for a year (comp grants,
-[study-plans.md](../deployment/study-plans.md#testing-a-plan-without-a-purchase)),
-with the reason `App store reviewer account`:
+App Review must **find and buy every subscription** submitted with the
+version (in Apple's sandbox, at no cost to the reviewer), and the app hides
+the buy button of a plan the account already holds. An account given every
+plan would leave the reviewer nothing to buy, which is rejected under
+Guideline 2.1 ("we were unable to locate the in-app purchases"). So each
+subscription stays buyable on one account (updated 2026-11-04):
 
-| Account | Plans |
-|---|---|
-| Teacher | Studafy Max |
-| Student | Studafy Max |
-| Parent | Studafy Max, and Family+ for up to 8 children |
+| Account | Given by the script | Buys during review |
+|---|---|---|
+| Teacher | Studafy Max (comp grant, a year) | **Studafy AI Marking** |
+| Student | nothing | **Studafy Plus, Studafy Max** (only students have this page) |
+| Parent | nothing | **Family+ (4 children), Family+ (8 children)** |
 
-The app shows these as held, with "Given by Studafy, nothing to pay" on the
-parent's Family+ and no store subscription to manage or cancel. A re-run adds
-nothing while a grant has more than 30 days left, and renews one nearer its
-end, so re-run the script before a review that falls within a month of the
-year's end.
+The teacher's grant has the reason `App store reviewer account`
+([study-plans.md](../deployment/study-plans.md#testing-a-plan-without-a-purchase)).
+A re-run adds nothing while it has more than 30 days left, and renews it
+nearer its end. A re-run also **ends** any reviewer grant an account should
+no longer hold: an earlier version gave all three Max and the parent
+Family+, and those would hide the student's and parent's buy buttons.
+Grants with any other reason are not touched.
+
+Production accepts Apple sandbox and Google test purchases (DL-080), marked
+`sandbox` and never charged, so a reviewer's purchase unlocks the plan on
+that demo account only.
 
 Grants are written straight to the database (no API writes them), so the
 script needs the database owner's connection: `DB_URL` from the local stack,
-or `DATABASE_URL` in the env file. To give the parent Family+ by hand
-instead, after migration `202610190010_family_plus_grants.sql`:
-
-```sql
-insert into private.family_plus_grants (user_id, tier, reason, ends_at)
-select p.id, 'family_plus_large', 'App store reviewer account',
-  now() + interval '1 year'
-from auth.users u join public.profiles p on p.id = u.id
-where u.email = 'parent@review.studafy.com';
-```
-
-and a Studafy Max for any of the three:
+or `DATABASE_URL` in the env file. To give the teacher Studafy Max by hand
+instead:
 
 ```sql
 insert into private.study_plan_grants (user_id, plan, reason, ends_at)
 select p.id, 'max', 'App store reviewer account', now() + interval '1 year'
 from auth.users u join public.profiles p on p.id = u.id
-where u.email in ('teacher@review.studafy.com', 'student@review.studafy.com',
-  'parent@review.studafy.com');
+where u.email = 'teacher@review.studafy.com';
 ```
 
 ### Passwords
@@ -103,9 +100,12 @@ issue, a chat or this repository.
    > the Terms of Use and Privacy Policy, then tap "Sign in with email" at
    > the bottom of the sign-in screen. Enter the email and password above. These accounts belong to
    > a demo school with invented people and data; no real student's data is
-   > shown. The sign-in does not need a verification code. The paid plans
-   > (Studafy Max, and Family+ on the parent account) are already active on
-   > these accounts, so nothing needs to be bought.
+   > shown. The sign-in does not need a verification code. The teacher
+   > account already has Studafy Max. Subscriptions are under Account →
+   > Subscription: Studafy Plus and Max on the student account, Family+ on
+   > the parent account, and Studafy AI Marking on the teacher account (also
+   > on the teacher's Today page, "See how it works"). Test purchases are
+   > not charged.
 
 4. Leave *Allow Android to use the credentials you provide for performance
    and app compatibility testing* ticked.
@@ -125,8 +125,12 @@ issue, a chat or this repository.
    > Student: student@review.studafy.com / <student password>
    > Parent: parent@review.studafy.com / <parent password>
    > All three belong to a demo school with invented people and data.
-   > The paid plans (Studafy Max, and Family+ on the parent account) are
-   > already active on these accounts, so nothing needs to be bought.
+   > In-app purchases (Account → Subscription on each account):
+   > - Studafy Plus and Studafy Max: the student account.
+   > - Family+ (4 children) and Family+ (8 children): the parent account.
+   > - Studafy AI Marking: the teacher account (also on the teacher's
+   >   Today page, "See how it works"). The teacher already has Studafy Max.
+   > Sandbox purchases unlock the plan on that demo account.
    > Account deletion is under Account → Delete account. If the sign-in was
    > more than 10 minutes ago, it asks for the account's password again,
    > then schedules deletion with a 14-day grace period.

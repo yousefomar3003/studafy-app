@@ -323,13 +323,14 @@ describe("whose school it touches", () => {
     expect(REVIEW_DOMAIN).toBe("review.studafy.com");
   });
 
-  test("every account gets Studafy Max, and the parent Family+ for 8", () => {
+  test("every subscription stays buyable on one account; the teacher holds Max", () => {
+    expect(REVIEWER_GRANTS.teacher.studyPlan).toBe("max");
+    // The student buys Plus or Max, the parent Family+, the teacher AI Marking.
+    expect(REVIEWER_GRANTS.student.studyPlan).toBeNull();
+    expect(REVIEWER_GRANTS.parent.studyPlan).toBeNull();
     for (const role of ROLES) {
-      expect(REVIEWER_GRANTS[role].studyPlan).toBe("max");
+      expect(REVIEWER_GRANTS[role].familyPlus).toBeNull();
     }
-    expect(REVIEWER_GRANTS.parent.familyPlus).toBe("family_plus_large");
-    expect(REVIEWER_GRANTS.teacher.familyPlus).toBeNull();
-    expect(REVIEWER_GRANTS.student.familyPlus).toBeNull();
     expect(GRANT_REASON).toBe("App store reviewer account");
   });
 
