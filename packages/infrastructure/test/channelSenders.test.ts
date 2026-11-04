@@ -107,7 +107,9 @@ describe("FCM's reason for a refusal (2026-11-04)", () => {
       serviceAccountJson: "{}",
       accessToken: async () => "oauth-token-not-real",
       fetchImpl: (async () =>
-        new Response(JSON.stringify(body), { status })) as typeof fetch,
+        new Response(JSON.stringify(body), {
+          status,
+        })) as unknown as typeof fetch,
     });
 
   test("APNs refusing the app's key is named, the code is unchanged", async () => {
