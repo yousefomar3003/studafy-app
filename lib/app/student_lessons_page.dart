@@ -103,7 +103,9 @@ class _StudentLessonsPageState extends State<StudentLessonsPage> {
             study: widget.study,
             studyPlans: widget.studyPlans,
             uploads: widget.uploads,
-            schoolId: widget.schoolId,
+            // The class's own school - its teacher's workspace - where its
+            // notebook's whiteboard photos are uploaded.
+            schoolId: classroom.schoolId ?? widget.schoolId,
             initialTab: tab,
             onAskHelper: widget.onAskHelper,
             pick: (context, request) => pickMaterials(

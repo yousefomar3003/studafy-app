@@ -49,6 +49,9 @@ const _coreAllowlist = <String>[
   // to the same crash reports, without the composition root.
   'core/crash_reports.dart',
   'core/studafy_domain.dart',
+  // A student's classes are in each teacher's own school: the data slices
+  // read every one of them through this one helper.
+  'core/every_school.dart',
   'core/studafy_design.dart',
   // The shared components of the redesign, built only from the tokens
   // above: avatars, section headers, pills, settings rows, the "+".

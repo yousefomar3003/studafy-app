@@ -1,4 +1,5 @@
 import '../../../core/class_join_link.dart';
+import '../../../core/every_school.dart';
 import '../../../core/failures.dart';
 import '../../../core/idempotency.dart';
 import '../../../core/ids.dart';
@@ -22,17 +23,38 @@ class ApiClassroomRepository implements ClassroomRepository {
     return membership.schoolId;
   }
 
+  /// A student's classes from every teacher's school, each class read from
+  /// its own (see [ActiveContextController.schoolIds]); a teacher's from
+  /// their own workspace.
   @override
   Future<List<ClassroomSummary>> listClasses() async {
+    final primary = _schoolId;
+    final schools = _context.schoolIds;
+    final classes = await readEverySchool(
+      schools.isEmpty ? [primary] : schools,
+      _listClassesIn,
+    );
+    final seen = <String>{};
+    return [
+      for (final item in classes)
+        if (seen.add(item.id.value)) item,
+    ];
+  }
+
+  Future<List<ClassroomSummary>> _listClassesIn(String schoolId) async {
     final result = <ClassroomSummary>[];
     String? cursor;
     do {
       final page = await _client.listClassrooms(
-        schoolId: _schoolId,
+        schoolId: schoolId,
         cursor: cursor,
         pageSize: 100,
       );
-      result.addAll(page.items.map(_map));
+      for (final item in page.items) {
+        // The class's own school is where its lessons and work are read.
+        _context.rememberClassroomSchool(item.id, schoolId);
+        result.add(_map(item, schoolId));
+      }
       cursor = page.nextCursor;
     } while (cursor != null);
     return result;
@@ -160,8 +182,9 @@ class ApiClassroomRepository implements ClassroomRepository {
     );
   }
 
-  static ClassroomSummary _map(V1AcademicClassroomDto value) =>
+  static ClassroomSummary _map(V1AcademicClassroomDto value, String schoolId) =>
       ClassroomSummary(
+        schoolId: schoolId,
         id: ClassroomId(value.id),
         name: value.name,
         grade: value.grade,

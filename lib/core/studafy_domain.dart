@@ -138,6 +138,45 @@ class ActiveContextController extends ChangeNotifier {
   String? get activeSchoolId =>
       membership?.schoolId ?? selectedStudent?.schoolId;
 
+  /// Every school the app reads for this person, the active one first.
+  ///
+  /// There is no school administrator: each teacher has a workspace of their
+  /// own, and a class is in its teacher's. A student in two teachers' classes
+  /// therefore holds two student memberships, and sees both together - their
+  /// classes, work, marks and announcements - not only the active one's.
+  /// Anyone else acts in one school, so it is [activeSchoolId] alone.
+  List<String> get schoolIds {
+    final active = membership;
+    if (active == null || active.role != StudafyRole.student) {
+      return [?activeSchoolId];
+    }
+    return {
+      active.schoolId,
+      for (final item in profile?.memberships ?? const <SchoolMembership>[])
+        if (item.active && item.role == StudafyRole.student) item.schoolId,
+    }.toList();
+  }
+
+  /// Which school each of a student's classes is in, as their class lists
+  /// said. A class's own reads and uploads go to its own school.
+  final Map<String, String> _classroomSchools = {};
+
+  /// Notes the school [classroomId] belongs to; it notifies nobody.
+  void rememberClassroomSchool(String classroomId, String schoolId) =>
+      _classroomSchools[classroomId] = schoolId;
+
+  /// The school of a student's class [classroomId] when a class list has
+  /// said; null for anyone but a student, and for a class not listed yet.
+  String? schoolOfClassroom(String? classroomId) =>
+      membership?.role == StudafyRole.student
+      ? _classroomSchools[classroomId]
+      : null;
+
+  /// The school a file for [classroomId] is uploaded to: the class's own,
+  /// or else the active one.
+  String? schoolFor(String? classroomId) =>
+      schoolOfClassroom(classroomId) ?? activeSchoolId;
+
   void startDemoRole(StudafyRole role) {
     // SEC-001/ARC-011: demo identities exist only in synthetic builds. Any
     // other environment refuses, so production can never hydrate demo data.
@@ -219,6 +258,8 @@ class ActiveContextController extends ChangeNotifier {
     String? termId,
     StudafyRole? signedInAs,
   }) {
+    // Another account's classes are not this one's.
+    if (profile?.id != authenticatedProfile.id) _classroomSchools.clear();
     profile = authenticatedProfile;
     membership = activeMembership;
     this.signedInAs = signedInAs ?? activeMembership?.role;
@@ -228,6 +269,7 @@ class ActiveContextController extends ChangeNotifier {
   }
 
   void signOut() {
+    _classroomSchools.clear();
     profile = null;
     membership = null;
     signedInAs = null;
