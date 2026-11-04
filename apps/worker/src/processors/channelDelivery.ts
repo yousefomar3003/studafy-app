@@ -119,6 +119,13 @@ export function startChannelDelivery(
         delivered ??= sent.providerMessageId ?? "sent";
       } catch (error) {
         lastError = asSendError(error);
+        // The provider's reason by name, so a refusal can be diagnosed;
+        // never the token.
+        logger.warn("push_refused", {
+          delivery_id: job.deliveryId,
+          code: lastError.code,
+          provider_reason: lastError.detail,
+        });
         if (lastError.invalidTarget) {
           await sql`select private.push_device_revoke_token(${token})`;
         } else if (!lastError.terminal) {

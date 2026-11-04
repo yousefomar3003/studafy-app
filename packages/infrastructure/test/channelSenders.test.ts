@@ -3,6 +3,7 @@ import {
   ANDROID_NOTIFICATION_CHANNEL_ID,
   ChannelSendError,
   FcmPushSender,
+  fcmReason,
   ResendEmailSender,
 } from "../src/notifications/channelSenders";
 
@@ -96,5 +97,44 @@ describe("DL-053 channel senders", () => {
       expect(() => new FcmPushSender({ projectId, serviceAccountJson: "{}" }))
         .toThrow(ChannelSendError);
     }
+  });
+});
+
+describe("FCM's reason for a refusal (2026-11-04)", () => {
+  const refusing = (status: number, body: unknown) =>
+    new FcmPushSender({
+      projectId: "studafy-test",
+      serviceAccountJson: "{}",
+      accessToken: async () => "oauth-token-not-real",
+      fetchImpl: (async () =>
+        new Response(JSON.stringify(body), {
+          status,
+        })) as unknown as typeof fetch,
+    });
+
+  test("APNs refusing the app's key is named, the code is unchanged", async () => {
+    const error = await refusing(401, {
+      error: {
+        code: 401,
+        message: "Auth error from APNS or Web Push Service",
+        status: "UNAUTHENTICATED",
+        details: [{
+          "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+          errorCode: "THIRD_PARTY_AUTH_ERROR",
+        }],
+      },
+    }).send({ token: "t", title: "a", body: "b", data: {} }).catch((e) => e);
+    expect(error).toBeInstanceOf(ChannelSendError);
+    expect(error.code).toBe("PROVIDER_AUTH_401");
+    expect(error.detail).toBe("THIRD_PARTY_AUTH_ERROR");
+  });
+
+  test("only an upper-case code is kept, never other text", () => {
+    expect(fcmReason({ error: { status: "PERMISSION_DENIED" } })).toBe(
+      "PERMISSION_DENIED",
+    );
+    expect(fcmReason({ error: { status: "token abc123 is bad" } })).toBeNull();
+    expect(fcmReason("not json")).toBeNull();
+    expect(fcmReason(null)).toBeNull();
   });
 });
