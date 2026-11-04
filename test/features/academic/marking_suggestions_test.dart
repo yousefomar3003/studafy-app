@@ -9,6 +9,7 @@ import 'package:studafy/features/academic/presentation/assessment_marking_page.d
 import 'package:studafy/features/academic/presentation/marking_plan_page.dart';
 import 'package:studafy/features/academic/presentation/marking_references_page.dart';
 import 'package:studafy/features/academic/presentation/marking_scope.dart';
+import 'package:studafy/features/academic/presentation/marking_suggestions_bar.dart';
 import 'package:studafy/features/academic/presentation/paper_gradebook_page.dart';
 
 import '../../support/accessibility.dart';
@@ -521,7 +522,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(MarkingPlanPage), findsOneWidget);
       expect(find.text(studafyPlanName('Studafy AI Marking')), findsOneWidget);
-      expect(find.text('Not subscribed'), findsOneWidget);
+      expect(find.text('Mark written answers in minutes'), findsOneWidget);
       expect(marking.requests, isEmpty);
     });
 
@@ -604,6 +605,133 @@ void main() {
     await tester.pumpAndSettle();
     expect(sheet.saves, 1);
     expect(sheet.saved.single.score, 15);
+  });
+
+  group('the AI Marking prompt at marking time', () {
+    const answersPrompt =
+        '1 submission has written answers to mark. AI can suggest the marks.';
+    setUp(MarkingSuggestionsController.showPromptsAgain);
+    tearDown(MarkingSuggestionsController.showPromptsAgain);
+
+    Future<(_Saves, String, String)> submitted() async {
+      final repository = _Saves();
+      final (assessmentId, attemptId) = await _attempt(repository);
+      return (repository, assessmentId, attemptId);
+    }
+
+    Future<void> openList(
+      WidgetTester tester,
+      _Saves repository,
+      String assessmentId,
+      MarkingPlan plan,
+    ) async {
+      _size(tester, const Size(1200, 2600));
+      await tester.pumpWidget(
+        _scoped(_Marking(plan: plan), _ListPage(repository, assessmentId)),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('a teacher without the plan is told what is waiting, and '
+        'See how opens the plan', (tester) async {
+      final (repository, assessmentId, _) = await submitted();
+      await openList(tester, repository, assessmentId, _plan(active: false));
+      expect(find.text(answersPrompt), findsOneWidget);
+      await tester.tap(find.text('See how'));
+      await tester.pumpAndSettle();
+      expect(find.byType(MarkingPlanPage), findsOneWidget);
+    });
+
+    testWidgets('it can be hidden for that work until the app closes', (
+      tester,
+    ) async {
+      final (repository, assessmentId, _) = await submitted();
+      await openList(tester, repository, assessmentId, _plan(active: false));
+      await tester.tap(find.byTooltip('Hide'));
+      await tester.pumpAndSettle();
+      expect(find.text(answersPrompt), findsNothing);
+      // The button that was always there stays.
+      expect(find.text('Suggest marks'), findsOneWidget);
+      // Opened again, it is still hidden.
+      await tester.pumpWidget(const SizedBox());
+      await openList(tester, repository, assessmentId, _plan(active: false));
+      expect(find.text(answersPrompt), findsNothing);
+    });
+
+    testWidgets('not with the plan, not where suggestions are unavailable', (
+      tester,
+    ) async {
+      final (repository, assessmentId, _) = await submitted();
+      await openList(tester, repository, assessmentId, _plan());
+      expect(find.text(answersPrompt), findsNothing);
+      expect(find.text('See how'), findsNothing);
+      await tester.pumpWidget(const SizedBox());
+      await openList(
+        tester,
+        repository,
+        assessmentId,
+        _plan(active: false, available: false),
+      );
+      expect(find.text(answersPrompt), findsNothing);
+      expect(find.text('See how'), findsNothing);
+    });
+
+    testWidgets('not when nothing is waiting to be marked', (tester) async {
+      final (repository, assessmentId, attemptId) = await submitted();
+      await repository.markAttempt(attemptId, const [
+        AnswerMark(questionId: 'q2', score: 2),
+      ]);
+      await openList(tester, repository, assessmentId, _plan(active: false));
+      expect(find.text('Suggest marks'), findsOneWidget);
+      expect(find.text('See how'), findsNothing);
+    });
+
+    testWidgets('on a hand-in sheet it counts the students with no mark', (
+      tester,
+    ) async {
+      _size(tester, const Size(1200, 2600));
+      await tester.pumpWidget(
+        _scoped(
+          _Marking(plan: _plan(active: false)),
+          PaperGradebookPage(
+            repository: _Sheet(),
+            assessmentId: 'mark-1',
+            handIn: true,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          '1 student has no mark yet. AI can suggest a mark for their '
+          'hand-in.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('See how'), findsOneWidget);
+    });
+
+    testWidgets('in Arabic', (tester) async {
+      final (repository, assessmentId, _) = await submitted();
+      _size(tester, const Size(1200, 2600));
+      await tester.pumpWidget(
+        _scoped(
+          _Marking(plan: _plan(active: false)),
+          _ListPage(repository, assessmentId),
+          locale: const Locale('ar'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text(
+          'تسليم واحد فيه إجابات مكتوبة تنتظر التصحيح. يمكن للذكاء '
+          'الاصطناعي اقتراح الدرجات.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('اعرف كيف'), findsOneWidget);
+    });
   });
 
   // Launch plan 7.1, in both languages. Contrast is checked in English with

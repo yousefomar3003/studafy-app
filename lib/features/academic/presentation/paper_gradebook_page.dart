@@ -604,6 +604,8 @@ class _PaperGradebookPageState extends State<PaperGradebookPage> {
                                         child: MarkingSuggestionsBar(
                                           controller: marking,
                                           enabled: !_saving,
+                                          waiting: _unmarked(sheet),
+                                          handIns: true,
                                         ),
                                       );
                               }

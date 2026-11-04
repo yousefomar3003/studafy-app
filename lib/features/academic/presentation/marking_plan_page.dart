@@ -10,6 +10,7 @@ import '../../../core/studafy_design.dart';
 import '../../../core/studafy_formatting.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../domain/marking.dart';
+import 'marking_plan_explainer.dart';
 
 /// The plan's name: Latin in every language, isolated inside Arabic text.
 final markingPlanName = studafyPlanName('Studafy AI Marking');
@@ -144,15 +145,19 @@ class _MarkingPlanPageState extends State<MarkingPlanPage> {
         child: ListView(
           padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 32),
           children: [
-            PlanSummaryCard(
-              eyebrow: l10n.markingPlanYours,
-              planName: active ? markingPlanName : l10n.markingPlanNone,
-              detail: granted
-                  ? l10n.familyPlusGranted
-                  : active
-                  ? null
-                  : l10n.markingPlanHeadline,
-            ),
+            if (active)
+              PlanSummaryCard(
+                eyebrow: l10n.markingPlanYours,
+                planName: markingPlanName,
+                detail: granted ? l10n.familyPlusGranted : null,
+              )
+            else
+              StudafyHero(
+                eyebrow: l10n.markingPlanAccountDetail,
+                title: l10n.markingLandingTitle,
+                subtitle: l10n.markingLandingPromise,
+                icon: Icons.auto_awesome_outlined,
+              ),
             if (plan != null && active)
               Padding(
                 padding: const EdgeInsets.only(top: 12),
@@ -163,74 +168,47 @@ class _MarkingPlanPageState extends State<MarkingPlanPage> {
                 padding: const EdgeInsets.only(top: 12),
                 child: Text(l10n.markingPlanUnavailable),
               ),
-            SectionHeader(l10n.markingPlanWhatYouGet),
-            FeatureCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (final feature in [
-                    l10n.markingPlanFeatureCompare,
-                    l10n.markingPlanFeatureDetail,
-                    l10n.markingPlanFeatureDecide,
-                    l10n.markingPlanFeatureOptOut,
-                    l10n.markingPlanFeaturePrivacy,
-                  ])
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(
-                            Icons.check_circle_rounded,
-                            size: 18,
-                            color: studafyTeal,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              feature,
-                              style: const TextStyle(
-                                color: studafyInk,
-                                height: 1.35,
-                              ),
-                            ),
-                          ),
-                        ],
+            // What it does, before what it costs (App Store 3.1.2 keeps the
+            // price, renewal terms and links on this same screen below).
+            const MarkingPlanExplainer(),
+            const SizedBox(height: 20),
+            if (!active)
+              FeatureCard(
+                tint: studafySky,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (offer != null && offer.canPurchase)
+                      Text(
+                        l10n.familyPlusPrice(offer.price),
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
-                    ),
-                ],
+                    if (!sells)
+                      Text(l10n.markingPlanOnlyInApp)
+                    else if (_loading)
+                      Text(l10n.familyPlusCheckingStore)
+                    else if (!(offer?.canPurchase ?? false))
+                      Text(l10n.familyPlusStoreUnavailable)
+                    else if (!links)
+                      Text(l10n.familyPlusCannotBuyYet),
+                    if (sells) ...[
+                      const SizedBox(height: 12),
+                      FilledButton.icon(
+                        onPressed: canBuy
+                            ? () => _perform(
+                                store.purchaseMarkingPlan,
+                                l10n.familyPlusOpeningStore,
+                              )
+                            : null,
+                        icon: const Icon(Icons.lock_open_rounded),
+                        label: Text(l10n.markingPlanSubscribe),
+                      ),
+                    ],
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            if (!active) ...[
-              if (offer != null && offer.canPurchase)
-                Text(
-                  l10n.familyPlusPrice(offer.price),
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              if (!sells)
-                Text(l10n.markingPlanOnlyInApp)
-              else if (_loading)
-                Text(l10n.familyPlusCheckingStore)
-              else if (!(offer?.canPurchase ?? false))
-                Text(l10n.familyPlusStoreUnavailable)
-              else if (!links)
-                Text(l10n.familyPlusCannotBuyYet),
-              const SizedBox(height: 12),
-              if (sells)
-                FilledButton.icon(
-                  onPressed: canBuy
-                      ? () => _perform(
-                          store.purchaseMarkingPlan,
-                          l10n.familyPlusOpeningStore,
-                        )
-                      : null,
-                  icon: const Icon(Icons.lock_open_rounded),
-                  label: Text(l10n.markingPlanSubscribe),
-                ),
-            ],
             if (_busy)
               const Padding(
                 padding: EdgeInsets.only(top: 12),

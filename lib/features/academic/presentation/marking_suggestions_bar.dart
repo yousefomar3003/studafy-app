@@ -33,6 +33,27 @@ class MarkingSuggestionsController extends ChangeNotifier {
   /// Suggestions can be asked for here: the server makes them.
   bool get offered => plan?.available ?? false;
 
+  /// Work whose AI Marking prompt the teacher hid, until the app closes.
+  static final _promptHidden = <String>{};
+
+  bool get promptHidden => _promptHidden.contains(assessmentId);
+
+  /// Hides the prompt for this work for the rest of the session.
+  void hidePrompt() {
+    _promptHidden.add(assessmentId);
+    notifyListeners();
+  }
+
+  @visibleForTesting
+  static void showPromptsAgain() => _promptHidden.clear();
+
+  /// Opens the plan from the prompt, then reads the plan again: the teacher
+  /// may have subscribed.
+  Future<void> seePlan(BuildContext context) async {
+    await openMarkingPlan(context, services);
+    await load();
+  }
+
   Future<void> load() async {
     _poll?.cancel();
     final repository = services.repository;
@@ -139,10 +160,18 @@ class MarkingSuggestionsBar extends StatelessWidget {
     super.key,
     required this.controller,
     this.enabled = true,
+    this.waiting = 0,
+    this.handIns = false,
   });
 
   final MarkingSuggestionsController controller;
   final bool enabled;
+
+  /// How much is waiting for a mark on this screen: submissions with
+  /// written answers, or - [handIns] - students with no mark on the sheet.
+  /// A teacher without the plan is told about it once, at this moment.
+  final int waiting;
+  final bool handIns;
 
   Future<void> _suggest(BuildContext context) async {
     final plan = controller.plan;
@@ -170,6 +199,14 @@ class MarkingSuggestionsBar extends StatelessWidget {
       final pending = s.count(MarkingSuggestionStatus.pending);
       final ready = s.count(MarkingSuggestionStatus.ready);
       final busy = controller.busy || !enabled;
+      final plan = controller.plan;
+      // Only without the plan, only with work waiting, and not once hidden:
+      // with the plan the button below is all there is.
+      final prompt =
+          plan != null &&
+          !plan.active &&
+          waiting > 0 &&
+          !controller.promptHidden;
       return Padding(
         padding: const EdgeInsets.only(bottom: 8),
         child: FeatureCard(
@@ -194,6 +231,17 @@ class MarkingSuggestionsBar extends StatelessWidget {
                   ),
                 ],
               ),
+              if (prompt)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2, bottom: 8),
+                  child: MarkingPlanPrompt(
+                    message: handIns
+                        ? l10n.markingPromptHandIns(waiting)
+                        : l10n.markingPromptAnswers(waiting),
+                    onSeeHow: busy ? null : () => controller.seePlan(context),
+                    onHide: controller.hidePrompt,
+                  ),
+                ),
               Text(
                 l10n.markingSuggestDraftNote,
                 style: theme.textTheme.bodySmall,
@@ -242,6 +290,70 @@ class MarkingSuggestionsBar extends StatelessWidget {
       );
     },
   );
+}
+
+/// A teacher without Studafy AI Marking, at the moment work is waiting:
+/// how much, that AI can suggest the marks, and the way to see how. It can
+/// be hidden for the rest of the session.
+class MarkingPlanPrompt extends StatelessWidget {
+  const MarkingPlanPrompt({
+    super.key,
+    required this.message,
+    required this.onSeeHow,
+    required this.onHide,
+  });
+
+  final String message;
+  final VoidCallback? onSeeHow;
+  final VoidCallback onHide;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
+    return Container(
+      padding: const EdgeInsetsDirectional.fromSTEB(12, 10, 4, 4),
+      decoration: BoxDecoration(
+        color: studafyWash,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: studafyFrost.withValues(alpha: .7)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Padding(
+                padding: EdgeInsets.only(top: 2),
+                child: Icon(
+                  Icons.lightbulb_outline_rounded,
+                  size: 18,
+                  color: studafyNavy,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  message,
+                  style: const TextStyle(color: studafyInk, height: 1.35),
+                ),
+              ),
+              IconButton(
+                tooltip: l10n.markingPromptHide,
+                visualDensity: VisualDensity.compact,
+                onPressed: onHide,
+                icon: const Icon(Icons.close_rounded, size: 18),
+              ),
+            ],
+          ),
+          TextButton(
+            onPressed: onSeeHow,
+            child: Text(l10n.markingPromptSeeHow),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 /// Unmarked work only (the default), or everything again.

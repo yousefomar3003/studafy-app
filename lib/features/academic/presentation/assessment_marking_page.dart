@@ -427,6 +427,7 @@ class _AssessmentMarkingPageState extends State<AssessmentMarkingPage> {
                       MarkingSuggestionsBar(
                         controller: marking,
                         enabled: !_busy,
+                        waiting: toMark,
                       ),
                     if (attempts.isEmpty && missing.isEmpty)
                       StudafyEmptyState(

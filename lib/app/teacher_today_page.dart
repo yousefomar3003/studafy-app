@@ -8,6 +8,7 @@ import '../core/studafy_domain.dart';
 import '../core/studafy_formatting.dart';
 import '../core/user_content_text.dart';
 import '../features/academic/domain/academic_repository.dart';
+import '../features/academic/presentation/marking_home_card.dart';
 import '../features/classes/application/class_list_interactor.dart';
 import '../features/classes/domain/classroom.dart';
 import '../features/notifications/presentation/notifications_scope.dart';
@@ -366,6 +367,10 @@ class _TeacherTodayPageState extends State<TeacherTodayPage> {
                 ],
               ),
             ],
+            // Studafy AI Marking, for teachers only: this page is only in
+            // the teacher shell, and the card shows nothing without the
+            // marking slice or a store that sells the plan.
+            const MarkingHomeCard(),
             SectionHeader(
               l10n.todayClasses,
               action: widget.onSeeAllClasses == null || _classes.length <= 3

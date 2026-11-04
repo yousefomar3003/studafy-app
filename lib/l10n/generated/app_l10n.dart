@@ -13639,12 +13639,6 @@ abstract class AppL10n {
   /// **'Your plan'**
   String get markingPlanYours;
 
-  /// Plan page: no plan.
-  ///
-  /// In en, this message translates to:
-  /// **'Not subscribed'**
-  String get markingPlanNone;
-
   /// Plan page: one-line summary.
   ///
   /// In en, this message translates to:
@@ -13660,19 +13654,13 @@ abstract class AppL10n {
   /// Plan feature.
   ///
   /// In en, this message translates to:
-  /// **'Written answers and hand-ins compared with your own reference answers.'**
-  String get markingPlanFeatureCompare;
-
-  /// Plan feature.
-  ///
-  /// In en, this message translates to:
   /// **'What each answer met and missed, why, and feedback you can edit.'**
   String get markingPlanFeatureDetail;
 
   /// Plan feature.
   ///
   /// In en, this message translates to:
-  /// **'You decide every mark. Nothing is saved until you save it.'**
+  /// **'You decide every mark. AI never marks work on its own, and nothing is saved until you save it.'**
   String get markingPlanFeatureDecide;
 
   /// Plan feature.
@@ -13722,6 +13710,168 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Suggested marks for written work'**
   String get markingPlanAccountDetail;
+
+  /// AI Marking landing page: the headline at the top, for a teacher without the plan.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark written answers in minutes'**
+  String get markingLandingTitle;
+
+  /// AI Marking landing page: the one-line promise under the headline.
+  ///
+  /// In en, this message translates to:
+  /// **'AI suggests a mark for each answer, compared with your own reference. You decide every mark.'**
+  String get markingLandingPromise;
+
+  /// AI Marking landing page: heading of the three steps.
+  ///
+  /// In en, this message translates to:
+  /// **'How it works'**
+  String get markingLandingHowTitle;
+
+  /// AI Marking landing page: step 1, writing the reference.
+  ///
+  /// In en, this message translates to:
+  /// **'Write what a good answer contains: a model answer or key points, and what each is worth.'**
+  String get markingLandingStep1;
+
+  /// AI Marking landing page: step 2, asking for suggestions.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask for suggested marks for the work waiting to be marked.'**
+  String get markingLandingStep2;
+
+  /// AI Marking landing page: step 3, the teacher reviews and saves.
+  ///
+  /// In en, this message translates to:
+  /// **'Review each suggestion, adjust it if you need to, and save.'**
+  String get markingLandingStep3;
+
+  /// AI Marking landing page: heading of the worked example.
+  ///
+  /// In en, this message translates to:
+  /// **'What a suggestion looks like'**
+  String get markingExampleTitle;
+
+  /// AI Marking landing page: the label on the worked example, so it is never taken for real work.
+  ///
+  /// In en, this message translates to:
+  /// **'Example'**
+  String get markingExampleLabel;
+
+  /// AI Marking landing page: under the Example label.
+  ///
+  /// In en, this message translates to:
+  /// **'A sample answer, not a real student\'s work.'**
+  String get markingExampleNote;
+
+  /// AI Marking landing page example: the question (out of 4).
+  ///
+  /// In en, this message translates to:
+  /// **'Why do green plants need sunlight?'**
+  String get markingExampleQuestion;
+
+  /// AI Marking landing page example: the teacher's key point 1 (worth 1); also listed as met.
+  ///
+  /// In en, this message translates to:
+  /// **'Light gives the energy for photosynthesis'**
+  String get markingExamplePoint1;
+
+  /// AI Marking landing page example: key point 2 (worth 1); also listed as met.
+  ///
+  /// In en, this message translates to:
+  /// **'The plant makes glucose, its food'**
+  String get markingExamplePoint2;
+
+  /// AI Marking landing page example: key point 3 (worth 1); also listed as met.
+  ///
+  /// In en, this message translates to:
+  /// **'Chlorophyll in the leaves absorbs the light'**
+  String get markingExamplePoint3;
+
+  /// AI Marking landing page example: key point 4 (worth 1), the one the answer missed.
+  ///
+  /// In en, this message translates to:
+  /// **'Oxygen is given off'**
+  String get markingExamplePoint4;
+
+  /// AI Marking landing page example: the sample student's answer. It meets key points 1 to 3 and misses 4.
+  ///
+  /// In en, this message translates to:
+  /// **'Plants use the energy in sunlight to make their own food, glucose. The green chlorophyll in their leaves takes in the light.'**
+  String get markingExampleAnswer;
+
+  /// AI Marking landing page example: the requirement the answer missed.
+  ///
+  /// In en, this message translates to:
+  /// **'Does not say that oxygen is given off'**
+  String get markingExampleMissed;
+
+  /// AI Marking landing page example: the suggested feedback for the student.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear explanation of how the plant makes its food. Add what it gives off: oxygen.'**
+  String get markingExampleFeedback;
+
+  /// AI Marking landing page: what is included, online tests.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested marks for written answers in online tests.'**
+  String get markingIncludedOnline;
+
+  /// AI Marking landing page: what is included, hand-ins and the files read.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested marks for handed-in work: typed text, PDF, Word, PowerPoint and photos of handwriting.'**
+  String get markingIncludedHandIns;
+
+  /// AI Marking landing page: roughly how much the monthly allowance covers. {count} is a formatted number such as 2,500, rounded down on purpose.
+  ///
+  /// In en, this message translates to:
+  /// **'Enough for about {count} written answers a month. Photos of handwriting use more of it.'**
+  String markingIncludedCapacity(String count);
+
+  /// AI Marking landing page: heading of the trust lines.
+  ///
+  /// In en, this message translates to:
+  /// **'You stay in charge'**
+  String get markingTrustTitle;
+
+  /// AI Marking landing page: trust line, as the privacy policy says.
+  ///
+  /// In en, this message translates to:
+  /// **'Students\' work is not used to train any AI model.'**
+  String get markingTrustTraining;
+
+  /// Online test marking list, teacher without AI Marking: submissions whose written answers wait for a mark.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 submission has written answers to mark. AI can suggest the marks.} other{{count} submissions have written answers to mark. AI can suggest the marks.}}'**
+  String markingPromptAnswers(int count);
+
+  /// Hand-in grade sheet, teacher without AI Marking: students still without a mark.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 student has no mark yet. AI can suggest a mark for their hand-in.} other{{count} students have no mark yet. AI can suggest marks for their hand-ins.}}'**
+  String markingPromptHandIns(int count);
+
+  /// Marking prompt: opens the AI Marking page.
+  ///
+  /// In en, this message translates to:
+  /// **'See how'**
+  String get markingPromptSeeHow;
+
+  /// Marking prompt: hides it for this work until the app is closed.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide'**
+  String get markingPromptHide;
+
+  /// Teacher home: the AI Marking card's button, opening the AI Marking page.
+  ///
+  /// In en, this message translates to:
+  /// **'See how it works'**
+  String get markingHomeCardAction;
 
   /// AI Tutor: the small action under an AI answer that opens the report sheet.
   ///
