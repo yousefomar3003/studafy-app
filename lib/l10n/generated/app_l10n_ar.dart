@@ -8025,17 +8025,10 @@ class AppL10nAr extends AppL10n {
   String get markingPlanYours => 'خطتك';
 
   @override
-  String get markingPlanNone => 'غير مشترك';
-
-  @override
   String get markingPlanHeadline => 'درجات مقترحة للعمل المكتوب، تراجعها أنت.';
 
   @override
   String get markingPlanWhatYouGet => 'ما تحصل عليه';
-
-  @override
-  String get markingPlanFeatureCompare =>
-      'مقارنة الإجابات المكتوبة والأعمال المسلَّمة بإجاباتك المرجعية.';
 
   @override
   String get markingPlanFeatureDetail =>
@@ -8043,7 +8036,7 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get markingPlanFeatureDecide =>
-      'أنت من يقرّر كل درجة. لا يُحفظ شيء حتى تحفظه أنت.';
+      'أنت من يقرّر كل درجة. لا يصحّح الذكاء الاصطناعي أي عمل وحده، ولا يُحفظ شيء حتى تحفظه أنت.';
 
   @override
   String get markingPlanFeatureOptOut =>
@@ -8073,6 +8066,128 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get markingPlanAccountDetail => 'درجات مقترحة للعمل المكتوب';
+
+  @override
+  String get markingLandingTitle => 'صحّح الإجابات المكتوبة في دقائق';
+
+  @override
+  String get markingLandingPromise =>
+      'يقترح الذكاء الاصطناعي درجة لكل إجابة بمقارنتها بمرجعك أنت. وأنت من يقرّر كل درجة.';
+
+  @override
+  String get markingLandingHowTitle => 'كيف يعمل';
+
+  @override
+  String get markingLandingStep1 =>
+      'اكتب ما تحتويه الإجابة الجيدة: إجابة نموذجية أو نقاطًا رئيسية، وكم تستحق كل منها.';
+
+  @override
+  String get markingLandingStep2 =>
+      'اطلب درجات مقترحة للعمل الذي ينتظر التصحيح.';
+
+  @override
+  String get markingLandingStep3 =>
+      'راجع كل اقتراح، وعدّله إن احتجت، ثم احفظه.';
+
+  @override
+  String get markingExampleTitle => 'كيف يبدو الاقتراح';
+
+  @override
+  String get markingExampleLabel => 'مثال';
+
+  @override
+  String get markingExampleNote => 'إجابة توضيحية، وليست عمل طالب حقيقي.';
+
+  @override
+  String get markingExampleQuestion =>
+      'لماذا تحتاج النباتات الخضراء إلى ضوء الشمس؟';
+
+  @override
+  String get markingExamplePoint1 =>
+      'يمنح الضوء الطاقة اللازمة لعملية البناء الضوئي';
+
+  @override
+  String get markingExamplePoint2 => 'يصنع النبات الجلوكوز، وهو غذاؤه';
+
+  @override
+  String get markingExamplePoint3 => 'يمتص الكلوروفيل في الأوراق الضوء';
+
+  @override
+  String get markingExamplePoint4 => 'يُطلق النبات الأكسجين';
+
+  @override
+  String get markingExampleAnswer =>
+      'تستخدم النباتات الطاقة الموجودة في ضوء الشمس لتصنع غذاءها، وهو الجلوكوز. ويمتص الكلوروفيل الأخضر في أوراقها الضوء.';
+
+  @override
+  String get markingExampleMissed => 'لم يذكر أن النبات يُطلق الأكسجين';
+
+  @override
+  String get markingExampleFeedback =>
+      'شرح واضح لكيف يصنع النبات غذاءه. أضف ما يُطلقه: الأكسجين.';
+
+  @override
+  String get markingIncludedOnline =>
+      'درجات مقترحة للإجابات المكتوبة في الاختبارات الإلكترونية.';
+
+  @override
+  String get markingIncludedHandIns =>
+      'درجات مقترحة للأعمال المسلَّمة: النص المكتوب، وملفات PDF وWord وPowerPoint، وصور الكتابة بخط اليد.';
+
+  @override
+  String markingIncludedCapacity(String count) {
+    return 'يكفي لنحو $count إجابة مكتوبة في الشهر. وتستهلك صور الكتابة بخط اليد منه أكثر.';
+  }
+
+  @override
+  String get markingTrustTitle => 'القرار لك';
+
+  @override
+  String get markingTrustTraining =>
+      'لا يُستخدم عمل الطلاب لتدريب أي نموذج ذكاء اصطناعي.';
+
+  @override
+  String markingPromptAnswers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count تسليم فيها إجابات مكتوبة تنتظر التصحيح. يمكن للذكاء الاصطناعي اقتراح الدرجات.',
+      many:
+          '$count تسليمًا فيها إجابات مكتوبة تنتظر التصحيح. يمكن للذكاء الاصطناعي اقتراح الدرجات.',
+      few:
+          '$count تسليمات فيها إجابات مكتوبة تنتظر التصحيح. يمكن للذكاء الاصطناعي اقتراح الدرجات.',
+      two: 'تسليمان فيهما إجابات مكتوبة تنتظر التصحيح. يمكن للذكاء الاصطناعي اقتراح الدرجات.',
+      one: 'تسليم واحد فيه إجابات مكتوبة تنتظر التصحيح. يمكن للذكاء الاصطناعي اقتراح الدرجات.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String markingPromptHandIns(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count طالب بلا درجة بعد. يمكن للذكاء الاصطناعي اقتراح درجات لأعمالهم المسلَّمة.',
+      many:
+          '$count طالبًا بلا درجة بعد. يمكن للذكاء الاصطناعي اقتراح درجات لأعمالهم المسلَّمة.',
+      few:
+          '$count طلاب بلا درجة بعد. يمكن للذكاء الاصطناعي اقتراح درجات لأعمالهم المسلَّمة.',
+      two: 'طالبان بلا درجة بعد. يمكن للذكاء الاصطناعي اقتراح درجات لعمليهما المسلَّمين.',
+      one: 'طالب واحد بلا درجة بعد. يمكن للذكاء الاصطناعي اقتراح درجة لعمله المسلَّم.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get markingPromptSeeHow => 'اعرف كيف';
+
+  @override
+  String get markingPromptHide => 'إخفاء';
+
+  @override
+  String get markingHomeCardAction => 'اعرف كيف يعمل';
 
   @override
   String get aiReportAction => 'إبلاغ';

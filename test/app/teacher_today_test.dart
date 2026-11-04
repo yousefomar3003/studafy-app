@@ -2,10 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:studafy/app/teacher_today_page.dart';
+import 'package:studafy/core/ai_usage.dart';
 import 'package:studafy/core/ids.dart';
 import 'package:studafy/core/studafy_domain.dart';
+import 'package:studafy/core/studafy_formatting.dart';
 import 'package:studafy/core/telemetry.dart';
+import 'package:studafy/features/academic/data/preview_marking_repository.dart';
 import 'package:studafy/features/academic/domain/academic_repository.dart';
+import 'package:studafy/features/academic/domain/marking.dart';
+import 'package:studafy/features/academic/presentation/marking_home_card.dart';
+import 'package:studafy/features/academic/presentation/marking_plan_page.dart';
+import 'package:studafy/features/academic/presentation/marking_scope.dart';
 import 'package:studafy/features/classes/application/class_list_interactor.dart';
 import 'package:studafy/features/classes/domain/classroom.dart';
 import 'package:studafy/features/classes/domain/classroom_repository.dart';
@@ -74,6 +81,7 @@ void main() {
     WidgetTester tester, {
     _Classes? classes,
     Locale? locale,
+    MarkingServices? marking,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -90,7 +98,9 @@ void main() {
             repository: _Notifications(),
             telemetry: const NoopTelemetry(),
           ),
-          child: child!,
+          child: marking == null
+              ? child!
+              : MarkingScope(services: marking, child: child!),
         ),
         home: TeacherTodayPage(
           classes: ClassListInteractor(
@@ -400,6 +410,89 @@ void main() {
     });
   });
 
+  group('Studafy AI Marking on Today', () {
+    MarkingServices services(MarkingPlan plan, {bool store = true}) =>
+        MarkingServices(
+          repository: PreviewMarkingRepository(plan: plan),
+          plans: store ? _MarkingStore() : null,
+        );
+
+    MarkingPlan plan({
+      bool active = false,
+      bool available = true,
+      int used = 0,
+    }) => MarkingPlan(
+      active: active,
+      teacher: true,
+      available: available,
+      used: used,
+      total: 7_000_000,
+      resetsAt: DateTime.utc(2026, 12),
+    );
+
+    testWidgets('a teacher without the plan sees one card, and it opens the '
+        'plan page', (tester) async {
+      _tall(tester);
+      await pumpToday(tester, marking: services(plan()));
+      expect(find.byType(MarkingHomeCard), findsOneWidget);
+      expect(
+        find.text('Suggested marks for written work, checked by you.'),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('See how it works'));
+      await tester.pumpAndSettle();
+      expect(find.byType(MarkingPlanPage), findsOneWidget);
+      expect(find.text('Mark written answers in minutes'), findsOneWidget);
+    });
+
+    testWidgets('with the plan it stays away while plenty is left, and shows '
+        "the month's bar once it runs low", (tester) async {
+      _tall(tester);
+      await pumpToday(
+        tester,
+        marking: services(plan(active: true, used: 1_000_000)),
+      );
+      expect(find.text('See how it works'), findsNothing);
+      expect(find.byType(AiUsageCard), findsNothing);
+
+      await tester.pumpWidget(const SizedBox());
+      await pumpToday(
+        tester,
+        marking: services(plan(active: true, used: 6_000_000)),
+      );
+      expect(find.text('See how it works'), findsNothing);
+      expect(find.byType(AiUsageCard), findsOneWidget);
+      expect(find.text('Running low'), findsOneWidget);
+    });
+
+    testWidgets('nothing where the server makes no suggestions, where the app '
+        'cannot sell the plan, or without the marking slice', (tester) async {
+      _tall(tester);
+      for (final marking in [
+        services(plan(available: false)),
+        services(plan(), store: false),
+        null,
+      ]) {
+        await tester.pumpWidget(const SizedBox());
+        await pumpToday(tester, marking: marking);
+        expect(find.text('See how it works'), findsNothing);
+        expect(find.byType(AiUsageCard), findsNothing);
+      }
+    });
+
+    testWidgets('the card in Arabic', (tester) async {
+      _tall(tester);
+      await pumpToday(
+        tester,
+        marking: services(plan()),
+        locale: const Locale('ar'),
+      );
+      expect(tester.takeException(), isNull);
+      expect(find.text('اعرف كيف يعمل'), findsOneWidget);
+      expect(find.text(studafyPlanName('Studafy AI Marking')), findsOneWidget);
+    });
+  });
+
   test('a class with no such work adds nothing to the list', () {
     const classroom = ClassroomSummary(
       id: ClassroomId('c'),
@@ -569,3 +662,23 @@ AcademicRecord _paperExam(
   scheduledAt: on,
   markedAssignmentId: markFor,
 );
+
+class _MarkingStore implements MarkingPlanStore {
+  @override
+  bool get sellsMarkingPlan => true;
+
+  @override
+  Future<MarkingPlanOffer> markingOffer() async => const MarkingPlanOffer();
+
+  @override
+  Future<void> purchaseMarkingPlan() async {}
+
+  @override
+  Future<void> restorePurchases() async {}
+
+  @override
+  void addEntitlementListener(void Function() listener) {}
+
+  @override
+  void removeEntitlementListener(void Function() listener) {}
+}

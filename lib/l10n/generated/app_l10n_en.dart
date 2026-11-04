@@ -8017,9 +8017,6 @@ class AppL10nEn extends AppL10n {
   String get markingPlanYours => 'Your plan';
 
   @override
-  String get markingPlanNone => 'Not subscribed';
-
-  @override
   String get markingPlanHeadline =>
       'Suggested marks for written work, checked by you.';
 
@@ -8027,16 +8024,12 @@ class AppL10nEn extends AppL10n {
   String get markingPlanWhatYouGet => 'What you get';
 
   @override
-  String get markingPlanFeatureCompare =>
-      'Written answers and hand-ins compared with your own reference answers.';
-
-  @override
   String get markingPlanFeatureDetail =>
       'What each answer met and missed, why, and feedback you can edit.';
 
   @override
   String get markingPlanFeatureDecide =>
-      'You decide every mark. Nothing is saved until you save it.';
+      'You decide every mark. AI never marks work on its own, and nothing is saved until you save it.';
 
   @override
   String get markingPlanFeatureOptOut =>
@@ -8066,6 +8059,121 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get markingPlanAccountDetail => 'Suggested marks for written work';
+
+  @override
+  String get markingLandingTitle => 'Mark written answers in minutes';
+
+  @override
+  String get markingLandingPromise =>
+      'AI suggests a mark for each answer, compared with your own reference. You decide every mark.';
+
+  @override
+  String get markingLandingHowTitle => 'How it works';
+
+  @override
+  String get markingLandingStep1 =>
+      'Write what a good answer contains: a model answer or key points, and what each is worth.';
+
+  @override
+  String get markingLandingStep2 =>
+      'Ask for suggested marks for the work waiting to be marked.';
+
+  @override
+  String get markingLandingStep3 =>
+      'Review each suggestion, adjust it if you need to, and save.';
+
+  @override
+  String get markingExampleTitle => 'What a suggestion looks like';
+
+  @override
+  String get markingExampleLabel => 'Example';
+
+  @override
+  String get markingExampleNote =>
+      'A sample answer, not a real student\'s work.';
+
+  @override
+  String get markingExampleQuestion => 'Why do green plants need sunlight?';
+
+  @override
+  String get markingExamplePoint1 =>
+      'Light gives the energy for photosynthesis';
+
+  @override
+  String get markingExamplePoint2 => 'The plant makes glucose, its food';
+
+  @override
+  String get markingExamplePoint3 =>
+      'Chlorophyll in the leaves absorbs the light';
+
+  @override
+  String get markingExamplePoint4 => 'Oxygen is given off';
+
+  @override
+  String get markingExampleAnswer =>
+      'Plants use the energy in sunlight to make their own food, glucose. The green chlorophyll in their leaves takes in the light.';
+
+  @override
+  String get markingExampleMissed => 'Does not say that oxygen is given off';
+
+  @override
+  String get markingExampleFeedback =>
+      'Clear explanation of how the plant makes its food. Add what it gives off: oxygen.';
+
+  @override
+  String get markingIncludedOnline =>
+      'Suggested marks for written answers in online tests.';
+
+  @override
+  String get markingIncludedHandIns =>
+      'Suggested marks for handed-in work: typed text, PDF, Word, PowerPoint and photos of handwriting.';
+
+  @override
+  String markingIncludedCapacity(String count) {
+    return 'Enough for about $count written answers a month. Photos of handwriting use more of it.';
+  }
+
+  @override
+  String get markingTrustTitle => 'You stay in charge';
+
+  @override
+  String get markingTrustTraining =>
+      'Students\' work is not used to train any AI model.';
+
+  @override
+  String markingPromptAnswers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count submissions have written answers to mark. AI can suggest the marks.',
+      one:
+          '1 submission has written answers to mark. AI can suggest the marks.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String markingPromptHandIns(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count students have no mark yet. AI can suggest marks for their hand-ins.',
+      one:
+          '1 student has no mark yet. AI can suggest a mark for their hand-in.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get markingPromptSeeHow => 'See how';
+
+  @override
+  String get markingPromptHide => 'Hide';
+
+  @override
+  String get markingHomeCardAction => 'See how it works';
 
   @override
   String get aiReportAction => 'Report';
