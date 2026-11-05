@@ -620,6 +620,18 @@ returns void language sql security definer set search_path = '' as $$
   where org_id = p_org and status in ('pending', 'linked');
 $$;
 
+-- A person who signs in on the website only belongs to no school, so
+-- nothing has decided what kind of account theirs is. Confirming they are
+-- an adult records it, once, exactly as the app's first-sign-in setup does
+-- (202610010002): never over a kind already decided, so a student account
+-- stays a student's and can never administer a school.
+create or replace function private.school_portal_confirm_adult(body jsonb)
+returns void language sql security definer set search_path = '' as $$
+  update public.profiles set account_kind = 'adult', updated_at = now()
+  where id = auth.uid() and coalesce((body->>'adult')::boolean, false)
+    and account_kind is null and private.account_kind(auth.uid()) is null;
+$$;
+
 create or replace function private.api062_command(
   p_operation text, p_resource_id uuid, p_input jsonb,
   p_idempotency_id uuid, p_idempotency_generation bigint)
@@ -646,6 +658,7 @@ begin
 
   case p_operation
     when 'createOrg' then
+      perform private.school_portal_confirm_adult(body);
       if private.account_kind(me) is distinct from 'adult' then
         return jsonb_build_object('outcome', 'forbidden');
       end if;
@@ -708,6 +721,7 @@ begin
       response := jsonb_build_object('id', v_id);
 
     when 'acceptInvite' then
+      perform private.school_portal_confirm_adult(body);
       select * into v_invite from private.school_portal_admin_invites i
       where i.id = p_resource_id and i.accepted_at is null and i.revoked_at is null
         and i.expires_at > now()
@@ -1349,6 +1363,7 @@ begin
     'private.school_portal_files(uuid[])',
     'private.school_portal_class_json(uuid, uuid)',
     'private.school_portal_reserved(uuid, bigint)',
+    'private.school_portal_confirm_adult(jsonb)',
     'private.school_portal_end_org_links(uuid, uuid)',
     'private.school_portal_forget_deleted_profile()',
     'private.school_portal_purge(integer)',

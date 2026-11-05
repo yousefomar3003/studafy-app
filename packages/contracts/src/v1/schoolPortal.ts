@@ -87,6 +87,8 @@ export const V1CreateSchoolPortalOrgRequest = z.strictObject({
   ...OrgFields,
   /** The creator's own role at the school, shown to teachers they ask. */
   jobTitle: z.string().trim().min(2).max(80),
+  /** "I am an adult": recorded once for an account nothing has decided. */
+  adult: z.literal(true),
   captchaToken: CaptchaToken,
 });
 export const V1UpdateSchoolPortalOrgRequest = z.strictObject({
@@ -123,6 +125,10 @@ export const V1SchoolPortalMyInvites = z.object({
   })).max(50),
 });
 export const V1SchoolPortalEmptyRequest = z.strictObject({});
+/** Accepting an administrator invite, as an adult (as creating a school). */
+export const V1AcceptSchoolPortalInviteRequest = z.strictObject({
+  adult: z.literal(true),
+});
 export const V1SchoolPortalOrgRef = z.object({
   orgId: Id,
   status: V1SchoolPortalOrgStatus.optional(),

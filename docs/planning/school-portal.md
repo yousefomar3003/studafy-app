@@ -1069,6 +1069,36 @@ branch (moved to step 2, with the download route it serves).
    screen's empty, loading, error and full states; an end-to-end test
    (Playwright) against staging with a fake school, teacher and class.
 
+**Status of 5b (2026-11-05):** built on this branch; not yet run against
+a real sign-in or staging (there is no staging yet).
+
+- `apps/school-web/src/portal/`: one-page app at `school.studafy.com`
+  (`portal/index.html`, host routing and its own CSP in `vercel.json`).
+  Sign-in with the configured providers (Supabase PKCE), sign-out that
+  clears what the site kept, and a 12-hour idle limit. Welcome (accept an
+  administrator invite, or create a school), create school (with the
+  adult and authorised boxes, contact email required behind an Apple
+  hidden address, Turnstile), dashboard (counts, link a teacher by Studafy
+  ID, waiting requests with Cancel), teachers (Unlink), classes (search,
+  teacher filter), one class (students, lessons with files, links and
+  announcements, assignments → hand-ins, online tests → answers, marks
+  grid with unpublished marks in italics and AI suggestions labelled,
+  attendance grid with totals, wellbeing notes), settings (details,
+  administrators, invite, remove, close). Files open through the
+  single-use delivery link, fetched with the session, never stored.
+- EN/AR (`src/portal/i18n/`), right-to-left, phone layout (bottom menu).
+- **Adults only, recorded once:** creating a school and accepting an
+  invite send `adult: true`; `private.school_portal_confirm_adult` records
+  `account_kind = 'adult'` only for an account nothing has classified, so a
+  student account still can never run a school page.
+- Tests: `apps/school-web/test/portal.test.tsx` (routes both ways, EN/AR
+  parity and glossary, number and date formats, each view's empty and full
+  states, loading and refusal, user content never as HTML).
+- **Not done yet:** the Playwright end-to-end test (needs staging), the
+  class Overview tab, the term and last-activity columns and the term
+  filter on Classes, and editing an invite. Turnstile and the providers
+  need their keys (deployment guide).
+
 ### Step 6: Operator tools
 
 1. Suspend / restore a school (existing operator path, `/internal/...`).

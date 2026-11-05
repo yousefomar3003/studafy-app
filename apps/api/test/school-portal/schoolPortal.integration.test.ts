@@ -174,6 +174,7 @@ suite("School Portal over real SQL", () => {
       city: "Amman",
       kind: "private",
       jobTitle: "Principal",
+      adult: true,
     });
     expect(created.status).toBe(201);
     const org = (await created.json() as { id: string }).id;

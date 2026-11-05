@@ -28130,7 +28130,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/V1SchoolPortalEmptyRequest"
+                "$ref": "#/components/schemas/V1AcceptSchoolPortalInviteRequest"
               }
             }
           }
@@ -30864,6 +30864,19 @@
           "role",
           "status",
           "version"
+        ],
+        "additionalProperties": false
+      },
+      "V1AcceptSchoolPortalInviteRequest": {
+        "type": "object",
+        "properties": {
+          "adult": {
+            "type": "boolean",
+            "const": true
+          }
+        },
+        "required": [
+          "adult"
         ],
         "additionalProperties": false
       },
@@ -35158,6 +35171,10 @@
             "minLength": 2,
             "maxLength": 80
           },
+          "adult": {
+            "type": "boolean",
+            "const": true
+          },
           "captchaToken": {
             "type": "string",
             "minLength": 1,
@@ -35169,7 +35186,8 @@
           "country",
           "city",
           "kind",
-          "jobTitle"
+          "jobTitle",
+          "adult"
         ],
         "additionalProperties": false
       },

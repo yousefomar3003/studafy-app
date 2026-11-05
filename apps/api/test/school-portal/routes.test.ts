@@ -206,6 +206,7 @@ describe("the server switch", () => {
       city: "Amman",
       kind: "private",
       jobTitle: "Principal",
+      adult: true,
     });
     expect(created.status).toBe(404);
     expect(seen.queries).toEqual([]);
@@ -266,6 +267,7 @@ describe("commands", () => {
         city: "Amman",
         kind: "private",
         jobTitle: "Principal",
+        adult: true,
         captchaToken: "token",
       },
     );

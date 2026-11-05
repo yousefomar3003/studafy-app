@@ -11,7 +11,7 @@ begin;
 \unset auth031_fixture_only
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(79);
+select plan(81);
 select set_config('studafy.request_id', 'school-portal-test', true);
 
 \set admin1 'f0000000-0000-4000-8000-000000000001'
@@ -39,9 +39,10 @@ from (values
   (:'admin3', 'it@cedar.synthetic.studafy.test', 'Cedar IT'),
   (:'admin4', 'head@oak.synthetic.studafy.test', 'Oak Head'),
   (:'stranger', 'stranger@synthetic.studafy.test', 'Stranger')) v(id, email, name);
--- Website-only adults: no membership anywhere.
+-- Website-only adults: no membership anywhere, and no kind recorded yet;
+-- admin1 confirms being an adult when creating the school (below).
 update public.profiles set account_kind = 'adult'
-where id in (:'admin1', :'admin2', :'admin3', :'admin4', :'stranger');
+where id in (:'admin2', :'admin3', :'admin4', :'stranger');
 
 create function pg_temp.cmd(actor uuid, op text, res uuid, body jsonb)
 returns jsonb language plpgsql as $$
@@ -105,8 +106,13 @@ $$;
 
 -- 1. Creating a school's page.
 select is(pg_temp.cmd(:'admin1', 'createOrg', null, '{"name":"Cedar Grove School",
-  "country":"Jordan","city":"Amman","kind":"private","jobTitle":"Principal"}')->>'status',
+  "country":"Jordan","city":"Amman","kind":"private","jobTitle":"Principal"}')->>'outcome',
+  'forbidden', 'an account nobody has classified must confirm being an adult first');
+select is(pg_temp.cmd(:'admin1', 'createOrg', null, '{"name":"Cedar Grove School",
+  "country":"Jordan","city":"Amman","kind":"private","jobTitle":"Principal","adult":true}')->>'status',
   '201', 'an adult with no school membership creates a school''s page');
+select is((select account_kind from public.profiles where id = :'admin1'), 'adult',
+  'and the account is recorded as an adult, once');
 select set_config('test.org', (select id::text from private.school_portal_orgs
   where name = 'Cedar Grove School'), true);
 select is(pg_temp.cmd(:'admin4', 'createOrg', null, '{"name":"Oak Hill School",
@@ -115,8 +121,8 @@ select is(pg_temp.cmd(:'admin4', 'createOrg', null, '{"name":"Oak Hill School",
 select set_config('test.org2', (select id::text from private.school_portal_orgs
   where name = 'Oak Hill School'), true);
 select is(pg_temp.cmd(:'student_user', 'createOrg', null, '{"name":"Kid School",
-  "country":"Jordan","city":"Amman","kind":"other","jobTitle":"Boss"}')->>'outcome',
-  'forbidden', 'a student cannot create one');
+  "country":"Jordan","city":"Amman","kind":"other","jobTitle":"Boss","adult":true}')->>'outcome',
+  'forbidden', 'a student cannot create one, even saying they are an adult');
 select is(pg_temp.cmd(:'admin1', 'createOrg', null, '{"name":"x","country":"Jordan",
   "city":"Amman","kind":"private","jobTitle":"Principal"}')->>'outcome',
   'invalid', 'a too-short name is refused');

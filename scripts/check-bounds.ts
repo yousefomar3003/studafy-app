@@ -58,6 +58,11 @@ const ALLOWED: Record<string, string[]> = {
   ],
   // The public website and, later, the School Portal (docs/planning/school-portal.md).
   "@studafy/school-web": [
+    // The portal reads the API's request and response types (types only)
+    // and signs in through Supabase Auth.
+    "@studafy/contracts",
+    "@supabase/supabase-js",
+    "zod",
     "react",
     "react-dom",
     "@fontsource-variable/inter",

@@ -3164,7 +3164,7 @@ class V1ApiClient {
       );
 
   Future<V1SchoolPortalOrgRefDto> acceptSchoolPortalInvite(
-    V1SchoolPortalEmptyRequestDto request, {
+    V1AcceptSchoolPortalInviteRequestDto request, {
     required String inviteId,
     String? idempotencyKey,
   }) async => V1SchoolPortalOrgRefDto.fromJson(
@@ -3614,6 +3614,18 @@ class V1AcceptInvitationResponseDto {
     'status': status,
     'version': version,
   };
+}
+
+class V1AcceptSchoolPortalInviteRequestDto {
+  const V1AcceptSchoolPortalInviteRequestDto({required this.adult});
+
+  factory V1AcceptSchoolPortalInviteRequestDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1AcceptSchoolPortalInviteRequestDto(adult: json['adult'] as bool);
+
+  final bool adult;
+
+  Map<String, Object?> toJson() => {'adult': adult};
 }
 
 class V1AcknowledgeDeliveryRequestDto {
@@ -6904,6 +6916,7 @@ class V1CreateSchoolPortalOrgRequestDto {
     required this.kind,
     this.contactEmail,
     required this.jobTitle,
+    required this.adult,
     this.captchaToken,
   });
 
@@ -6916,6 +6929,7 @@ class V1CreateSchoolPortalOrgRequestDto {
     kind: json['kind'] as String,
     contactEmail: json['contactEmail'] as String?,
     jobTitle: json['jobTitle'] as String,
+    adult: json['adult'] as bool,
     captchaToken: json['captchaToken'] as String?,
   );
 
@@ -6925,6 +6939,7 @@ class V1CreateSchoolPortalOrgRequestDto {
   final String kind;
   final String? contactEmail;
   final String jobTitle;
+  final bool adult;
   final String? captchaToken;
 
   Map<String, Object?> toJson() => {
@@ -6934,6 +6949,7 @@ class V1CreateSchoolPortalOrgRequestDto {
     'kind': kind,
     'contactEmail': ?contactEmail,
     'jobTitle': jobTitle,
+    'adult': adult,
     'captchaToken': ?captchaToken,
   };
 }

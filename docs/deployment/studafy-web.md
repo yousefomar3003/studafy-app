@@ -106,3 +106,35 @@ Only when every item in plan 11.1 is true, and the owner says go.
   between و and a Latin name (`App Store و Google Play`), or the line
   reads out of order.
 - No company name, number or address anywhere; the footer says "© Studafy".
+
+## The School Portal (school.studafy.com)
+
+The same project builds the portal as a single page (`portal/index.html`,
+code in `src/portal/`). On a host matching `^school(-…)?\.studafy\.com$`
+(`school.studafy.com`, or a staging host such as
+`school-staging.studafy.com`), `vercel.json` serves that page for every
+path, with its own Content-Security-Policy (the API on `*.studafy.com`,
+Supabase on `*.supabase.co`, Cloudflare Turnstile), `noindex` and
+`no-store`. `studafy.com/portal/...` redirects to `school.studafy.com`.
+Locally: `bun run dev`, then `http://localhost:5173/portal/`.
+
+| Variable | What it does |
+| --- | --- |
+| `VITE_API_URL` | The API (`https://api.studafy.com`; staging's own on staging) |
+| `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` | The Supabase project the app signs in to (the publishable key only; it grants nothing). Without them the sign-in page says sign-in isn't available |
+| `VITE_PORTAL_PROVIDERS` | Which sign-in buttons show: `apple,google,azure` (default `google,azure`). Add `apple` only once its Services ID is set up (plan 7.6) |
+| `VITE_TURNSTILE_SITE_KEY` | The bot check on creating a school and asking for a teacher. Set it exactly when the API has `TURNSTILE_ENABLED` |
+
+At the portal's release (plan 11.2), also:
+
+1. Supabase → Authentication → URL Configuration → Redirect URLs: add
+   `https://school.studafy.com/auth/callback` (and staging's).
+2. The API: `SCHOOL_PORTAL_ENABLED = "true"`, and
+   `SCHOOL_PORTAL_ORIGINS = "https://school.studafy.com"` (comma-separated,
+   staging's too where it has one). Those origins may call only the
+   portal's routes, `GET /v1/me` and the file delivery route.
+3. Turnstile: add `school.studafy.com` to the widget's hostnames and to the
+   API's `TURNSTILE_HOSTNAMES`.
+4. Vercel: add `school.studafy.com` to `studafy-web` → Settings → Domains.
+5. Build the site with `VITE_PORTAL_PUBLIC=true` so `/schools` and its links
+   appear.
