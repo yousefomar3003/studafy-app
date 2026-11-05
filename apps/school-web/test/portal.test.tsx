@@ -30,6 +30,7 @@ import { TeachersView } from "../src/portal/pages/Teachers";
 import { AnswersView, HandInsView } from "../src/portal/pages/Work";
 import { StudentView, TeacherView } from "../src/portal/pages/People";
 import { ReportsView } from "../src/portal/pages/Reports";
+import { SentList } from "../src/portal/pages/Announcements";
 import { csvCell, fileName, toCsv } from "../src/portal/export";
 import {
   attendanceRows,
@@ -65,6 +66,7 @@ describe("addresses", () => {
     { name: "classes", org: ORG },
     { name: "settings", org: ORG },
     { name: "reports", org: ORG },
+    { name: "announcements", org: ORG },
     { name: "student", org: ORG, student: STUDENT },
     { name: "teacher", org: ORG, teacher: STUDENT },
     ...CLASS_TABS.map((tab) =>
@@ -373,6 +375,37 @@ describe("screens", () => {
     expect(html).toContain(portalEn.reports.asTable);
     expect(render(<ReportsView org={ORG} data={{ weeks, classes: [] }} />))
       .toContain(portalEn.classes.empty);
+  });
+
+  test("announcements sent: who they were for, when, how many they reached", () => {
+    expect(render(<SentList data={{ announcements: [] }} />)).toContain(
+      portalEn.announcements.empty,
+    );
+    const html = render(
+      <SentList
+        data={{
+          announcements: [{
+            id: ITEM,
+            title: "Sports day",
+            body: "<b>Friday</b>",
+            audience: "students_and_parents",
+            classroomIds: null,
+            createdAt: "2026-11-03T08:00:00Z",
+            removed: true,
+            school: "Cedar Grove",
+            author: "Huda Saleh",
+            recipients: 14,
+          }],
+        }}
+      />,
+    );
+    expect(html).toContain("Sports day");
+    expect(html).toContain(
+      portalEn.announcements.audiences.students_and_parents,
+    );
+    expect(html).toContain("14");
+    expect(html).toContain(portalEn.announcements.removed);
+    expect(html).not.toContain("<b>Friday</b>");
   });
 
   test("teachers: empty, and Unlink only for a linked teacher", () => {

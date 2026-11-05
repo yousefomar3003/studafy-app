@@ -219,7 +219,7 @@ h3 {
   }
 
   .side-nav {
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, 1fr);
   }
 
   .side-nav a {
@@ -435,7 +435,7 @@ label.check {
   font-weight: 500;
 }
 
-input:not([type="checkbox"]),
+input:not([type="checkbox"]):not([type="radio"]),
 select {
   width: 100%;
   min-height: 44px;
@@ -950,4 +950,53 @@ td.totals {
     color: inherit;
     text-decoration: none;
   }
+}
+
+/* Announcements */
+
+textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #c9d6e2;
+  font: inherit;
+  color: var(--ink);
+  resize: vertical;
+}
+
+textarea:focus {
+  outline: 3px solid var(--sky);
+  outline-offset: 1px;
+}
+
+.choices {
+  display: grid;
+  gap: 8px;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.choices legend {
+  font-weight: 600;
+  margin-block-end: 6px;
+}
+
+.class-picks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 6px 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--canvas);
+  border: 1px solid var(--hairline);
+}
+
+.sent {
+  padding-block: 12px;
+  border-block-end: 1px solid var(--hairline);
+}
+
+.sent:last-child {
+  border-block-end: 0;
 }

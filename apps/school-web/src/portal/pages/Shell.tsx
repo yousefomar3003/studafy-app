@@ -4,7 +4,13 @@ import { signOut } from "../auth";
 import { useCopy } from "../i18n";
 import { hrefFor, navigate, type Route } from "../router";
 
-type Section = "dashboard" | "teachers" | "classes" | "reports" | "settings";
+type Section =
+  | "dashboard"
+  | "teachers"
+  | "classes"
+  | "reports"
+  | "announcements"
+  | "settings";
 
 /** Side menu on a computer, bottom menu on a phone (plan 5). */
 export function Shell({ org, orgs, section, onLanguage, children }: {
@@ -35,6 +41,11 @@ export function Shell({ org, orgs, section, onLanguage, children }: {
       key: "reports",
       route: { name: "reports", org: org.id },
       icon: "M4 20V4M4 20h16M8 16v-4M12 16V8M16 16v-6",
+    },
+    {
+      key: "announcements",
+      route: { name: "announcements", org: org.id },
+      icon: "M4 10v4h3l5 4V6L7 10zm12-2a5 5 0 0 1 0 8",
     },
     {
       key: "settings",

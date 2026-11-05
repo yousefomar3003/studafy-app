@@ -101,6 +101,7 @@ const org = {
 export function demoAnswer(method: string, path: string): unknown {
   if (method === "POST") {
     if (path.endsWith("/exports")) return { recorded: true };
+    if (path.endsWith("/announcements")) return { id: ORG, recipients: 14 };
     if (path.endsWith("/download-intent")) {
       return { downloadUrl: "demo:", displayName: FILE.name };
     }
@@ -121,6 +122,23 @@ export function demoAnswer(method: string, path: string): unknown {
           email: "khaled@cedar.example",
         },
         requestedAt: "2026-11-04T09:00:00Z",
+      }],
+    };
+  }
+  if (path.endsWith("/announcements")) {
+    return {
+      announcements: [{
+        id: "d0000000-0000-4000-8000-000000001201",
+        title: "Sports day on Friday",
+        body:
+          "Students should wear sports clothes and bring water. Parents are welcome from 11.",
+        audience: "students_and_parents",
+        classroomIds: null,
+        createdAt: "2026-11-03T08:00:00Z",
+        removed: false,
+        school: "Cedar Grove School",
+        author: "Huda Saleh",
+        recipients: 14,
       }],
     };
   }

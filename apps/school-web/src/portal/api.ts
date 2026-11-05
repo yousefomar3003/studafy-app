@@ -31,6 +31,10 @@ export type Overview = Of<typeof C.V1SchoolPortalOverview>;
 export type StudentPage = Of<typeof C.V1SchoolPortalStudent>;
 export type TeacherPage = Of<typeof C.V1SchoolPortalTeacher>;
 export type Reports = Of<typeof C.V1SchoolPortalReports>;
+export type Announcements = Of<typeof C.V1SchoolPortalAnnouncements>;
+export type AnnouncementRequest = Of<
+  typeof C.V1SendSchoolPortalAnnouncementRequest
+>;
 export type CreateOrgRequest = Of<typeof C.V1CreateSchoolPortalOrgRequest>;
 export type PortalFile = Lessons["materials"][number]["files"][number];
 
@@ -96,6 +100,14 @@ export const api = {
   overview: (orgId: string) =>
     request<Overview>("GET", `${org(orgId)}/overview`),
   reports: (orgId: string) => request<Reports>("GET", `${org(orgId)}/reports`),
+  announcements: (orgId: string) =>
+    request<Announcements>("GET", `${org(orgId)}/announcements`),
+  sendAnnouncement: (orgId: string, body: AnnouncementRequest) =>
+    request<{ id: string; recipients: number }>(
+      "POST",
+      `${org(orgId)}/announcements`,
+      body,
+    ),
   recordExport: (
     orgId: string,
     body: { kind: string; format: "csv" | "pdf"; classroomId?: string },
