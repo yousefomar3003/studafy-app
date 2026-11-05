@@ -16,10 +16,12 @@ import 'app/profile_setup_gate.dart';
 import 'app/session_scope.dart';
 import 'app/studafy_theme.dart';
 import 'app/student_shell.dart';
+import 'app/synthetic_banner.dart';
 import 'app/teacher_shell.dart';
 import 'core/ai_output_report.dart';
 import 'core/app_routes.dart';
 import 'core/crash_reports.dart';
+import 'core/keyboard_dismissal.dart';
 import 'core/locale_controller.dart';
 import 'core/runtime_environment.dart';
 import 'core/studafy_design.dart';
@@ -173,32 +175,11 @@ class StudafyApp extends StatelessWidget {
         navigatorKey: _navigatorKey,
         routes: routes,
         builder: (context, child) {
-          Widget content = BrandPrecache(child: child);
+          Widget content = BrandPrecache(
+            child: KeyboardDismissal(child: child),
+          );
           if (runtimePolicy.isSynthetic) {
-            content = Column(
-              children: [
-                Material(
-                  color: const Color(0xFFFFE0A3),
-                  child: SafeArea(
-                    bottom: false,
-                    child: SizedBox(
-                      height: 30,
-                      child: Center(
-                        child: Text(
-                          AppL10n.of(context).syntheticBanner,
-                          style: Theme.of(context).textTheme.labelSmall
-                              ?.copyWith(
-                                color: const Color(0xFF5E3B00),
-                                fontWeight: FontWeight.w900,
-                              ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                Expanded(child: content),
-              ],
-            );
+            content = SyntheticBanner(child: content);
           }
           if (deps == null) return content;
           final deviceAccounts = deps.deviceAccounts;
