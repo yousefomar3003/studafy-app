@@ -44,7 +44,9 @@ type QueryOperation =
   | "overview"
   | "student"
   | "teacher"
-  | "reports";
+  | "reports"
+  | "announcements"
+  | "myAnnouncements";
 type CommandOperation =
   | "createOrg"
   | "updateOrg"
@@ -57,7 +59,8 @@ type CommandOperation =
   | "decideLink"
   | "endLink"
   | "reportOrg"
-  | "recordExport";
+  | "recordExport"
+  | "sendAnnouncement";
 
 /**
  * Studafy School Portal (api062, docs/planning/school-portal.md). Every call
@@ -208,6 +211,7 @@ export function createSchoolPortalRoutes(
   routes.use("/v1/school-portal/*", switchedOn);
   routes.use("/v1/me/school-links", switchedOn);
   routes.use("/v1/me/school-links/*", switchedOn);
+  routes.use("/v1/me/school-announcements", switchedOn);
   if (deps.turnstile) {
     const challenge = requireStudentLookupChallenge(deps.turnstile);
     routes.post("/v1/school-portal/orgs", challenge);
@@ -283,7 +287,10 @@ export function createSchoolPortalRoutes(
     operationId: Parameters<typeof v1Route>[0],
     path: string,
     operation: QueryOperation,
-    permission: "school_portal.read" | "school_link.read",
+    permission:
+      | "school_portal.read"
+      | "school_link.read"
+      | "school_announcement.read",
     id?: string,
   ) {
     const route = v1Route(operationId);
@@ -542,6 +549,26 @@ export function createSchoolPortalRoutes(
     "recordExport",
     "school_portal.read",
     "orgId",
+  );
+  get(
+    "listSchoolPortalAnnouncements",
+    `${ORG}/announcements`,
+    "announcements",
+    read_,
+    "orgId",
+  );
+  post(
+    "sendSchoolPortalAnnouncement",
+    `${ORG}/announcements`,
+    "sendAnnouncement",
+    manage,
+    "orgId",
+  );
+  get(
+    "listMySchoolAnnouncements",
+    "/v1/me/school-announcements",
+    "myAnnouncements",
+    "school_announcement.read",
   );
 
   return routes;

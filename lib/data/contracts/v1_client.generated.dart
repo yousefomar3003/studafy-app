@@ -3476,6 +3476,36 @@ class V1ApiClient {
       requiresIdempotency: true,
     ),
   );
+
+  Future<V1SchoolPortalAnnouncementsDto> listSchoolPortalAnnouncements({
+    required String orgId,
+  }) async => V1SchoolPortalAnnouncementsDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/school-portal/orgs/{orgId}/announcements', {
+        'orgId': orgId,
+      }, {}),
+    ),
+  );
+
+  Future<V1SendSchoolPortalAnnouncementResultDto> sendSchoolPortalAnnouncement(
+    V1SendSchoolPortalAnnouncementRequestDto request, {
+    required String orgId,
+    String? idempotencyKey,
+  }) async => V1SendSchoolPortalAnnouncementResultDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/school-portal/orgs/{orgId}/announcements', {
+        'orgId': orgId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1MySchoolAnnouncementsDto> listMySchoolAnnouncements() async =>
+      V1MySchoolAnnouncementsDto.fromJson(
+        await _transport.get(_v1Path('/v1/me/school-announcements', {}, {})),
+      );
 }
 
 String _v1Path(
@@ -10991,6 +11021,24 @@ class V1MyNotebooksDto {
   Map<String, Object?> toJson() => {'classes': classes};
 }
 
+class V1MySchoolAnnouncementsDto {
+  const V1MySchoolAnnouncementsDto({required this.announcements});
+
+  factory V1MySchoolAnnouncementsDto.fromJson(Map<String, dynamic> json) =>
+      V1MySchoolAnnouncementsDto(
+        announcements: [
+          for (final item in json['announcements'] as List<dynamic>)
+            V1SchoolAnnouncementDto.fromJson(item as Map<String, dynamic>),
+        ],
+      );
+
+  final List<V1SchoolAnnouncementDto> announcements;
+
+  Map<String, Object?> toJson() => {
+    'announcements': [for (final item in announcements) item.toJson()],
+  };
+}
+
 class V1MySchoolLinksDto {
   const V1MySchoolLinksDto({required this.links});
 
@@ -13452,6 +13500,57 @@ class V1SchoolAdminDto {
   };
 }
 
+class V1SchoolAnnouncementDto {
+  const V1SchoolAnnouncementDto({
+    required this.id,
+    required this.title,
+    required this.body,
+    required this.audience,
+    required this.classroomIds,
+    required this.createdAt,
+    required this.removed,
+    required this.school,
+    required this.author,
+  });
+
+  factory V1SchoolAnnouncementDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolAnnouncementDto(
+        id: json['id'] as String,
+        title: json['title'] as String,
+        body: json['body'] as String,
+        audience: json['audience'] as String,
+        classroomIds: json['classroomIds'] == null
+            ? null
+            : (json['classroomIds'] as List<dynamic>).cast<String>(),
+        createdAt: json['createdAt'] as String,
+        removed: json['removed'] as bool,
+        school: json['school'] as String,
+        author: json['author'] as String?,
+      );
+
+  final String id;
+  final String title;
+  final String body;
+  final String audience;
+  final List<String>? classroomIds;
+  final String createdAt;
+  final bool removed;
+  final String school;
+  final String? author;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'title': title,
+    'body': body,
+    'audience': audience,
+    'classroomIds': classroomIds,
+    'createdAt': createdAt,
+    'removed': removed,
+    'school': school,
+    'author': author,
+  };
+}
+
 class V1SchoolIdQueryDto {
   const V1SchoolIdQueryDto({required this.schoolId});
 
@@ -13515,6 +13614,20 @@ class V1SchoolPortalAdminDto {
     'jobTitle': jobTitle,
     'addedAt': addedAt,
   };
+}
+
+class V1SchoolPortalAnnouncementsDto {
+  const V1SchoolPortalAnnouncementsDto({required this.announcements});
+
+  factory V1SchoolPortalAnnouncementsDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalAnnouncementsDto(
+        announcements: (json['announcements'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+      );
+
+  final List<Map<String, dynamic>> announcements;
+
+  Map<String, Object?> toJson() => {'announcements': announcements};
 }
 
 class V1SchoolPortalAssignmentsDto {
@@ -14312,6 +14425,57 @@ class V1SendMessageRequestDto {
     'body': body,
     'attachmentFileIds': ?attachmentFileIds,
   };
+}
+
+class V1SendSchoolPortalAnnouncementRequestDto {
+  const V1SendSchoolPortalAnnouncementRequestDto({
+    required this.title,
+    required this.body,
+    required this.audience,
+    this.classroomIds,
+  });
+
+  factory V1SendSchoolPortalAnnouncementRequestDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1SendSchoolPortalAnnouncementRequestDto(
+    title: json['title'] as String,
+    body: json['body'] as String,
+    audience: json['audience'] as String,
+    classroomIds: json['classroomIds'] == null
+        ? null
+        : (json['classroomIds'] as List<dynamic>).cast<String>(),
+  );
+
+  final String title;
+  final String body;
+  final String audience;
+  final List<String>? classroomIds;
+
+  Map<String, Object?> toJson() => {
+    'title': title,
+    'body': body,
+    'audience': audience,
+    'classroomIds': ?classroomIds,
+  };
+}
+
+class V1SendSchoolPortalAnnouncementResultDto {
+  const V1SendSchoolPortalAnnouncementResultDto({
+    required this.id,
+    required this.recipients,
+  });
+
+  factory V1SendSchoolPortalAnnouncementResultDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1SendSchoolPortalAnnouncementResultDto(
+    id: json['id'] as String,
+    recipients: json['recipients'] as int,
+  );
+
+  final String id;
+  final int recipients;
+
+  Map<String, Object?> toJson() => {'id': id, 'recipients': recipients};
 }
 
 class V1SetSelfPurchaseRequestDto {

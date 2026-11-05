@@ -772,6 +772,14 @@ export const PERMISSION_CATALOGUE = {
     description:
       "Create or run a school page one administers, and ask teachers to link.",
   },
+  "school_announcement.read": {
+    resource: "school_announcement",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Read the school announcements that reach oneself as a student, parent or teacher.",
+  },
   "school_link.read": {
     resource: "school_link",
     scope: "self",

@@ -11,7 +11,7 @@ begin;
 \unset auth031_fixture_only
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(94);
+select plan(102);
 select set_config('studafy.request_id', 'school-portal-test', true);
 
 \set admin1 'f0000000-0000-4000-8000-000000000001'
@@ -345,6 +345,33 @@ select is((select count(*)::int from private.school_portal_views where admin_id 
 select is(pg_temp.cmd(:'admin1', 'recordExport', current_setting('test.org')::uuid,
   jsonb_build_object('kind', 'marks', 'format', 'csv', 'classroomId', gen_random_uuid()))->>'outcome',
   'not_found', 'a class the school cannot see cannot be exported');
+
+-- 6d. Announcements from the school.
+select is(pg_temp.cmd(:'admin1', 'sendAnnouncement', current_setting('test.org')::uuid,
+  '{"title":"Sports day","body":"Friday from 9.","audience":"students_and_parents"}')->>'status',
+  '201', 'an administrator sends an announcement to every linked class');
+select set_config('test.ann', (select id::text from private.school_portal_announcements
+  where title = 'Sports day'), true);
+select ok((select bool_and(u = any(array(select r.user_id from private.school_portal_announcement_recipients(
+    current_setting('test.ann')::uuid) r))) from unnest(array[:'student_user'::uuid, :'guardian_user'::uuid]) u),
+  'it reaches the class''s students and their parents');
+select ok(not exists (select 1 from private.school_portal_announcement_recipients(
+    current_setting('test.ann')::uuid) r where r.user_id = :'teacher_user'),
+  'and not the teacher, for whom it was not meant');
+select is((select count(*)::int from public.notification_outbox
+  where template_key = 'school_portal.announcement' and source_event_id = current_setting('test.ann')), 1,
+  'one notice for the teacher''s workspace it reaches');
+select is(pg_temp.q(:'student_user', 'myAnnouncements', null)->'announcements'->0->>'title', 'Sports day',
+  'the student reads it in the app');
+select is(pg_temp.cmd(:'admin1', 'sendAnnouncement', current_setting('test.org')::uuid,
+  jsonb_build_object('title', 'x', 'body', 'y', 'audience', 'teachers',
+    'classroomIds', jsonb_build_array(gen_random_uuid())))->>'outcome',
+  'not_found', 'a class the school cannot see cannot be chosen');
+insert into public.platform_operators (user_id) values (:'stranger');
+select is(pg_temp.cmd(:'stranger', 'removeAnnouncement', current_setting('test.ann')::uuid, '{}')
+  ->'response'->>'removed', 'true', 'Studafy can remove an announcement after a report');
+select is(jsonb_array_length(pg_temp.q(:'student_user', 'myAnnouncements', null)->'announcements'), 0,
+  'and it disappears for everyone');
 
 -- 6c. A student's page and a teacher's page.
 select is(pg_temp.q(:'admin1', 'student', :'student_id', current_setting('test.org')::uuid)

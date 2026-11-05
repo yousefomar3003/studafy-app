@@ -597,6 +597,15 @@ begin
       join private.school_portal_orgs o on o.id = i.org_id and o.status = 'active'
       where i.email = lower((select u.email from auth.users u where u.id = auth.uid()))
         and i.accepted_at is null and i.revoked_at is null and i.expires_at > now()), '[]'::jsonb));
+  elsif p_operation = 'myAnnouncements' then
+    -- What reaches the caller now, from any school, over the last year.
+    return jsonb_build_object('outcome', 'ok', 'announcements', coalesce((
+      select jsonb_agg(private.school_portal_announcement_json(a.id) order by a.created_at desc)
+      from private.school_portal_announcements a
+      join private.school_portal_orgs o on o.id = a.org_id and o.status = 'active'
+      where a.removed_at is null and a.created_at > now() - interval '12 months'
+        and exists (select 1 from private.school_portal_announcement_recipients(a.id) r
+          where r.user_id = auth.uid())), '[]'::jsonb));
   elsif p_operation = 'orgs' then
     return jsonb_build_object('outcome', 'ok', 'orgs', coalesce((
       select jsonb_agg(jsonb_build_object(
@@ -619,7 +628,8 @@ begin
   end if;
 
   -- Everything else is an administrator reading their org.
-  v_org := case when p_operation in ('dashboard', 'teachers', 'classes', 'overview', 'reports')
+  v_org := case when p_operation in ('dashboard', 'teachers', 'classes', 'overview', 'reports',
+      'announcements')
     then p_resource_id else nullif(p_input->>'orgId', '')::uuid end;
   if v_org is null or not private.school_portal_admin_ok(v_org) then
     return jsonb_build_object('outcome', 'not_found');
@@ -657,6 +667,15 @@ begin
             else 0 end)
           order by l.requested_at desc)
         from private.school_portal_teacher_links l where l.org_id = v_org), '[]'::jsonb));
+
+    when 'announcements' then
+      return jsonb_build_object('outcome', 'ok', 'announcements', coalesce((
+        select jsonb_agg(private.school_portal_announcement_json(a.id)
+          || jsonb_build_object('recipients', (select count(*)
+            from private.school_portal_announcement_recipients(a.id)))
+          order by a.created_at desc)
+        from (select * from private.school_portal_announcements
+              where org_id = v_org order by created_at desc limit 200) a), '[]'::jsonb));
 
     when 'reports' then
       perform private.school_portal_log(v_org, 'reports');
@@ -1199,6 +1218,49 @@ begin
       set status = 'unlinked', ended_at = now(), ended_by = me where id = v_link.id;
       response := jsonb_build_object('linkId', v_link.id, 'status', 'unlinked');
 
+    when 'sendAnnouncement' then
+      if not private.school_portal_admin_ok(p_resource_id) then
+        return jsonb_build_object('outcome', 'not_found');
+      end if;
+      if (select count(*) from private.school_portal_announcements a
+          where a.org_id = p_resource_id and a.created_at > now() - interval '1 day') >= 20 then
+        return jsonb_build_object('outcome', 'rate_limited');
+      end if;
+      -- Chosen classes must all be linked now.
+      if jsonb_typeof(body->'classroomIds') = 'array' and exists (
+          select 1 from jsonb_array_elements_text(body->'classroomIds') x(id)
+          where not private.school_portal_class_visible(p_resource_id, x.id::uuid)) then
+        return jsonb_build_object('outcome', 'not_found');
+      end if;
+      insert into private.school_portal_announcements(org_id, author_id, title, body,
+        audience, classroom_ids)
+      values (p_resource_id, me, btrim(body->>'title'), btrim(body->>'body'), body->>'audience',
+        case when jsonb_typeof(body->'classroomIds') = 'array' then
+          array(select x::uuid from jsonb_array_elements_text(body->'classroomIds') x) end)
+      returning id into v_id;
+      -- One notice per teacher's workspace it reaches; the outbox resolves
+      -- each to that workspace's recipients.
+      insert into public.notification_outbox(school_id, source_event_id, idempotency_key,
+        channel, template_key, audience, payload)
+      select distinct r.school_id, v_id::text,
+        'school_portal.announcement:' || v_id || ':' || r.school_id, 'in_app',
+        'school_portal.announcement', jsonb_build_object('announcementId', v_id),
+        jsonb_build_object('id', v_id)
+      from private.school_portal_announcement_recipients(v_id) r;
+      v_status := 201;
+      response := jsonb_build_object('id', v_id, 'recipients',
+        (select count(*) from private.school_portal_announcement_recipients(v_id)));
+
+    when 'removeAnnouncement' then
+      -- The operator's, after a report: it disappears for everyone.
+      if not private.is_platform_operator() then
+        return jsonb_build_object('outcome', 'forbidden');
+      end if;
+      update private.school_portal_announcements set removed_at = now(), removed_by = me
+      where id = p_resource_id and removed_at is null;
+      if not found then return jsonb_build_object('outcome', 'not_found'); end if;
+      response := jsonb_build_object('id', p_resource_id, 'removed', true);
+
     when 'recordExport' then
       -- Every export is recorded before the website builds the file.
       if not private.school_portal_admin_ok(p_resource_id) then
@@ -1332,9 +1394,87 @@ begin
     select id from private.school_portal_lookups where at < now() - interval '12 months'
     order by at limit p_limit);
   get diagnostics v_lookups = row_count;
+  -- Announcements are kept a year (TODO(legal): confirm the period).
+  delete from private.school_portal_announcements where id in (
+    select id from private.school_portal_announcements
+    where created_at < now() - interval '12 months' order by created_at limit p_limit);
   return jsonb_build_object('school_portal_expired', v_expired,
     'school_portal_views', v_views, 'school_portal_lookups', v_lookups);
 end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 11. Announcements from the school (plan 13a.6). To the students of all
+--     linked classes or chosen ones, their parents, both, or the linked
+--     teachers; never to one student. Recipients are worked out from the
+--     classes linked at the moment of reading, so an unlink ends the reach.
+--     The push names nothing; the words are read in the app after sign-in.
+-- ---------------------------------------------------------------------------
+
+create table private.school_portal_announcements (
+  id uuid primary key default gen_random_uuid(),
+  org_id uuid not null references private.school_portal_orgs(id) on delete cascade,
+  author_id uuid references public.profiles(id) on delete set null,
+  title text not null check (char_length(btrim(title)) between 1 and 120),
+  body text not null check (char_length(btrim(body)) between 1 and 4000),
+  audience text not null check (audience in
+    ('students', 'parents', 'students_and_parents', 'teachers')),
+  -- Null: every linked class.
+  classroom_ids uuid[] check (classroom_ids is null or cardinality(classroom_ids) between 1 and 500),
+  created_at timestamptz not null default now(),
+  removed_at timestamptz,
+  removed_by uuid references public.profiles(id) on delete set null
+);
+create index school_portal_announcements_org_idx
+  on private.school_portal_announcements (org_id, created_at desc);
+alter table private.school_portal_announcements enable row level security;
+alter table private.school_portal_announcements force row level security;
+revoke all on private.school_portal_announcements from public, anon, authenticated,
+  service_role, studafy_api_runtime, studafy_worker_runtime;
+
+-- Who an announcement reaches now, and in which teacher's workspace.
+create or replace function private.school_portal_announcement_recipients(p_announcement uuid)
+returns table (user_id uuid, school_id uuid)
+language sql stable security definer set search_path = '' as $$
+  with a as (
+    select * from private.school_portal_announcements
+    where id = p_announcement and removed_at is null),
+  cls as (
+    select c.id, c.school_id from public.classrooms c, a
+    where c.id in (select id from private.school_portal_visible_classes(a.org_id) v(id))
+      and (a.classroom_ids is null or c.id = any(a.classroom_ids))),
+  kids as (
+    select s.id as student_id, s.user_id, cls.school_id
+    from public.enrollments e
+    join cls on cls.id = e.classroom_id
+    join public.students s on s.id = e.student_id and s.deleted_at is null
+    where e.status = 'active')
+  select distinct x.user_id, x.school_id from (
+    select k.user_id, k.school_id from kids k, a
+    where a.audience in ('students', 'students_and_parents') and k.user_id is not null
+    union all
+    select gl.guardian_id, k.school_id from kids k
+    join public.guardian_links gl on gl.student_id = k.student_id
+      and gl.status = 'verified' and (gl.expires_at is null or gl.expires_at > now()), a
+    where a.audience in ('parents', 'students_and_parents')
+    union all
+    select cs.user_id, cls.school_id from cls
+    join public.classroom_staff cs on cs.classroom_id = cls.id and cs.status = 'active'
+      and cs.role in ('lead_teacher', 'co_teacher'), a
+    where a.audience = 'teachers') x
+  join public.profiles p on p.id = x.user_id and p.status = 'active';
+$$;
+
+create or replace function private.school_portal_announcement_json(p_id uuid)
+returns jsonb language sql stable security definer set search_path = '' as $$
+  select jsonb_build_object('id', a.id, 'title', a.title, 'body', a.body,
+    'audience', a.audience, 'classroomIds', to_jsonb(a.classroom_ids),
+    'createdAt', a.created_at, 'removed', a.removed_at is not null,
+    'school', o.name, 'author', (select p.display_name from public.profiles p
+      where p.id = a.author_id))
+  from private.school_portal_announcements a
+  join private.school_portal_orgs o on o.id = a.org_id
+  where a.id = p_id;
 $$;
 
 -- ---------------------------------------------------------------------------
@@ -1660,6 +1800,12 @@ returns jsonb language sql stable security definer set search_path = '' as $$
           from private.school_portal_admins a
           join private.school_portal_orgs o on o.id = a.org_id
           where a.user_id = p_user), '[]'::jsonb),
+        'announcements', coalesce((select jsonb_agg(jsonb_build_object(
+            'school', o.name, 'title', a.title, 'body', a.body, 'audience', a.audience,
+            'sentAt', a.created_at) order by a.created_at)
+          from private.school_portal_announcements a
+          join private.school_portal_orgs o on o.id = a.org_id
+          where a.author_id = p_user), '[]'::jsonb),
         'activity', coalesce((select jsonb_agg(jsonb_build_object(
             'view', v.view, 'classroomId', v.classroom_id, 'studentId', v.student_id,
             'fileId', v.file_id, 'itemId', v.item_id, 'exportKind', v.export_kind,
@@ -1964,6 +2110,12 @@ begin
   -- Studafy School Portal: a school asked a teacher to link. Only the
   -- teacher named on the request, and only while it still waits; never a
   -- student, a parent or anyone at the teacher's school.
+  if p_template = 'school_portal.announcement' then
+    return (
+      select coalesce(array_agg(r.user_id), array[]::uuid[])
+      from private.school_portal_announcement_recipients(v_source) r
+      where r.school_id = p_school);
+  end if;
   if p_template = 'school_portal.link_requested' then
     return (
       select coalesce(array_agg(l.teacher_id), array[]::uuid[])
@@ -2214,3 +2366,16 @@ grant execute on function private.school_portal_alerts_claim(integer, integer),
   private.school_portal_alerts_finish(uuid, boolean, text),
   private.school_portal_alerts_backlog()
   to studafy_worker_runtime;
+
+do $grants$
+declare fn text;
+begin
+  foreach fn in array array[
+    'private.school_portal_announcement_recipients(uuid)',
+    'private.school_portal_announcement_json(uuid)'
+  ] loop
+    execute format('alter function %s owner to postgres', fn);
+    execute format('revoke all on function %s from public, anon, authenticated, service_role, studafy_api_runtime, studafy_worker_runtime', fn);
+  end loop;
+end
+$grants$;

@@ -567,3 +567,47 @@ export const V1RecordSchoolPortalExportRequest = z.strictObject({
 export const V1RecordSchoolPortalExportResult = z.object({
   recorded: z.literal(true),
 });
+
+/** Who a school's announcement is for (plan 13a.6); never one student. */
+export const V1SchoolAnnouncementAudience = z.enum([
+  "students",
+  "parents",
+  "students_and_parents",
+  "teachers",
+]);
+
+export const V1SchoolAnnouncement = z.object({
+  id: Id,
+  title: z.string(),
+  body: z.string(),
+  audience: V1SchoolAnnouncementAudience,
+  /** Null: every linked class. */
+  classroomIds: z.array(Id).nullable(),
+  createdAt: Timestamp,
+  removed: z.boolean(),
+  school: z.string(),
+  author: z.string().nullable(),
+});
+
+export const V1SchoolPortalAnnouncements = z.object({
+  announcements: z.array(V1SchoolAnnouncement.extend({
+    recipients: z.number().int().nonnegative(),
+  })).max(200),
+});
+
+export const V1SendSchoolPortalAnnouncementRequest = z.strictObject({
+  title: z.string().trim().min(1).max(120),
+  body: z.string().trim().min(1).max(4000),
+  audience: V1SchoolAnnouncementAudience,
+  /** Omitted: every linked class. */
+  classroomIds: z.array(Id).min(1).max(500).optional(),
+});
+export const V1SendSchoolPortalAnnouncementResult = z.object({
+  id: Id,
+  recipients: z.number().int().nonnegative(),
+});
+
+/** Announcements that reach the signed-in person, from any school. */
+export const V1MySchoolAnnouncements = z.object({
+  announcements: z.array(V1SchoolAnnouncement).max(500),
+});
