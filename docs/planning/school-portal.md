@@ -1340,6 +1340,50 @@ branch until the gate.
 
 ---
 
+## 13a. Version 1 additions (owner, 2026-11-05)
+
+After clicking through the portal, the owner found version 1 too thin and
+chose to add, before release:
+
+**A. Read-only, from data the portal already shows (no privacy change):**
+
+1. **Overview and "needs attention"** (dashboard): per class, attendance
+   rate over the last 30 days, average mark (score ÷ maximum, all marks the
+   school can see), and work missing (published assignments past due, not
+   handed in, not excused); and a list of students who need attention in
+   any class: attendance under 85 % over 30 days, two or more pieces of
+   missing work, or an average under 50 %, each with its reason.
+2. **A student's page:** one student across every visible class: contact
+   details and parents, attendance and marks per class, missing work,
+   recent marks, wellbeing notes.
+3. **A teacher's page:** a linked teacher's classes with their numbers,
+   their recent lessons, and marking still to do (online answers waiting
+   for a mark, hand-ins without a published mark).
+4. **Reports across classes:** attendance rate by week (last 12 weeks) and
+   average mark and hand-in rate per class, school-wide and per class.
+
+**B. Brought forward from versions 2 and 3 (change what a school can do;
+need the policy and terms updates and the lawyer before release):**
+
+5. **Export to Excel (CSV) and PDF:** class lists, marks, attendance and
+   the reports, downloaded by an administrator. Every export is recorded in
+   the activity record. The school agreement must cover what is done with
+   exported files.
+6. **Announcements from the school:** to all linked classes, chosen
+   classes, their parents, or the linked teachers; through the existing
+   notification outbox with a "school" sender label; teachers see them in
+   their classes. A teacher can report one; the operator can remove it.
+   Never a message to one student.
+7. **One code for many classes:** the school makes a **group** of linked
+   teachers' classes (for example "Grade 7 – Section A"); each teacher
+   approves their class joining a group; a student enters the group's code
+   once and joins every class in it through the existing class-join rules
+   (each teacher can still remove a student).
+
+**Build order:** 1 → 2 → 3 → 4 (read-only, one migration each step on this
+branch), then 5, 6, 7, each with its own tests, CI and a line in the
+release gate's legal list.
+
 ## 14. Owner decisions and open questions
 
 ### Decided (2026-11-05)
