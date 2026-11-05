@@ -85,6 +85,22 @@ export const portalAr: PortalCopy = {
     cancelRequest: "إلغاء الطلب",
     status: { active: "نشطة", suspended: "موقوفة", closed: "مغلقة" },
   },
+  overview: {
+    title: "الصفوف في لمحة",
+    classEmpty: "تظهر الصفوف هنا حين يرتبط معلم بمدرستك.",
+    attendance: "الحضور (30 يومًا)",
+    average: "متوسط الدرجات",
+    missing: "أعمال ناقصة",
+    attentionTitle: "بحاجة إلى متابعة",
+    attentionText:
+      "الطلاب الذين يقل حضورهم عن 85% في آخر 30 يومًا، أو لديهم عملان ناقصان أو أكثر، أو يقل متوسطهم عن 50%.",
+    attentionEmpty: "لا يوجد طالب بحاجة إلى متابعة الآن.",
+    reasons: {
+      attendance: "حضور منخفض",
+      missing_work: "أعمال ناقصة",
+      low_marks: "درجات منخفضة",
+    },
+  },
   teachers: {
     title: "المعلمون",
     empty:

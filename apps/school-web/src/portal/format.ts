@@ -48,6 +48,18 @@ export function formatNumber(
     .format(value);
 }
 
+/** A 0–1 rate as a whole percentage. */
+export function formatPercent(
+  value: number | null | undefined,
+  lang: string,
+): string {
+  if (value === null || value === undefined || Number.isNaN(value)) return "—";
+  return new Intl.NumberFormat(locale(lang), {
+    style: "percent",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
 /** "n of m", for hand-ins and tests. */
 export function ofTotal(part: number, total: number, lang: string): string {
   return `${formatNumber(part, lang)} / ${formatNumber(total, lang)}`;

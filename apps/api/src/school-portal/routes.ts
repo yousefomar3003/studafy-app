@@ -40,7 +40,8 @@ type QueryOperation =
   | "testAnswers"
   | "marks"
   | "attendance"
-  | "wellbeing";
+  | "wellbeing"
+  | "overview";
 type CommandOperation =
   | "createOrg"
   | "updateOrg"
@@ -510,6 +511,9 @@ export function createSchoolPortalRoutes(
       return committedJson(c, parsed.data);
     },
   );
+
+  // Version 1 additions (plan 13a), after the file route in the catalogue.
+  get("getSchoolPortalOverview", `${ORG}/overview`, "overview", read_, "orgId");
 
   return routes;
 }

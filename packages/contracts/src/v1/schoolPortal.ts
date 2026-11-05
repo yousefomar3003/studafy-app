@@ -426,3 +426,30 @@ export const V1ReportSchoolRequest = z.strictObject({
   details: z.string().trim().max(1000).optional(),
 });
 export const V1ReportSchoolResult = z.object({ reportId: Id });
+
+/** The school at a glance (plan 13a.1). Rates and marks are 0–1. */
+export const V1SchoolPortalAttentionReason = z.enum([
+  "attendance",
+  "missing_work",
+  "low_marks",
+]);
+export const V1SchoolPortalOverview = z.object({
+  classes: z.array(z.object({
+    classroomId: Id,
+    name: z.string(),
+    students: z.number().int().nonnegative(),
+    attendanceRate: z.number().nullable(),
+    averageMark: z.number().nullable(),
+    missing: z.number().int().nonnegative(),
+  })).max(5000),
+  attention: z.array(z.object({
+    studentId: Id,
+    name: z.string(),
+    classroomId: Id,
+    className: z.string(),
+    reasons: z.array(V1SchoolPortalAttentionReason).min(1).max(3),
+    attendanceRate: z.number().nullable(),
+    averageMark: z.number().nullable(),
+    missing: z.number().int().nonnegative(),
+  })).max(20000),
+});

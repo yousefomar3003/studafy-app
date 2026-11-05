@@ -3423,6 +3423,14 @@ class V1ApiClient {
       requiresIdempotency: true,
     ),
   );
+
+  Future<V1SchoolPortalOverviewDto> getSchoolPortalOverview({
+    required String orgId,
+  }) async => V1SchoolPortalOverviewDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/school-portal/orgs/{orgId}/overview', {'orgId': orgId}, {}),
+    ),
+  );
 }
 
 String _v1Path(
@@ -13849,6 +13857,26 @@ class V1SchoolPortalOrgsDto {
   Map<String, Object?> toJson() => {
     'orgs': [for (final item in orgs) item.toJson()],
   };
+}
+
+class V1SchoolPortalOverviewDto {
+  const V1SchoolPortalOverviewDto({
+    required this.classes,
+    required this.attention,
+  });
+
+  factory V1SchoolPortalOverviewDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalOverviewDto(
+        classes: (json['classes'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+        attention: (json['attention'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+      );
+
+  final List<Map<String, dynamic>> classes;
+  final List<Map<String, dynamic>> attention;
+
+  Map<String, Object?> toJson() => {'classes': classes, 'attention': attention};
 }
 
 class V1SchoolPortalPersonDto {

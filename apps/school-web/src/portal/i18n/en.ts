@@ -81,6 +81,22 @@ export const portalEn = {
     cancelRequest: "Cancel request",
     status: { active: "Active", suspended: "Suspended", closed: "Closed" },
   },
+  overview: {
+    title: "Classes at a glance",
+    classEmpty: "Classes appear here once a teacher links with your school.",
+    attendance: "Attendance (30 days)",
+    average: "Average mark",
+    missing: "Missing work",
+    attentionTitle: "Needs attention",
+    attentionText:
+      "Students with attendance under 85% in the last 30 days, two or more pieces of missing work, or an average under 50%.",
+    attentionEmpty: "No student needs attention right now.",
+    reasons: {
+      attendance: "Low attendance",
+      missing_work: "Missing work",
+      low_marks: "Low marks",
+    },
+  },
   teachers: {
     title: "Teachers",
     empty:

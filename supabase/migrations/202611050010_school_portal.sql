@@ -138,7 +138,7 @@ create table private.school_portal_views (
   item_id uuid,
   view text not null check (view in ('dashboard', 'teachers', 'classes', 'roster',
     'lessons', 'file', 'assignments', 'hand_ins', 'tests', 'test_answers', 'marks',
-    'attendance', 'wellbeing')),
+    'attendance', 'wellbeing', 'overview', 'student', 'teacher', 'reports', 'export')),
   at timestamptz not null default now()
 );
 create index school_portal_views_org_idx on private.school_portal_views (org_id, at);
@@ -275,6 +275,97 @@ returns jsonb language sql stable security definer set search_path = '' as $$
   where c.id = p_classroom;
 $$;
 
+-- Per (class, student): attendance over 30 days, average mark and missing
+-- work, for the visible classes of an org. Shared by the overview, the
+-- student's page and the reports.
+create or replace function private.school_portal_student_stats(p_org uuid)
+returns table (classroom_id uuid, student_id uuid, sessions bigint,
+  attended bigint, average numeric, missing bigint)
+language sql stable security definer set search_path = '' as $$
+  with vc as (select id from private.school_portal_visible_classes(p_org) v(id)),
+  enr as (
+    select e.classroom_id, e.student_id from public.enrollments e
+    join public.students s on s.id = e.student_id and s.deleted_at is null
+    where e.status = 'active' and e.classroom_id in (select id from vc)),
+  att as (
+    select ls.classroom_id, ar.student_id, count(*) as sessions,
+      count(*) filter (where ar.state in ('present', 'late')) as attended
+    from public.lesson_sessions ls
+    join public.attendance_records ar on ar.session_id = ls.id
+    where ls.classroom_id in (select id from vc)
+      and ls.starts_at > now() - interval '30 days'
+    group by 1, 2),
+  mk as (
+    select t.classroom_id, g.student_id,
+      avg(g.score / nullif(t.maximum_score, 0)) as average
+    from public.grade_results g
+    join public.assessments t on t.id = g.assessment_id and t.deleted_at is null
+    where t.classroom_id in (select id from vc) and g.mark = 'scored'
+      and g.score is not null
+    group by 1, 2),
+  miss as (
+    select a.classroom_id, e.student_id, count(*) as missing
+    from public.assignments a
+    join enr e on e.classroom_id = a.classroom_id
+    where a.deleted_at is null and a.state::text = 'published'
+      and a.due_at < now()
+      and not exists (select 1 from public.submissions sb
+        where sb.assignment_id = a.id and sb.student_id = e.student_id
+          and (sb.status = 'submitted' or sb.excused))
+    group by 1, 2)
+  select e.classroom_id, e.student_id, coalesce(att.sessions, 0),
+    coalesce(att.attended, 0), mk.average, coalesce(miss.missing, 0)
+  from enr e
+  left join att on att.classroom_id = e.classroom_id and att.student_id = e.student_id
+  left join mk on mk.classroom_id = e.classroom_id and mk.student_id = e.student_id
+  left join miss on miss.classroom_id = e.classroom_id and miss.student_id = e.student_id;
+$$;
+
+-- Thresholds for "needs attention" (plan 13a.1).
+create or replace function private.school_portal_attention_reasons(
+  p_sessions bigint, p_attended bigint, p_average numeric, p_missing bigint)
+returns text[] language sql immutable set search_path = '' as $$
+  select array_remove(array[
+    case when p_sessions >= 3 and p_attended::numeric / p_sessions < 0.85
+      then 'attendance' end,
+    case when p_missing >= 2 then 'missing_work' end,
+    case when p_average is not null and p_average < 0.5 then 'low_marks' end
+  ], null);
+$$;
+
+create or replace function private.school_portal_overview(p_org uuid)
+returns jsonb language sql stable security definer set search_path = '' as $$
+  with st as (select * from private.school_portal_student_stats(p_org))
+  select jsonb_build_object('outcome', 'ok',
+    'classes', coalesce((
+      select jsonb_agg(jsonb_build_object(
+        'classroomId', c.id, 'name', c.name,
+        'students', (select count(*) from st where st.classroom_id = c.id),
+        'attendanceRate', (select round(sum(st.attended)::numeric
+            / nullif(sum(st.sessions), 0), 3) from st where st.classroom_id = c.id),
+        'averageMark', (select round(avg(st.average), 3) from st
+          where st.classroom_id = c.id),
+        'missing', (select coalesce(sum(st.missing), 0) from st
+          where st.classroom_id = c.id)) order by c.name)
+      from public.classrooms c
+      where c.id in (select id from private.school_portal_visible_classes(p_org) v(id))),
+      '[]'::jsonb),
+    'attention', coalesce((
+      select jsonb_agg(jsonb_build_object(
+        'studentId', s.id, 'name', s.display_name,
+        'classroomId', c.id, 'className', c.name,
+        'reasons', to_jsonb(private.school_portal_attention_reasons(
+          st.sessions, st.attended, st.average, st.missing)),
+        'attendanceRate', round(st.attended::numeric / nullif(st.sessions, 0), 3),
+        'averageMark', round(st.average, 3), 'missing', st.missing)
+        order by s.display_name, c.name)
+      from st
+      join public.students s on s.id = st.student_id
+      join public.classrooms c on c.id = st.classroom_id
+      where cardinality(private.school_portal_attention_reasons(
+        st.sessions, st.attended, st.average, st.missing)) > 0), '[]'::jsonb));
+$$;
+
 create or replace function private.api062_query(
   p_operation text, p_resource_id uuid, p_input jsonb)
 returns jsonb language plpgsql volatile security definer set search_path = '' as $$
@@ -336,7 +427,7 @@ begin
   end if;
 
   -- Everything else is an administrator reading their org.
-  v_org := case when p_operation in ('dashboard', 'teachers', 'classes')
+  v_org := case when p_operation in ('dashboard', 'teachers', 'classes', 'overview')
     then p_resource_id else nullif(p_input->>'orgId', '')::uuid end;
   if v_org is null or not private.school_portal_admin_ok(v_org) then
     return jsonb_build_object('outcome', 'not_found');
@@ -374,6 +465,13 @@ begin
             else 0 end)
           order by l.requested_at desc)
         from private.school_portal_teacher_links l where l.org_id = v_org), '[]'::jsonb));
+
+    when 'overview' then
+      -- The school at a glance (plan 13a.1): per class, attendance over the
+      -- last 30 days, the average mark and work still missing; and the
+      -- students who need attention, each with the reason.
+      perform private.school_portal_log(v_org, 'overview');
+      return private.school_portal_overview(v_org);
 
     when 'classes' then
       perform private.school_portal_log(v_org, 'classes');
@@ -1362,6 +1460,9 @@ begin
     'private.school_portal_log(uuid, text, uuid, uuid, uuid, uuid)',
     'private.school_portal_files(uuid[])',
     'private.school_portal_class_json(uuid, uuid)',
+    'private.school_portal_student_stats(uuid)',
+    'private.school_portal_attention_reasons(bigint, bigint, numeric, bigint)',
+    'private.school_portal_overview(uuid)',
     'private.school_portal_reserved(uuid, bigint)',
     'private.school_portal_confirm_adult(jsonb)',
     'private.school_portal_end_org_links(uuid, uuid)',

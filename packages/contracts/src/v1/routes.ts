@@ -2616,6 +2616,14 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     portalParams("orgId", "fileId"),
   ),
+  catalogueGet(
+    "getSchoolPortalOverview",
+    "/v1/school-portal/orgs/{orgId}/overview",
+    "school_portal.read",
+    SchoolPortal.V1SchoolPortalOverview,
+    "V1SchoolPortalOverview",
+    portalParams("orgId"),
+  ),
 ] as const satisfies readonly V1RouteContract[];
 
 function params(key: string) {

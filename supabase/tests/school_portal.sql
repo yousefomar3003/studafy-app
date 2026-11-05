@@ -11,7 +11,7 @@ begin;
 \unset auth031_fixture_only
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(81);
+select plan(84);
 select set_config('studafy.request_id', 'school-portal-test', true);
 
 \set admin1 'f0000000-0000-4000-8000-000000000001'
@@ -314,6 +314,21 @@ select is(pg_temp.q(:'admin1', 'roster', :'classroom_id', current_setting('test.
   'not_found', 'another school sees none of it');
 select is(pg_temp.q(:'teacher_user', 'roster', :'classroom_id', current_setting('test.org')::uuid)->>'outcome',
   'not_found', 'nor does anyone who is not the school''s administrator');
+
+-- 6b. The overview: per class, and students who need attention.
+insert into public.assignments (school_id, classroom_id, title, due_at, state, created_by, published_at)
+values
+  (:'school_id', :'classroom_id', 'Late map', now() - interval '2 days', 'published', :'teacher_user', now() - interval '5 days'),
+  (:'school_id', :'classroom_id', 'Late essay', now() - interval '1 day', 'published', :'teacher_user', now() - interval '5 days');
+select ok((select bool_or(a->>'studentId' = :'student_id' and a->'reasons' ? 'missing_work')
+    from jsonb_array_elements(pg_temp.q(:'admin1', 'overview',
+      current_setting('test.org')::uuid)->'attention') a),
+  'a student with two pieces of overdue work is on the needs-attention list, with the reason');
+select ok((select (c->>'missing')::int >= 2 from jsonb_array_elements(pg_temp.q(:'admin1', 'overview',
+      current_setting('test.org')::uuid)->'classes') c where c->>'classroomId' = :'classroom_id'),
+  'and the class counts its missing work');
+select is(pg_temp.q(:'admin4', 'overview', current_setting('test.org')::uuid)->>'outcome',
+  'not_found', 'another school''s administrator sees no overview');
 
 -- 7. Never: messages, AI Tutor material, students' own notes and practice.
 select ok(pg_get_functiondef('private.api062_query(text, uuid, jsonb)'::regprocedure)

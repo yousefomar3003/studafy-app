@@ -123,6 +123,40 @@ export function demoAnswer(method: string, path: string): unknown {
       }],
     };
   }
+  if (path.endsWith("/overview")) {
+    return {
+      classes: CLASSES.map((c, i) => ({
+        classroomId: c.id,
+        name: c.name,
+        students: STUDENTS.length,
+        attendanceRate: i === 0 ? 0.81 : 0.93,
+        averageMark: i === 0 ? 0.72 : 0.64,
+        missing: i === 0 ? 5 : 1,
+      })),
+      attention: [
+        {
+          studentId: STUDENTS[4]!.studentId,
+          name: STUDENTS[4]!.name,
+          classroomId: CLASSES[0]!.id,
+          className: CLASSES[0]!.name,
+          reasons: ["attendance", "missing_work"],
+          attendanceRate: 0.6,
+          averageMark: 0.58,
+          missing: 3,
+        },
+        {
+          studentId: STUDENTS[1]!.studentId,
+          name: STUDENTS[1]!.name,
+          classroomId: CLASSES[1]!.id,
+          className: CLASSES[1]!.name,
+          reasons: ["low_marks"],
+          attendanceRate: 0.95,
+          averageMark: 0.42,
+          missing: 0,
+        },
+      ],
+    };
+  }
   if (path.endsWith("/teachers")) {
     return {
       teachers: [

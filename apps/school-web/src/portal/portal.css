@@ -652,3 +652,130 @@ td.totals {
 .turnstile {
   min-height: 65px;
 }
+
+/* Overview */
+
+.reasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.meter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.meter-bar {
+  display: inline-block;
+  width: 72px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--hairline);
+  overflow: hidden;
+}
+
+.meter-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+}
+
+.meter-bar.good .meter-fill {
+  background: #2e8b57;
+}
+
+.meter-bar.warn .meter-fill {
+  background: #d08a00;
+}
+
+.meter-bar.bad .meter-fill {
+  background: #b3261e;
+}
+
+.meter-fill.w0 {
+  width: 0%;
+}
+
+.meter-fill.w5 {
+  width: 5%;
+}
+
+.meter-fill.w10 {
+  width: 10%;
+}
+
+.meter-fill.w15 {
+  width: 15%;
+}
+
+.meter-fill.w20 {
+  width: 20%;
+}
+
+.meter-fill.w25 {
+  width: 25%;
+}
+
+.meter-fill.w30 {
+  width: 30%;
+}
+
+.meter-fill.w35 {
+  width: 35%;
+}
+
+.meter-fill.w40 {
+  width: 40%;
+}
+
+.meter-fill.w45 {
+  width: 45%;
+}
+
+.meter-fill.w50 {
+  width: 50%;
+}
+
+.meter-fill.w55 {
+  width: 55%;
+}
+
+.meter-fill.w60 {
+  width: 60%;
+}
+
+.meter-fill.w65 {
+  width: 65%;
+}
+
+.meter-fill.w70 {
+  width: 70%;
+}
+
+.meter-fill.w75 {
+  width: 75%;
+}
+
+.meter-fill.w80 {
+  width: 80%;
+}
+
+.meter-fill.w85 {
+  width: 85%;
+}
+
+.meter-fill.w90 {
+  width: 90%;
+}
+
+.meter-fill.w95 {
+  width: 95%;
+}
+
+.meter-fill.w100 {
+  width: 100%;
+}

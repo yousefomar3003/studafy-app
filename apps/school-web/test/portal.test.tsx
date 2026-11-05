@@ -20,7 +20,11 @@ import {
   StudentsTab,
   WellbeingTab,
 } from "../src/portal/pages/ClassPage";
-import { DashboardView } from "../src/portal/pages/Dashboard";
+import {
+  DashboardView,
+  Meter,
+  OverviewView,
+} from "../src/portal/pages/Dashboard";
 import { SignIn } from "../src/portal/pages/SignIn";
 import { TeachersView } from "../src/portal/pages/Teachers";
 import { AnswersView, HandInsView } from "../src/portal/pages/Work";
@@ -188,6 +192,48 @@ describe("screens", () => {
     expect(full).toContain("Rania Haddad");
     expect(full).toContain(portalEn.dashboard.cancelRequest);
     expect(full).toContain("120");
+  });
+
+  test("overview: each class's numbers and who needs attention, with the reason", () => {
+    const empty = render(
+      <OverviewView data={{ classes: [], attention: [] }} org={ORG} />,
+    );
+    expect(empty).toContain(portalEn.overview.attentionEmpty);
+    const html = render(
+      <OverviewView
+        data={{
+          classes: [{
+            classroomId: CLASS,
+            name: "Grade 7 Science",
+            students: 24,
+            attendanceRate: 0.81,
+            averageMark: 0.72,
+            missing: 5,
+          }],
+          attention: [{
+            studentId: STUDENT,
+            name: "Adam Odeh",
+            classroomId: CLASS,
+            className: "Grade 7 Science",
+            reasons: ["attendance", "missing_work"],
+            attendanceRate: 0.6,
+            averageMark: 0.58,
+            missing: 3,
+          }],
+        }}
+        org={ORG}
+      />,
+    );
+    expect(html).toContain("Adam Odeh");
+    expect(html).toContain(portalEn.overview.reasons.attendance);
+    expect(html).toContain("60%");
+    expect(html).toContain("81%");
+  });
+
+  test("a rate's bar never shows colour alone, and an unknown rate is a dash", () => {
+    expect(render(<Meter value={0.42} lang="en" />)).toContain("42%");
+    expect(render(<Meter value={0.42} lang="en" />)).toContain("meter-bar bad");
+    expect(render(<Meter value={null} lang="en" />)).toContain("—");
   });
 
   test("teachers: empty, and Unlink only for a linked teacher", () => {
