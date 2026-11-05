@@ -1384,6 +1384,24 @@ need the policy and terms updates and the lawyer before release):**
 branch), then 5, 6, 7, each with its own tests, CI and a line in the
 release gate's legal list.
 
+**Status (2026-11-05):** 1 to 6 built on this branch.
+
+- 1 to 4: the dashboard's overview, the student and teacher pages and
+  Reports, each recorded in the activity record (`overview`, `student`,
+  `teacher`, `reports`).
+- 5: CSV (opens in Excel) and print-to-PDF on class lists, marks,
+  attendance and reports; each export is recorded first (`export`, with
+  what and which format), and appears in the school's data export.
+- 6: the portal's Announcements page (send to students, parents, both, or
+  teachers, of all linked classes or chosen ones; up to 20 a day); one
+  notice per person through the outbox; the app's "Announcements from
+  schools" screen (Account, and the notice opens it). Announcements are
+  kept 12 months. A teacher reports one through the existing "Report this
+  school" on their link; the operator removes it
+  (`removeAnnouncement`).
+- Left for the release gate: the policy, terms and school agreement
+  wording for 5 and 6.
+
 ## 14. Owner decisions and open questions
 
 ### Decided (2026-11-05)

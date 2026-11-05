@@ -8701,4 +8701,24 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get schoolLinkErrorGeneric => 'حدث خطأ ما. حاول مرة أخرى.';
+
+  @override
+  String get schoolAnnouncementsTitle => 'من مدرستك';
+
+  @override
+  String get schoolAnnouncementsEmpty => 'لا توجد إعلانات من مدرسة بعد.';
+
+  @override
+  String get schoolAnnouncementsLoadError => 'تعذّر تحميل الإعلانات.';
+
+  @override
+  String get schoolAnnouncementsAccountRow => 'إعلانات المدارس';
+
+  @override
+  String get notificationCopySchoolPortalAnnouncementTitle =>
+      'إعلان جديد من مدرسة';
+
+  @override
+  String get notificationCopySchoolPortalAnnouncementDetail =>
+      'افتحه لقراءة ما أرسلته المدرسة.';
 }

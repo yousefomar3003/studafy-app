@@ -4275,5 +4275,11 @@
   "schoolLinkErrorUnavailable": "This school's page is no longer available.",
   "schoolLinkErrorAlreadyReported": "You've already reported this school.",
   "schoolLinkErrorNetwork": "No connection. Check your internet and try again.",
-  "schoolLinkErrorGeneric": "Something went wrong. Try again."
+  "schoolLinkErrorGeneric": "Something went wrong. Try again.",
+  "schoolAnnouncementsTitle": "From your school",
+  "schoolAnnouncementsEmpty": "No announcements from a school yet.",
+  "schoolAnnouncementsLoadError": "Announcements couldn't be loaded.",
+  "schoolAnnouncementsAccountRow": "Announcements from schools",
+  "notificationCopySchoolPortalAnnouncementTitle": "New announcement from a school",
+  "notificationCopySchoolPortalAnnouncementDetail": "Open it to read what the school sent."
 }

@@ -2442,5 +2442,11 @@
   "schoolLinkErrorUnavailable": "صفحة هذه المدرسة لم تعد متاحة.",
   "schoolLinkErrorAlreadyReported": "لقد أبلغت عن هذه المدرسة من قبل.",
   "schoolLinkErrorNetwork": "لا يوجد اتصال. تحقّق من الإنترنت وحاول مرة أخرى.",
-  "schoolLinkErrorGeneric": "حدث خطأ ما. حاول مرة أخرى."
+  "schoolLinkErrorGeneric": "حدث خطأ ما. حاول مرة أخرى.",
+  "schoolAnnouncementsTitle": "من مدرستك",
+  "schoolAnnouncementsEmpty": "لا توجد إعلانات من مدرسة بعد.",
+  "schoolAnnouncementsLoadError": "تعذّر تحميل الإعلانات.",
+  "schoolAnnouncementsAccountRow": "إعلانات المدارس",
+  "notificationCopySchoolPortalAnnouncementTitle": "إعلان جديد من مدرسة",
+  "notificationCopySchoolPortalAnnouncementDetail": "افتحه لقراءة ما أرسلته المدرسة."
 }

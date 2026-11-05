@@ -41,6 +41,9 @@ enum NotificationTargetKind {
 
   /// A school's request to link with the teacher (School Portal).
   schoolLink,
+
+  /// An announcement from a school (School Portal).
+  schoolAnnouncement,
 }
 
 /// The one thing a notification opens: a kind and the server's id for it.
@@ -130,6 +133,10 @@ class NotificationTarget {
     'family.guardian_link_verified' ||
     'family.guardian_link_revoked' => (
       NotificationTargetKind.guardianLink,
+      'id',
+    ),
+    'school_portal.announcement' => (
+      NotificationTargetKind.schoolAnnouncement,
       'id',
     ),
     'school_portal.link_requested' => (NotificationTargetKind.schoolLink, 'id'),

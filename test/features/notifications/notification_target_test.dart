@@ -58,6 +58,10 @@ void main() {
         {'id': 'sl1'},
         NotificationTargetKind.schoolLink,
       ),
+      'school_portal.announcement': (
+        {'id': 'sa1'},
+        NotificationTargetKind.schoolAnnouncement,
+      ),
       'billing.subscription_renewed': (
         {'featureKey': 'studafy_plus'},
         NotificationTargetKind.plan,

@@ -28,6 +28,7 @@ import 'account/account_widgets.dart';
 import 'account/data_export_tile.dart';
 import 'account/role_switcher.dart';
 import 'account_scope.dart';
+import 'school_announcements_entry.dart';
 import 'session_scope.dart';
 
 /// The Subscription part of a profile: where the plans are, the plan the
@@ -428,6 +429,16 @@ class _AccountHubPageState extends State<AccountHubPage> {
           // The platform operator's safety-report review (DL-063): only for
           // an account the server marks as an operator (GET /v1/me), never
           // inferred here. The server checks every step again.
+          if (openSchoolAnnouncementsIn(context) case final open?)
+            SettingsGroup(
+              children: [
+                SettingsRow(
+                  icon: Icons.campaign_outlined,
+                  title: l10n.schoolAnnouncementsAccountRow,
+                  onTap: open,
+                ),
+              ],
+            ),
           if (schoolLinks != null)
             SettingsGroup(
               title: l10n.schoolLinksTitle,

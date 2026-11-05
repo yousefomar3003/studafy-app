@@ -104,7 +104,11 @@ const templates: Record<"en" | "ar", Record<string, ChannelCopy>> = {
       title: "Test notification",
       body: "Notifications from Studafy are working on this device.",
     },
-    // School Portal: which school is shown only in the app, after sign-in.
+    // School Portal: which school, and what it said, only in the app.
+    "school_portal.announcement": {
+      title: "New announcement from a school",
+      body: "Open Studafy to read what the school sent.",
+    },
     "school_portal.link_requested": {
       title: "A school asked to link",
       body:
@@ -150,6 +154,10 @@ const templates: Record<"en" | "ar", Record<string, ChannelCopy>> = {
     "system.push_test": {
       title: "إشعار تجريبي",
       body: "إشعارات Studafy تعمل على هذا الجهاز.",
+    },
+    "school_portal.announcement": {
+      title: "إعلان جديد من مدرسة",
+      body: "افتح Studafy لقراءة ما أرسلته المدرسة.",
     },
     "school_portal.link_requested": {
       title: "طلبت مدرسة الربط معك",

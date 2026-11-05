@@ -8697,4 +8697,25 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get schoolLinkErrorGeneric => 'Something went wrong. Try again.';
+
+  @override
+  String get schoolAnnouncementsTitle => 'From your school';
+
+  @override
+  String get schoolAnnouncementsEmpty => 'No announcements from a school yet.';
+
+  @override
+  String get schoolAnnouncementsLoadError =>
+      'Announcements couldn\'t be loaded.';
+
+  @override
+  String get schoolAnnouncementsAccountRow => 'Announcements from schools';
+
+  @override
+  String get notificationCopySchoolPortalAnnouncementTitle =>
+      'New announcement from a school';
+
+  @override
+  String get notificationCopySchoolPortalAnnouncementDetail =>
+      'Open it to read what the school sent.';
 }

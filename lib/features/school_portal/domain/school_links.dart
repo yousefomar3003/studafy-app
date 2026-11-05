@@ -92,9 +92,33 @@ class SchoolLink {
   bool get isLinked => status == SchoolLinkStatus.linked;
 }
 
-/// A teacher's school links, newest request first.
+/// An announcement from a school, to the reader's class, their child's or
+/// their own (as a teacher). The school only reaches classes linked with it.
+@immutable
+class SchoolAnnouncement {
+  const SchoolAnnouncement({
+    required this.id,
+    required this.title,
+    required this.body,
+    required this.school,
+    required this.createdAt,
+  });
+
+  final String id;
+
+  /// User content: shown through `UserContentText`.
+  final String title;
+  final String body;
+  final String school;
+  final DateTime createdAt;
+}
+
+/// A teacher's school links, newest request first; and, for anyone, the
+/// school announcements that reach them.
 abstract interface class SchoolLinksRepository {
   Future<List<SchoolLink>> list();
+
+  Future<List<SchoolAnnouncement>> announcements();
 
   /// Accepts or declines a waiting request. Accepting while linked with
   /// another school fails with `LINKED_ELSEWHERE` unless [replaceCurrent]:

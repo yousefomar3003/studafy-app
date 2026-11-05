@@ -14766,6 +14766,42 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Something went wrong. Try again.'**
   String get schoolLinkErrorGeneric;
+
+  /// No description provided for @schoolAnnouncementsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'From your school'**
+  String get schoolAnnouncementsTitle;
+
+  /// No description provided for @schoolAnnouncementsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No announcements from a school yet.'**
+  String get schoolAnnouncementsEmpty;
+
+  /// No description provided for @schoolAnnouncementsLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Announcements couldn\'t be loaded.'**
+  String get schoolAnnouncementsLoadError;
+
+  /// No description provided for @schoolAnnouncementsAccountRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Announcements from schools'**
+  String get schoolAnnouncementsAccountRow;
+
+  /// No description provided for @notificationCopySchoolPortalAnnouncementTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New announcement from a school'**
+  String get notificationCopySchoolPortalAnnouncementTitle;
+
+  /// No description provided for @notificationCopySchoolPortalAnnouncementDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Open it to read what the school sent.'**
+  String get notificationCopySchoolPortalAnnouncementDetail;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

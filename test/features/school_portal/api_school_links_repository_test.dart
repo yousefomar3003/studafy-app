@@ -123,4 +123,26 @@ void main() {
     );
     expect(transport.posts.single.body, {'reason': 'fake_school'});
   });
+
+  test('reads the announcements schools sent', () async {
+    transport.answers['/v1/me/school-announcements'] = {
+      'announcements': [
+        {
+          'id': '66666666-6666-4666-8666-666666666666',
+          'title': 'Sports day',
+          'body': 'Friday from 9.',
+          'audience': 'students_and_parents',
+          'classroomIds': null,
+          'createdAt': '2026-11-03T08:00:00Z',
+          'removed': false,
+          'school': 'Cedar Grove',
+          'author': 'Huda Saleh',
+        },
+      ],
+    };
+    final news = await repository.announcements();
+    expect(news.single.title, 'Sports day');
+    expect(news.single.school, 'Cedar Grove');
+    expect(news.single.createdAt, DateTime.utc(2026, 11, 3, 8).toLocal());
+  });
 }

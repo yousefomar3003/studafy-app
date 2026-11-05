@@ -35,6 +35,22 @@ class ApiSchoolLinksRepository implements SchoolLinksRepository {
   });
 
   @override
+  Future<List<SchoolAnnouncement>> announcements() => _guard(() async {
+    final response = await _client.listMySchoolAnnouncements();
+    return [
+      for (final item in response.announcements)
+        if (_date(item.createdAt) case final at?)
+          SchoolAnnouncement(
+            id: item.id,
+            title: item.title,
+            body: item.body,
+            school: item.school,
+            createdAt: at,
+          ),
+    ];
+  });
+
+  @override
   Future<void> decide(
     String linkId, {
     required bool accept,

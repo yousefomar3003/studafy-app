@@ -35,6 +35,7 @@ import 'account_hub_page.dart';
 import 'assessment_navigation.dart';
 import 'notification_routes.dart';
 import 'parent_insights_tab.dart';
+import 'school_announcements_entry.dart';
 
 /// The parent's app: their children's day, schoolwork, Family+ insights,
 /// announcements and messages. Composed here because it draws on several
@@ -175,6 +176,7 @@ class _ParentShellState extends State<ParentShell> {
       context,
       item,
       NotificationDestinations(
+        schoolAnnouncements: openSchoolAnnouncementsIn(context),
         feed: (target) {
           // The notification names no child, so Learning shows them all,
           // each labelled - and finds the work whoever's it is.

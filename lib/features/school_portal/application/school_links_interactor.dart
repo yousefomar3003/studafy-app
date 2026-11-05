@@ -27,6 +27,10 @@ class SchoolLinksInteractor {
     return list;
   });
 
+  /// Announcements from schools that reach the reader, newest first.
+  Future<Result<List<SchoolAnnouncement>>> announcements() =>
+      runCatching(() => links.announcements());
+
   Future<Result<void>> decide(
     SchoolLink link, {
     required bool accept,

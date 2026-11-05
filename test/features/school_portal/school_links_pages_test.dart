@@ -4,6 +4,7 @@ import 'package:studafy/core/failures.dart';
 import 'package:studafy/core/telemetry.dart';
 import 'package:studafy/features/school_portal/application/school_links_interactor.dart';
 import 'package:studafy/features/school_portal/domain/school_links.dart';
+import 'package:studafy/features/school_portal/presentation/school_announcements_page.dart';
 import 'package:studafy/features/school_portal/presentation/school_link_banner.dart';
 import 'package:studafy/features/school_portal/presentation/school_link_request_page.dart';
 import 'package:studafy/features/school_portal/presentation/schools_page.dart';
@@ -42,8 +43,13 @@ class _Links implements SchoolLinksRepository {
   /// Accepting while linked elsewhere is refused until the teacher agrees.
   bool linkedElsewhere = false;
 
+  List<SchoolAnnouncement> news = const [];
+
   @override
   Future<List<SchoolLink>> list() async => items;
+
+  @override
+  Future<List<SchoolAnnouncement>> announcements() async => news;
 
   @override
   Future<void> decide(
@@ -265,5 +271,37 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('No school has asked to link with you.'), findsOneWidget);
+  });
+
+  testWidgets('From your school shows each announcement, or says none came', (
+    tester,
+  ) async {
+    await _phone(tester);
+    final links = _Links([])
+      ..news = [
+        SchoolAnnouncement(
+          id: 'a1',
+          title: 'Sports day',
+          body: 'Friday from 9.',
+          school: 'Cedar Grove',
+          createdAt: DateTime(2026, 11, 3, 8),
+        ),
+      ];
+    await tester.pumpWidget(
+      localizedApp(home: SchoolAnnouncementsPage(links: _interactor(links))),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Sports day'), findsOneWidget);
+    expect(find.text('Cedar Grove'), findsOneWidget);
+    await tester.pumpWidget(
+      localizedApp(
+        home: SchoolAnnouncementsPage(
+          key: const ValueKey('empty'),
+          links: _interactor(_Links([])),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('No announcements from a school yet.'), findsOneWidget);
   });
 }

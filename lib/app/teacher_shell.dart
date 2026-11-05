@@ -31,6 +31,7 @@ import '../l10n/generated/app_l10n.dart';
 import 'app_dependencies.dart';
 import 'assessment_navigation.dart';
 import 'notification_routes.dart';
+import 'school_announcements_entry.dart';
 import 'school_messaging_switch.dart';
 import 'tab_header.dart';
 import 'teacher_create_actions.dart';
@@ -307,6 +308,7 @@ class _TeacherShellState extends State<TeacherShell>
       context,
       item,
       NotificationDestinations(
+        schoolAnnouncements: openSchoolAnnouncementsIn(context),
         feed: (target) => target.feed == AcademicFeed.grades
             ? tab(3)
             : setState(() {
