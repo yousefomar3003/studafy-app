@@ -366,6 +366,128 @@ returns jsonb language sql stable security definer set search_path = '' as $$
         st.sessions, st.attended, st.average, st.missing)) > 0), '[]'::jsonb));
 $$;
 
+-- One student across every visible class (plan 13a.2). The same child
+-- may be on several teachers' lists (one row per teacher's workspace, one
+-- account); their rows are read together.
+create or replace function private.school_portal_student_page(p_org uuid, p_student uuid)
+returns jsonb language sql stable security definer set search_path = '' as $$
+  with me as (
+    select s.id, s.user_id from public.students s where s.id = p_student),
+  rows as (
+    select s.id from public.students s, me
+    where s.deleted_at is null
+      and (s.id = me.id or (me.user_id is not null and s.user_id = me.user_id))),
+  vc as (select id from private.school_portal_visible_classes(p_org) v(id)),
+  enr as (
+    select e.classroom_id, e.student_id from public.enrollments e
+    where e.status = 'active' and e.student_id in (select id from rows)
+      and e.classroom_id in (select id from vc)),
+  st as (
+    select st.* from private.school_portal_student_stats(p_org) st
+    where st.student_id in (select id from rows))
+  select case when not exists (select 1 from enr) then null else jsonb_build_object(
+    'outcome', 'ok',
+    'student', (select jsonb_build_object('studentId', s.id, 'name', s.display_name,
+        'studafyId', s.studafy_id,
+        'email', (select u.email from auth.users u where u.id = s.user_id),
+        'parents', coalesce((select jsonb_agg(distinct jsonb_build_object(
+            'name', gp.display_name,
+            'email', (select u.email from auth.users u where u.id = gl.guardian_id),
+            'relationship', gl.relationship))
+          from public.guardian_links gl
+          join public.profiles gp on gp.id = gl.guardian_id and gp.status = 'active'
+          where gl.student_id in (select id from rows) and gl.status = 'verified'
+            and (gl.expires_at is null or gl.expires_at > now())), '[]'::jsonb))
+      from public.students s where s.id = p_student),
+    'classes', coalesce((select jsonb_agg(jsonb_build_object(
+        'classroomId', c.id, 'name', c.name,
+        'teachers', (select coalesce(jsonb_agg(p.display_name order by p.display_name), '[]'::jsonb)
+          from public.classroom_staff cs join public.profiles p on p.id = cs.user_id
+          where cs.classroom_id = c.id and cs.status = 'active'
+            and cs.role in ('lead_teacher', 'co_teacher')),
+        'attendanceRate', round(st.attended::numeric / nullif(st.sessions, 0), 3),
+        'averageMark', round(st.average, 3), 'missing', coalesce(st.missing, 0))
+        order by c.name)
+      from enr join public.classrooms c on c.id = enr.classroom_id
+      left join st on st.classroom_id = enr.classroom_id and st.student_id = enr.student_id),
+      '[]'::jsonb),
+    'recentMarks', coalesce((select jsonb_agg(m order by m->>'at' desc) from (
+        select jsonb_build_object('assessmentId', t.id, 'title', t.title,
+          'className', c.name, 'score', g.score, 'maximumScore', t.maximum_score,
+          'mark', g.mark, 'state', g.state,
+          'at', coalesce(g.published_at, g.updated_at)) as m
+        from public.grade_results g
+        join public.assessments t on t.id = g.assessment_id and t.deleted_at is null
+        join enr on enr.classroom_id = t.classroom_id and enr.student_id = g.student_id
+        join public.classrooms c on c.id = t.classroom_id
+        order by coalesce(g.published_at, g.updated_at) desc limit 20) x), '[]'::jsonb),
+    'missingWork', coalesce((select jsonb_agg(jsonb_build_object('assignmentId', a.id,
+        'title', a.title, 'className', c.name, 'dueAt', a.due_at) order by a.due_at desc)
+      from public.assignments a
+      join enr on enr.classroom_id = a.classroom_id
+      join public.classrooms c on c.id = a.classroom_id
+      where a.deleted_at is null and a.state::text = 'published' and a.due_at < now()
+        and not exists (select 1 from public.submissions sb
+          where sb.assignment_id = a.id and sb.student_id = enr.student_id
+            and (sb.status = 'submitted' or sb.excused))), '[]'::jsonb),
+    'wellbeing', coalesce((select jsonb_agg(jsonb_build_object('id', w.id,
+        'className', c.name, 'kind', w.kind, 'title', w.title, 'context', w.context,
+        'createdAt', w.created_at) order by w.created_at desc)
+      from public.wellbeing_events w
+      join enr on enr.classroom_id = w.classroom_id and enr.student_id = w.student_id
+      join public.classrooms c on c.id = w.classroom_id
+      where w.visibility::text <> 'safeguarding_restricted'), '[]'::jsonb)) end;
+$$;
+
+-- One linked teacher (plan 13a.3): their classes with the same numbers as
+-- the overview, recent lessons, and marking still to do.
+create or replace function private.school_portal_teacher_page(p_org uuid, p_teacher uuid)
+returns jsonb language sql stable security definer set search_path = '' as $$
+  with link as (
+    select l.* from private.school_portal_teacher_links l
+    where l.org_id = p_org and l.teacher_id = p_teacher and l.status = 'linked'),
+  tc as (
+    select distinct cs.classroom_id as id from public.classroom_staff cs
+    where cs.user_id = p_teacher and cs.status = 'active'
+      and cs.role in ('lead_teacher', 'co_teacher')
+      and cs.classroom_id in (select id from private.school_portal_visible_classes(p_org) v(id))),
+  st as (
+    select st.* from private.school_portal_student_stats(p_org) st
+    where st.classroom_id in (select id from tc))
+  select case when not exists (select 1 from link) then null else jsonb_build_object(
+    'outcome', 'ok',
+    'teacher', private.school_portal_person(p_teacher) || jsonb_build_object(
+      'studafyId', (select p.public_id from public.profiles p where p.id = p_teacher),
+      'linkedSince', (select decided_at from link)),
+    'classes', coalesce((select jsonb_agg(jsonb_build_object(
+        'classroomId', c.id, 'name', c.name,
+        'students', (select count(*) from st where st.classroom_id = c.id),
+        'attendanceRate', (select round(sum(st.attended)::numeric
+            / nullif(sum(st.sessions), 0), 3) from st where st.classroom_id = c.id),
+        'averageMark', (select round(avg(st.average), 3) from st where st.classroom_id = c.id),
+        'missing', (select coalesce(sum(st.missing), 0) from st where st.classroom_id = c.id))
+        order by c.name)
+      from public.classrooms c where c.id in (select id from tc)), '[]'::jsonb),
+    'recentLessons', coalesce((select jsonb_agg(x order by x->>'startsAt' desc) from (
+        select jsonb_build_object('id', ls.id, 'title', ls.title, 'className', c.name,
+          'startsAt', ls.starts_at, 'status', ls.status) as x
+        from public.lesson_sessions ls join public.classrooms c on c.id = ls.classroom_id
+        where ls.classroom_id in (select id from tc) and ls.starts_at <= now()
+        order by ls.starts_at desc limit 10) y), '[]'::jsonb),
+    'toMark', jsonb_build_object(
+      'testAnswers', (select count(*) from public.assessment_attempts at
+        join public.assessments t on t.id = at.assessment_id and t.deleted_at is null
+        where t.classroom_id in (select id from tc) and at.submitted_at is not null
+          and at.needs_marking),
+      'handIns', (select count(*) from public.submissions sb
+        join public.assignments a on a.id = sb.assignment_id and a.deleted_at is null
+        where a.classroom_id in (select id from tc) and sb.status = 'submitted'
+          and not exists (select 1 from public.assessments t
+            join public.grade_results g on g.assessment_id = t.id
+              and g.student_id = sb.student_id and g.state::text = 'published'
+            where t.assignment_id = a.id)))) end;
+$$;
+
 create or replace function private.api062_query(
   p_operation text, p_resource_id uuid, p_input jsonb)
 returns jsonb language plpgsql volatile security definer set search_path = '' as $$
@@ -490,6 +612,16 @@ begin
   elsif p_operation = 'testAnswers' then
     select a.classroom_id into v_classroom from public.assessments a
     where a.id = p_resource_id and a.deleted_at is null;
+  elsif p_operation = 'student' then
+    v_result := private.school_portal_student_page(v_org, p_resource_id);
+    if v_result is null then return jsonb_build_object('outcome', 'not_found'); end if;
+    perform private.school_portal_log(v_org, 'student', null, p_resource_id);
+    return v_result;
+  elsif p_operation = 'teacher' then
+    v_result := private.school_portal_teacher_page(v_org, p_resource_id);
+    if v_result is null then return jsonb_build_object('outcome', 'not_found'); end if;
+    perform private.school_portal_log(v_org, 'teacher', null, null, null, p_resource_id);
+    return v_result;
   elsif p_operation in ('roster', 'lessons', 'assignments', 'tests', 'marks', 'attendance', 'wellbeing') then
     v_classroom := p_resource_id;
   else
@@ -1463,6 +1595,8 @@ begin
     'private.school_portal_student_stats(uuid)',
     'private.school_portal_attention_reasons(bigint, bigint, numeric, bigint)',
     'private.school_portal_overview(uuid)',
+    'private.school_portal_student_page(uuid, uuid)',
+    'private.school_portal_teacher_page(uuid, uuid)',
     'private.school_portal_reserved(uuid, bigint)',
     'private.school_portal_confirm_adult(jsonb)',
     'private.school_portal_end_org_links(uuid, uuid)',

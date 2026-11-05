@@ -3431,6 +3431,30 @@ class V1ApiClient {
       _v1Path('/v1/school-portal/orgs/{orgId}/overview', {'orgId': orgId}, {}),
     ),
   );
+
+  Future<V1SchoolPortalStudentDto> getSchoolPortalStudent({
+    required String orgId,
+    required String studentId,
+  }) async => V1SchoolPortalStudentDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/school-portal/orgs/{orgId}/students/{studentId}', {
+        'orgId': orgId,
+        'studentId': studentId,
+      }, {}),
+    ),
+  );
+
+  Future<V1SchoolPortalTeacherDto> getSchoolPortalTeacher({
+    required String orgId,
+    required String teacherId,
+  }) async => V1SchoolPortalTeacherDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/school-portal/orgs/{orgId}/teachers/{teacherId}', {
+        'orgId': orgId,
+        'teacherId': teacherId,
+      }, {}),
+    ),
+  );
 }
 
 String _v1Path(
@@ -13912,6 +13936,74 @@ class V1SchoolPortalRosterDto {
   final List<Map<String, dynamic>> students;
 
   Map<String, Object?> toJson() => {'students': students};
+}
+
+class V1SchoolPortalStudentDto {
+  const V1SchoolPortalStudentDto({
+    required this.student,
+    required this.classes,
+    required this.recentMarks,
+    required this.missingWork,
+    required this.wellbeing,
+  });
+
+  factory V1SchoolPortalStudentDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalStudentDto(
+        student: json['student'] as Map<String, dynamic>,
+        classes: (json['classes'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+        recentMarks: (json['recentMarks'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+        missingWork: (json['missingWork'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+        wellbeing: (json['wellbeing'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+      );
+
+  final Map<String, dynamic> student;
+  final List<Map<String, dynamic>> classes;
+  final List<Map<String, dynamic>> recentMarks;
+  final List<Map<String, dynamic>> missingWork;
+  final List<Map<String, dynamic>> wellbeing;
+
+  Map<String, Object?> toJson() => {
+    'student': student,
+    'classes': classes,
+    'recentMarks': recentMarks,
+    'missingWork': missingWork,
+    'wellbeing': wellbeing,
+  };
+}
+
+class V1SchoolPortalTeacherDto {
+  const V1SchoolPortalTeacherDto({
+    required this.teacher,
+    required this.classes,
+    required this.recentLessons,
+    required this.toMark,
+  });
+
+  factory V1SchoolPortalTeacherDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalTeacherDto(
+        teacher: json['teacher'] as Map<String, dynamic>,
+        classes: (json['classes'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+        recentLessons: (json['recentLessons'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+        toMark: json['toMark'] as Map<String, dynamic>,
+      );
+
+  final Map<String, dynamic> teacher;
+  final List<Map<String, dynamic>> classes;
+  final List<Map<String, dynamic>> recentLessons;
+  final Map<String, dynamic> toMark;
+
+  Map<String, Object?> toJson() => {
+    'teacher': teacher,
+    'classes': classes,
+    'recentLessons': recentLessons,
+    'toMark': toMark,
+  };
 }
 
 class V1SchoolPortalTeachersDto {

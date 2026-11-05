@@ -28,6 +28,7 @@ import {
 import { SignIn } from "../src/portal/pages/SignIn";
 import { TeachersView } from "../src/portal/pages/Teachers";
 import { AnswersView, HandInsView } from "../src/portal/pages/Work";
+import { StudentView, TeacherView } from "../src/portal/pages/People";
 import {
   CLASS_TABS,
   hrefFor,
@@ -56,6 +57,8 @@ describe("addresses", () => {
     { name: "teachers", org: ORG },
     { name: "classes", org: ORG },
     { name: "settings", org: ORG },
+    { name: "student", org: ORG, student: STUDENT },
+    { name: "teacher", org: ORG, teacher: STUDENT },
     ...CLASS_TABS.map((tab) =>
       ({ name: "class", org: ORG, classroom: CLASS, tab }) as Route
     ),
@@ -236,6 +239,97 @@ describe("screens", () => {
     expect(render(<Meter value={null} lang="en" />)).toContain("—");
   });
 
+  test("a student's page: classes, missing work, marks and notes", () => {
+    const html = render(
+      <StudentView
+        org={ORG}
+        data={{
+          student: {
+            studentId: STUDENT,
+            name: "Adam Odeh",
+            studafyId: "SJ-0A1B2C3D4E",
+            email: "adam@student.example",
+            parents: [],
+          },
+          classes: [{
+            classroomId: CLASS,
+            name: "Grade 7 Science",
+            teachers: ["Rania Haddad"],
+            attendanceRate: 0.6,
+            averageMark: 0.58,
+            missing: 3,
+          }],
+          recentMarks: [{
+            assessmentId: ITEM,
+            title: "Quiz 1",
+            className: "Grade 7 Science",
+            score: 4,
+            maximumScore: 10,
+            mark: "scored",
+            state: "draft",
+            at: "2026-11-03T09:00:00Z",
+          }],
+          missingWork: [{
+            assignmentId: ITEM,
+            title: "Essay on rivers",
+            className: "Grade 7 Science",
+            dueAt: "2026-11-02T18:00:00Z",
+          }],
+          wellbeing: [],
+        }}
+      />,
+    );
+    for (
+      const text of [
+        "Adam Odeh",
+        "Grade 7 Science",
+        "Essay on rivers",
+        "60%",
+        portalEn.marks.notPublished,
+        portalEn.people.noWellbeing,
+      ]
+    ) {
+      expect(html).toContain(text);
+    }
+  });
+
+  test("a teacher's page: classes, recent lessons and marking still to do", () => {
+    const html = render(
+      <TeacherView
+        org={ORG}
+        data={{
+          teacher: {
+            id: STUDENT,
+            name: "Rania Haddad",
+            email: "rania@cedar.example",
+            studafyId: "4821937560",
+            linkedSince: "2026-11-02T10:00:00Z",
+          },
+          classes: [{
+            classroomId: CLASS,
+            name: "Grade 7 Science",
+            students: 24,
+            attendanceRate: 0.81,
+            averageMark: 0.72,
+            missing: 5,
+          }],
+          recentLessons: [],
+          toMark: { testAnswers: 3, handIns: 2 },
+        }}
+      />,
+    );
+    for (
+      const text of [
+        "Rania Haddad",
+        "Grade 7 Science",
+        portalEn.people.testAnswers,
+        portalEn.people.noLessons,
+      ]
+    ) {
+      expect(html).toContain(text);
+    }
+  });
+
   test("teachers: empty, and Unlink only for a linked teacher", () => {
     expect(
       render(
@@ -309,6 +403,7 @@ describe("screens", () => {
   test("students show emails, Studafy IDs and linked parents", () => {
     const html = render(
       <StudentsTab
+        org={ORG}
         data={{
           students: [{
             studentId: STUDENT,
@@ -336,7 +431,7 @@ describe("screens", () => {
     ) {
       expect(html).toContain(text);
     }
-    expect(render(<StudentsTab data={{ students: [] }} />)).toContain(
+    expect(render(<StudentsTab data={{ students: [] }} org={ORG} />)).toContain(
       portalEn.students.empty,
     );
   });

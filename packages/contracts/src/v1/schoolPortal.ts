@@ -453,3 +453,77 @@ export const V1SchoolPortalOverview = z.object({
     missing: z.number().int().nonnegative(),
   })).max(20000),
 });
+
+const ClassNumbers = {
+  classroomId: Id,
+  name: z.string(),
+  attendanceRate: z.number().nullable(),
+  averageMark: z.number().nullable(),
+  missing: z.number().int().nonnegative(),
+};
+
+/** One student across every visible class (plan 13a.2). */
+export const V1SchoolPortalStudent = z.object({
+  student: z.object({
+    studentId: Id,
+    name: z.string(),
+    studafyId: z.string().nullable(),
+    email: z.string().nullable(),
+    parents: z.array(z.object({
+      name: z.string(),
+      email: z.string().nullable(),
+      relationship: z.string().nullable(),
+    })).max(20),
+  }),
+  classes: z.array(z.object({
+    ...ClassNumbers,
+    teachers: z.array(z.string()).max(50),
+  })).max(200),
+  recentMarks: z.array(z.object({
+    assessmentId: Id,
+    title: z.string(),
+    className: z.string(),
+    score: z.number().nullable(),
+    maximumScore: z.number(),
+    mark: z.string(),
+    state: z.string(),
+    at: Timestamp,
+  })).max(20),
+  missingWork: z.array(z.object({
+    assignmentId: Id,
+    title: z.string(),
+    className: z.string(),
+    dueAt: Timestamp.nullable(),
+  })).max(1000),
+  wellbeing: z.array(z.object({
+    id: Id,
+    className: z.string(),
+    kind: z.string(),
+    title: z.string(),
+    context: z.string().nullable(),
+    createdAt: Timestamp,
+  })).max(1000),
+});
+
+/** One linked teacher (plan 13a.3). */
+export const V1SchoolPortalTeacher = z.object({
+  teacher: V1SchoolPortalPerson.extend({
+    studafyId: z.string().nullable(),
+    linkedSince: Timestamp.nullable(),
+  }),
+  classes: z.array(z.object({
+    ...ClassNumbers,
+    students: z.number().int().nonnegative(),
+  })).max(500),
+  recentLessons: z.array(z.object({
+    id: Id,
+    title: z.string().nullable(),
+    className: z.string(),
+    startsAt: Timestamp,
+    status: z.string(),
+  })).max(10),
+  toMark: z.object({
+    testAnswers: z.number().int().nonnegative(),
+    handIns: z.number().int().nonnegative(),
+  }),
+});

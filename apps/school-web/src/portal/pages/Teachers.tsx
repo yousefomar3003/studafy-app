@@ -3,6 +3,7 @@ import { api, ApiError, type Teachers as Data } from "../api";
 import { formatDate, formatNumber } from "../format";
 import { errorText, useCopy } from "../i18n";
 import { useLoad } from "../load";
+import { hrefFor, navigate } from "../router";
 import { Empty, Loader, Notice, Pill, Table, useConfirm } from "../ui";
 
 /** Every teacher asked or linked, with Unlink (plan 5.4). */
@@ -62,7 +63,22 @@ export function TeachersView({ data, org, onChange }: {
       >
         {data.teachers.map((t) => (
           <tr key={t.linkId}>
-            <td dir="auto">{t.name}</td>
+            <td>
+              {t.status === "linked"
+                ? (
+                  <a
+                    dir="auto"
+                    href={hrefFor({ name: "teacher", org, teacher: t.id })}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      navigate({ name: "teacher", org, teacher: t.id });
+                    }}
+                  >
+                    {t.name}
+                  </a>
+                )
+                : <span dir="auto">{t.name}</span>}
+            </td>
             <td dir="ltr">{t.email ?? "—"}</td>
             <td>
               <Pill

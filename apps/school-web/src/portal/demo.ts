@@ -157,6 +157,80 @@ export function demoAnswer(method: string, path: string): unknown {
       ],
     };
   }
+  const studentPage = path.match(/\/students\/([0-9a-f-]{36})$/);
+  if (studentPage) {
+    const s = STUDENTS.find((x) => x.studentId === studentPage[1]) ??
+      STUDENTS[0]!;
+    return {
+      student: {
+        ...s,
+        studafyId: "SJ-0A1B2C3D4E",
+        email: `${s.name.split(" ")[0]!.toLowerCase()}@student.example`,
+        parents: [{
+          name: `Parent of ${s.name.split(" ")[0]}`,
+          email: "parent@family.example",
+          relationship: "parent",
+        }],
+      },
+      classes: CLASSES.map((c, i) => ({
+        classroomId: c.id,
+        name: c.name,
+        teachers: [TEACHER.name],
+        attendanceRate: i ? 0.9 : 0.6,
+        averageMark: i ? 0.66 : 0.58,
+        missing: i ? 0 : 3,
+      })),
+      recentMarks: ITEMS.map((it, i) => ({
+        assessmentId: it.id,
+        title: it.title,
+        className: CLASSES[0]!.name,
+        score: it.maximumScore - 3 - i,
+        maximumScore: it.maximumScore,
+        mark: "scored",
+        state: i === 2 ? "draft" : "published",
+        at: "2026-11-03T09:00:00Z",
+      })),
+      missingWork: [{
+        assignmentId: ASSIGNMENT,
+        title: "Essay on rivers",
+        className: CLASSES[0]!.name,
+        dueAt: "2026-11-02T18:00:00Z",
+      }],
+      wellbeing: [{
+        id: "d0000000-0000-4000-8000-000000001102",
+        className: CLASSES[0]!.name,
+        kind: "concern",
+        title: "Tired in morning lessons",
+        context: "Often yawning in first period this week.",
+        createdAt: "2026-11-04T10:00:00Z",
+      }],
+    };
+  }
+  if (/\/teachers\/[0-9a-f-]{36}$/.test(path)) {
+    return {
+      teacher: {
+        ...TEACHER,
+        studafyId: "4821937560",
+        linkedSince: "2026-11-02T10:00:00Z",
+      },
+      classes: CLASSES.map((c, i) => ({
+        classroomId: c.id,
+        name: c.name,
+        students: STUDENTS.length,
+        attendanceRate: i ? 0.93 : 0.81,
+        averageMark: i ? 0.64 : 0.72,
+        missing: i ? 1 : 5,
+      })),
+      recentLessons: DAYS.map((d, i) => ({
+        id: `d0000000-0000-4000-8000-00000000080${i}`,
+        title: `Rivers, part ${i + 1}`,
+        className: CLASSES[0]!.name,
+        startsAt: `${d}T08:00:00Z`,
+        status: "completed",
+      })).reverse(),
+      toMark: { testAnswers: 3, handIns: 2 },
+    };
+  }
   if (path.endsWith("/teachers")) {
     return {
       teachers: [

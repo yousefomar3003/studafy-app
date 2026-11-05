@@ -11,7 +11,7 @@ begin;
 \unset auth031_fixture_only
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(84);
+select plan(89);
 select set_config('studafy.request_id', 'school-portal-test', true);
 
 \set admin1 'f0000000-0000-4000-8000-000000000001'
@@ -329,6 +329,21 @@ select ok((select (c->>'missing')::int >= 2 from jsonb_array_elements(pg_temp.q(
   'and the class counts its missing work');
 select is(pg_temp.q(:'admin4', 'overview', current_setting('test.org')::uuid)->>'outcome',
   'not_found', 'another school''s administrator sees no overview');
+
+-- 6c. A student's page and a teacher's page.
+select is(pg_temp.q(:'admin1', 'student', :'student_id', current_setting('test.org')::uuid)
+  ->'student'->>'email', 'seed.student@synthetic.studafy.test',
+  'a student''s page shows them across the school''s classes');
+select ok((select bool_or(m->>'title' = 'Late map') from jsonb_array_elements(
+    pg_temp.q(:'admin1', 'student', :'student_id', current_setting('test.org')::uuid)->'missingWork') m),
+  'with their missing work');
+select is(pg_temp.q(:'admin1', 'student', gen_random_uuid(), current_setting('test.org')::uuid)->>'outcome',
+  'not_found', 'a student in no linked class has no page');
+select ok((select bool_or(c->>'classroomId' = :'classroom_id') from jsonb_array_elements(
+    pg_temp.q(:'admin1', 'teacher', :'teacher_user', current_setting('test.org')::uuid)->'classes') c),
+  'a linked teacher''s page lists their classes');
+select is(pg_temp.q(:'admin1', 'teacher', :'other_school_user', current_setting('test.org')::uuid)->>'outcome',
+  'not_found', 'a teacher who is not linked has no page');
 
 -- 7. Never: messages, AI Tutor material, students' own notes and practice.
 select ok(pg_get_functiondef('private.api062_query(text, uuid, jsonb)'::regprocedure)

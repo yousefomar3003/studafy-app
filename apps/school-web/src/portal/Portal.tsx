@@ -21,6 +21,7 @@ import { SignIn } from "./pages/SignIn";
 import { Teachers } from "./pages/Teachers";
 import { Welcome } from "./pages/Welcome";
 import { AnswersPage, HandInsPage } from "./pages/Work";
+import { Student, Teacher } from "./pages/People";
 
 /** The School Portal: sign-in, then the school pages the person runs. */
 export function Portal() {
@@ -96,6 +97,8 @@ function SignedIn({ route, me, email, onLanguage }: {
         if (!org) return <Redirect to={{ name: "home" }} />;
         const section = route.name === "teachers" || route.name === "settings"
           ? route.name
+          : route.name === "teacher"
+          ? "teachers"
           : route.name === "dashboard"
           ? "dashboard"
           : "classes";
@@ -132,6 +135,12 @@ function SignedIn({ route, me, email, onLanguage }: {
             )}
             {route.name === "settings" && (
               <Settings org={org} me={me} onChange={orgs.reload} />
+            )}
+            {route.name === "student" && (
+              <Student org={org.id} student={route.student} />
+            )}
+            {route.name === "teacher" && (
+              <Teacher org={org.id} teacher={route.teacher} />
             )}
           </Shell>
         );

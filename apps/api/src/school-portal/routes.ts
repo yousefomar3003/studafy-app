@@ -41,7 +41,9 @@ type QueryOperation =
   | "marks"
   | "attendance"
   | "wellbeing"
-  | "overview";
+  | "overview"
+  | "student"
+  | "teacher";
 type CommandOperation =
   | "createOrg"
   | "updateOrg"
@@ -514,6 +516,20 @@ export function createSchoolPortalRoutes(
 
   // Version 1 additions (plan 13a), after the file route in the catalogue.
   get("getSchoolPortalOverview", `${ORG}/overview`, "overview", read_, "orgId");
+  get(
+    "getSchoolPortalStudent",
+    `${ORG}/students/:studentId`,
+    "student",
+    read_,
+    "studentId",
+  );
+  get(
+    "getSchoolPortalTeacher",
+    `${ORG}/teachers/:teacherId`,
+    "teacher",
+    read_,
+    "teacherId",
+  );
 
   return routes;
 }

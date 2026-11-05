@@ -30,6 +30,8 @@ export type Route =
   | { name: "handIns"; org: string; classroom: string; assignment: string }
   | { name: "answers"; org: string; classroom: string; test: string }
   | { name: "settings"; org: string }
+  | { name: "student"; org: string; student: string }
+  | { name: "teacher"; org: string; teacher: string }
   | { name: "notFound" };
 
 const ID = /^[0-9a-f-]{36}$/i;
@@ -56,6 +58,12 @@ export function parseRoute(pathname: string): Route {
   if (first !== "o" || !org || !ID.test(org)) return { name: "notFound" };
   if (!section) return { name: "dashboard", org };
   if (section === "teachers" && !a) return { name: "teachers", org };
+  if (section === "teachers" && a && ID.test(a) && !b) {
+    return { name: "teacher", org, teacher: a };
+  }
+  if (section === "students" && a && ID.test(a) && !b) {
+    return { name: "student", org, student: a };
+  }
   if (section === "settings" && !a) return { name: "settings", org };
   if (section === "classes" && !a) return { name: "classes", org };
   if (section === "classes" && a && ID.test(a)) {
@@ -92,6 +100,10 @@ export function hrefFor(route: Route, base: string = basePath()): string {
         return `${o}/classes`;
       case "settings":
         return `${o}/settings`;
+      case "student":
+        return `${o}/students/${route.student}`;
+      case "teacher":
+        return `${o}/teachers/${route.teacher}`;
       case "class":
         return `${o}/classes/${route.classroom}/${route.tab}`;
       case "handIns":

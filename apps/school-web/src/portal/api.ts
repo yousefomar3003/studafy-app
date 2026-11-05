@@ -28,6 +28,8 @@ export type Marks = Of<typeof C.V1SchoolPortalMarks>;
 export type Attendance = Of<typeof C.V1SchoolPortalAttendance>;
 export type Wellbeing = Of<typeof C.V1SchoolPortalWellbeing>;
 export type Overview = Of<typeof C.V1SchoolPortalOverview>;
+export type StudentPage = Of<typeof C.V1SchoolPortalStudent>;
+export type TeacherPage = Of<typeof C.V1SchoolPortalTeacher>;
 export type CreateOrgRequest = Of<typeof C.V1CreateSchoolPortalOrgRequest>;
 export type PortalFile = Lessons["materials"][number]["files"][number];
 
@@ -92,6 +94,10 @@ export const api = {
     request<Dashboard>("GET", `${org(orgId)}/dashboard`),
   overview: (orgId: string) =>
     request<Overview>("GET", `${org(orgId)}/overview`),
+  student: (orgId: string, studentId: string) =>
+    request<StudentPage>("GET", `${org(orgId)}/students/${id(studentId)}`),
+  teacher: (orgId: string, teacherId: string) =>
+    request<TeacherPage>("GET", `${org(orgId)}/teachers/${id(teacherId)}`),
   teachers: (orgId: string) =>
     request<Teachers>("GET", `${org(orgId)}/teachers`),
   requestLink: (orgId: string, studafyId: string, captchaToken?: string) =>

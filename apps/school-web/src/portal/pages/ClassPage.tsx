@@ -114,7 +114,7 @@ function ClassTabContent({ org, classroom, tab }: {
       {(data) => {
         switch (tab) {
           case "students":
-            return <StudentsTab data={data as Roster} />;
+            return <StudentsTab data={data as Roster} org={org} />;
           case "lessons":
             return <LessonsTab data={data as Lessons} org={org} />;
           case "assignments":
@@ -141,7 +141,9 @@ function ClassTabContent({ org, classroom, tab }: {
   );
 }
 
-export function StudentsTab({ data }: { data: Roster }) {
+export function StudentsTab(
+  { data, org }: { data: Roster; org: string },
+) {
   const copy = useCopy();
   if (data.students.length === 0) return <Empty>{copy.students.empty}</Empty>;
   return (
@@ -155,7 +157,18 @@ export function StudentsTab({ data }: { data: Roster }) {
     >
       {data.students.map((s) => (
         <tr key={s.studentId}>
-          <td dir="auto">{s.name}</td>
+          <td>
+            <a
+              dir="auto"
+              href={hrefFor({ name: "student", org, student: s.studentId })}
+              onClick={(e) => {
+                e.preventDefault();
+                navigate({ name: "student", org, student: s.studentId });
+              }}
+            >
+              {s.name}
+            </a>
+          </td>
           <td dir="ltr">{s.email ?? "—"}</td>
           <td dir="ltr">{s.studafyId ?? "—"}</td>
           <td>

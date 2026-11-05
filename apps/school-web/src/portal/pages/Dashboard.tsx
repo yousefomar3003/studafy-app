@@ -102,7 +102,12 @@ export function OverviewView({ data, org }: { data: Overview; org: string }) {
               {data.attention.map((a) => (
                 <li key={`${a.studentId}:${a.classroomId}`}>
                   <div>
-                    <strong dir="auto">{a.name}</strong>
+                    <a
+                      dir="auto"
+                      {...go({ name: "student", org, student: a.studentId })}
+                    >
+                      <strong>{a.name}</strong>
+                    </a>
                     <a
                       className="muted"
                       dir="auto"
