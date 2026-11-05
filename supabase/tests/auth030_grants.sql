@@ -110,6 +110,11 @@ select is(
     -- teacher is re-checked on every call, and suggestions are drafts.
     'api059_command',
     'api059_query',
+    -- School Portal (docs/planning/school-portal.md): a school's
+    -- administrator reads a linked teacher's classes, re-checked per read;
+    -- the teacher decides every link.
+    'api062_command',
+    'api062_query',
     'api_idempotency_complete',
     'api_idempotency_fail',
     'api_idempotency_reserve',

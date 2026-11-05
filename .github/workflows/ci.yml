@@ -448,6 +448,15 @@ jobs:
           bunx supabase test db --local
           supabase/tests/ai_output_reports.sql
 
+      # School Portal (docs/planning/school-portal.md): linking only by the
+      # teacher's Studafy ID and acceptance, read-only views of a linked
+      # teacher's classes, never messages or students' own notes, one school
+      # at a time, limits, expiry, export and deletion. Transactional.
+      - name: Verify School Portal
+        run: >-
+          bunx supabase test db --local
+          supabase/tests/school_portal.sql
+
       # DL-078: .doc/.xls/.ppt uploads, renditions queued when a file is
       # cleared and dropped with it, the converter worker's claim and
       # finish, the material index waiting for a .doc's OOXML copy, and PDF

@@ -885,6 +885,27 @@ tests passing.
 4. Run the tests on a **throwaway** database only (see the project's
    pgTAP notes), never the hosted one.
 
+**Status (2026-11-05):** done on this branch, except item 1's file-delivery
+branch (moved to step 2, with the download route it serves).
+`supabase/migrations/202611050010_school_portal.sql` and
+`supabase/tests/school_portal.sql` (66 checks, in CI after
+`ai_output_reports.sql`); the worker's retention pass runs
+`private.school_portal_purge`. Choices made while building:
+
+- **The teacher's Studafy ID is `profiles.public_id`**, the 10-digit number
+  every account already has and the app already shows as "Your Studafy ID".
+  The portal's lookup is the first that finds anyone by it; it finds only
+  teacher accounts and is counted per administrator.
+- **Safeguarding-restricted wellbeing notes are not shown** to the school;
+  every other wellbeing note is. Those notes are, by design, limited to the
+  people the teacher chose. Change only with the owner and the lawyer.
+- **Website-only administrators must be recorded as adults.** Creating a
+  school checks `private.account_kind(...) = 'adult'`; a person who signs in
+  on the website only has no membership, so the portal's sign-up (step 5b)
+  must record `profiles.account_kind = 'adult'` (an age confirmation) first.
+- The commands' idempotency records have no school (`school_id` null),
+  since the administrator belongs to none.
+
 ### Step 2: API
 
 1. Contracts (`schoolPortal.ts`), catalogue entries, permissions (7.5).
