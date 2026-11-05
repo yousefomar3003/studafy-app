@@ -10095,6 +10095,7 @@ class V1MeResponseDto {
     required this.memberships,
     required this.activeTermId,
     this.platformOperator,
+    this.schoolPortal,
   });
 
   factory V1MeResponseDto.fromJson(Map<String, dynamic> json) =>
@@ -10107,6 +10108,7 @@ class V1MeResponseDto {
         ],
         activeTermId: json['activeTermId'] as String?,
         platformOperator: json['platformOperator'] as bool?,
+        schoolPortal: json['schoolPortal'] as bool?,
       );
 
   final String id;
@@ -10114,6 +10116,7 @@ class V1MeResponseDto {
   final List<V1MembershipDto> memberships;
   final String? activeTermId;
   final bool? platformOperator;
+  final bool? schoolPortal;
 
   Map<String, Object?> toJson() => {
     'id': id,
@@ -10121,6 +10124,7 @@ class V1MeResponseDto {
     'memberships': [for (final item in memberships) item.toJson()],
     'activeTermId': activeTermId,
     'platformOperator': ?platformOperator,
+    'schoolPortal': ?schoolPortal,
   };
 }
 

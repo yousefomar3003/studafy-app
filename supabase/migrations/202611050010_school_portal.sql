@@ -772,7 +772,9 @@ begin
           where l.org_id = p_resource_id and l.requested_at > now() - interval '1 day') >= 30 then
         return jsonb_build_object('outcome', 'rate_limited');
       end if;
-      v_teacher := private.school_portal_find_teacher(btrim(body->>'studafyId'));
+      -- As the app shows it ("TC-" and ten digits) or the digits alone.
+      v_teacher := private.school_portal_find_teacher(
+        regexp_replace(upper(btrim(body->>'studafyId')), '^TC-', ''));
       insert into private.school_portal_lookups(admin_id, org_id, found)
       values (me, p_resource_id, v_teacher is not null);
       if v_teacher is null then

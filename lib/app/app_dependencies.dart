@@ -69,6 +69,8 @@ import '../features/safety_review/data/supabase_second_factor.dart';
 import '../features/school_operations/data/api_school_operations_repository.dart';
 import '../features/school_operations/data/preview_school_operations_repository.dart';
 import '../features/school_operations/domain/school_operations_repository.dart';
+import '../features/school_portal/application/school_links_interactor.dart';
+import '../features/school_portal/data/api_school_links_repository.dart';
 import '../features/session/application/session_interactor.dart';
 import '../features/session/data/api_session_repository.dart';
 import '../features/session/data/demo_session_repository.dart';
@@ -111,6 +113,7 @@ class AppDependencies {
     this.aiConsent,
     required this.aiOutputReports,
     this.safetyReview,
+    this.schoolLinks,
     required this.account,
     required this.academicApi,
     required this.academic,
@@ -176,6 +179,10 @@ class AppDependencies {
   /// The platform operator's safety-report review (DL-063). Null without a
   /// backend; offered only to an account the server marks as an operator.
   final SafetyReviewInteractor? safetyReview;
+
+  /// The teacher's School Portal links. Null without a backend; offered
+  /// only while the server says the portal is on.
+  final SchoolLinksInteractor? schoolLinks;
   final AccountInteractor account;
   final V1ApiClient? academicApi;
   final AcademicRepository academic;
@@ -374,6 +381,12 @@ class AppDependencies {
       aiOutputReports: remote == null
           ? const PreviewAiOutputReportRepository()
           : ApiAiOutputReportRepository(remote.api),
+      schoolLinks: remote == null
+          ? null
+          : SchoolLinksInteractor(
+              links: ApiSchoolLinksRepository(remote.api),
+              telemetry: telemetry,
+            ),
       safetyReview: remote == null
           ? null
           : SafetyReviewInteractor(

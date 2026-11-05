@@ -136,8 +136,11 @@ export const V1RemoveSchoolPortalAdminRequest = z.strictObject({
 // ---------------------------------------------------------------------------
 
 export const V1RequestSchoolPortalLinkRequest = z.strictObject({
-  /** The teacher's Studafy ID: ten digits, shown in their app. */
-  studafyId: z.string().trim().regex(/^[1-9][0-9]{9}$/),
+  /**
+   * The teacher's Studafy ID, as their app shows it ("TC-" and ten digits)
+   * or the ten digits alone.
+   */
+  studafyId: z.string().trim().regex(/^(?:TC-)?[1-9][0-9]{9}$/i),
   captchaToken: CaptchaToken,
 });
 export const V1SchoolPortalLinkRequested = z.object({

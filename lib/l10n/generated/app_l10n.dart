@@ -14340,6 +14340,432 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'See trends and what to focus on for {name} with Family+'**
   String familyPlusNudge(String name);
+
+  /// No description provided for @schoolLinkIdDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Give this to your school so it can ask to link with you. Studafy support may also ask for it.'**
+  String get schoolLinkIdDetail;
+
+  /// No description provided for @schoolLinksTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Schools'**
+  String get schoolLinksTitle;
+
+  /// No description provided for @schoolLinksAccountRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Schools that asked to link'**
+  String get schoolLinksAccountRow;
+
+  /// School Portal (teacher side). Placeholders are school names, user content, wrapped in isolates.
+  ///
+  /// In en, this message translates to:
+  /// **'Your classes are visible to ⁨{school}⁩'**
+  String schoolLinksAccountLinked(String school);
+
+  /// No description provided for @schoolLinksAccountNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No school can see your classes'**
+  String get schoolLinksAccountNone;
+
+  /// No description provided for @schoolLinksIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'A school can ask to see your classes. Nothing is shared until you accept, the school can only look, never change anything, and you can unlink at any time.'**
+  String get schoolLinksIntro;
+
+  /// No description provided for @schoolLinksEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No school has asked to link with you.'**
+  String get schoolLinksEmpty;
+
+  /// No description provided for @schoolLinksLinkedSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked now'**
+  String get schoolLinksLinkedSection;
+
+  /// No description provided for @schoolLinksPendingSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for your answer'**
+  String get schoolLinksPendingSection;
+
+  /// No description provided for @schoolLinksPastSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Earlier'**
+  String get schoolLinksPastSection;
+
+  /// No description provided for @schoolLinksReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Review'**
+  String get schoolLinksReview;
+
+  /// No description provided for @schoolLinksLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Your school links couldn\'t be loaded.'**
+  String get schoolLinksLoadError;
+
+  /// No description provided for @schoolLinkRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get schoolLinkRetry;
+
+  /// No description provided for @schoolLinkCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get schoolLinkCancel;
+
+  /// No description provided for @schoolLinkStatusLinked.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked'**
+  String get schoolLinkStatusLinked;
+
+  /// No description provided for @schoolLinkStatusDeclined.
+  ///
+  /// In en, this message translates to:
+  /// **'Declined'**
+  String get schoolLinkStatusDeclined;
+
+  /// No description provided for @schoolLinkStatusCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdrawn by the school'**
+  String get schoolLinkStatusCancelled;
+
+  /// No description provided for @schoolLinkStatusExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired'**
+  String get schoolLinkStatusExpired;
+
+  /// No description provided for @schoolLinkStatusUnlinked.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlinked'**
+  String get schoolLinkStatusUnlinked;
+
+  /// No description provided for @schoolLinkKindPublic.
+  ///
+  /// In en, this message translates to:
+  /// **'Public school'**
+  String get schoolLinkKindPublic;
+
+  /// No description provided for @schoolLinkKindPrivate.
+  ///
+  /// In en, this message translates to:
+  /// **'Private school'**
+  String get schoolLinkKindPrivate;
+
+  /// No description provided for @schoolLinkKindInternational.
+  ///
+  /// In en, this message translates to:
+  /// **'International school'**
+  String get schoolLinkKindInternational;
+
+  /// No description provided for @schoolLinkKindOther.
+  ///
+  /// In en, this message translates to:
+  /// **'School'**
+  String get schoolLinkKindOther;
+
+  /// School Portal (teacher side). Placeholders are school names, user content, wrapped in isolates.
+  ///
+  /// In en, this message translates to:
+  /// **'Your classes are visible to ⁨{school}⁩.'**
+  String schoolLinkBanner(String school);
+
+  /// No description provided for @schoolLinkUnlink.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlink'**
+  String get schoolLinkUnlink;
+
+  /// No description provided for @schoolLinkUnlinkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlink from this school?'**
+  String get schoolLinkUnlinkTitle;
+
+  /// School Portal (teacher side). Placeholders are school names, user content, wrapped in isolates.
+  ///
+  /// In en, this message translates to:
+  /// **'⁨{school}⁩ will stop seeing your classes at once.'**
+  String schoolLinkUnlinkBody(String school);
+
+  /// No description provided for @schoolLinkUnlinked.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlinked. The school can no longer see your classes.'**
+  String get schoolLinkUnlinked;
+
+  /// No description provided for @schoolLinkRequestTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'School request'**
+  String get schoolLinkRequestTitle;
+
+  /// School Portal (teacher side). Placeholders are school names, user content, wrapped in isolates.
+  ///
+  /// In en, this message translates to:
+  /// **'⁨{school}⁩ asks to see your classes'**
+  String schoolLinkRequestHeading(String school);
+
+  /// No description provided for @schoolLinkAskedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Asked by'**
+  String get schoolLinkAskedBy;
+
+  /// No description provided for @schoolLinkSeesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What the school will see'**
+  String get schoolLinkSeesTitle;
+
+  /// No description provided for @schoolLinkSeesClasses.
+  ///
+  /// In en, this message translates to:
+  /// **'All your classes, including ones you create later'**
+  String get schoolLinkSeesClasses;
+
+  /// No description provided for @schoolLinkSeesStudents.
+  ///
+  /// In en, this message translates to:
+  /// **'Every student\'s name, email and Studafy ID'**
+  String get schoolLinkSeesStudents;
+
+  /// No description provided for @schoolLinkSeesParents.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked parents\' names and emails'**
+  String get schoolLinkSeesParents;
+
+  /// No description provided for @schoolLinkSeesLessons.
+  ///
+  /// In en, this message translates to:
+  /// **'Lessons, your files and class announcements'**
+  String get schoolLinkSeesLessons;
+
+  /// No description provided for @schoolLinkSeesWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Hand-ins and test answers'**
+  String get schoolLinkSeesWork;
+
+  /// No description provided for @schoolLinkSeesMarks.
+  ///
+  /// In en, this message translates to:
+  /// **'All marks, including unpublished and AI-suggested ones'**
+  String get schoolLinkSeesMarks;
+
+  /// No description provided for @schoolLinkSeesAttendance.
+  ///
+  /// In en, this message translates to:
+  /// **'Each student\'s attendance, day by day'**
+  String get schoolLinkSeesAttendance;
+
+  /// No description provided for @schoolLinkSeesWellbeing.
+  ///
+  /// In en, this message translates to:
+  /// **'Your wellbeing notes, except safeguarding-restricted ones'**
+  String get schoolLinkSeesWellbeing;
+
+  /// No description provided for @schoolLinkNeverTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What it will never see'**
+  String get schoolLinkNeverTitle;
+
+  /// No description provided for @schoolLinkNeverMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get schoolLinkNeverMessages;
+
+  /// No description provided for @schoolLinkNeverTutor.
+  ///
+  /// In en, this message translates to:
+  /// **'Students\' AI Tutor chats'**
+  String get schoolLinkNeverTutor;
+
+  /// No description provided for @schoolLinkNeverNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Students\' own notebooks, notes, flashcards and quizzes'**
+  String get schoolLinkNeverNotes;
+
+  /// No description provided for @schoolLinkReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'The school can only look, never change anything. You can unlink at any time.'**
+  String get schoolLinkReadOnly;
+
+  /// No description provided for @schoolLinkAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get schoolLinkAccept;
+
+  /// No description provided for @schoolLinkDecline.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline'**
+  String get schoolLinkDecline;
+
+  /// No description provided for @schoolLinkReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Report this school'**
+  String get schoolLinkReport;
+
+  /// School Portal (teacher side). Placeholders are school names, user content, wrapped in isolates.
+  ///
+  /// In en, this message translates to:
+  /// **'Share your classes with ⁨{school}⁩?'**
+  String schoolLinkAcceptTitle(String school);
+
+  /// No description provided for @schoolLinkAcceptBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Its administrators will see everything listed on this page until you unlink.'**
+  String get schoolLinkAcceptBody;
+
+  /// No description provided for @schoolLinkDeclineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline this request?'**
+  String get schoolLinkDeclineTitle;
+
+  /// School Portal (teacher side). Placeholders are school names, user content, wrapped in isolates.
+  ///
+  /// In en, this message translates to:
+  /// **'⁨{school}⁩ can\'t ask again for 30 days.'**
+  String schoolLinkDeclineBody(String school);
+
+  /// No description provided for @schoolLinkReplaceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re linked with another school'**
+  String get schoolLinkReplaceTitle;
+
+  /// School Portal (teacher side). Placeholders are school names, user content, wrapped in isolates.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re linked with ⁨{current}⁩. To link with ⁨{school}⁩, you\'ll be unlinked from ⁨{current}⁩, which will stop seeing your classes.'**
+  String schoolLinkReplaceBody(String current, String school);
+
+  /// No description provided for @schoolLinkReplaceConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlink and accept'**
+  String get schoolLinkReplaceConfirm;
+
+  /// No description provided for @schoolLinkAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked. The school can now see your classes.'**
+  String get schoolLinkAccepted;
+
+  /// No description provided for @schoolLinkDeclined.
+  ///
+  /// In en, this message translates to:
+  /// **'Request declined.'**
+  String get schoolLinkDeclined;
+
+  /// No description provided for @schoolLinkNoLongerWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'This request is no longer waiting for an answer.'**
+  String get schoolLinkNoLongerWaiting;
+
+  /// No description provided for @schoolReportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Report this school'**
+  String get schoolReportTitle;
+
+  /// No description provided for @schoolReportIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell Studafy what\'s wrong. The school isn\'t told who reported it.'**
+  String get schoolReportIntro;
+
+  /// No description provided for @schoolReportNotMySchool.
+  ///
+  /// In en, this message translates to:
+  /// **'This isn\'t my school'**
+  String get schoolReportNotMySchool;
+
+  /// No description provided for @schoolReportFake.
+  ///
+  /// In en, this message translates to:
+  /// **'This school seems fake'**
+  String get schoolReportFake;
+
+  /// No description provided for @schoolReportPressure.
+  ///
+  /// In en, this message translates to:
+  /// **'I\'m being pressured to accept'**
+  String get schoolReportPressure;
+
+  /// No description provided for @schoolReportOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Something else'**
+  String get schoolReportOther;
+
+  /// No description provided for @schoolReportDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Details (optional)'**
+  String get schoolReportDetails;
+
+  /// No description provided for @schoolReportSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send report'**
+  String get schoolReportSend;
+
+  /// No description provided for @schoolReportSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Thank you. Studafy will review your report.'**
+  String get schoolReportSent;
+
+  /// No description provided for @schoolLinkErrorUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This school\'s page is no longer available.'**
+  String get schoolLinkErrorUnavailable;
+
+  /// No description provided for @schoolLinkErrorAlreadyReported.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve already reported this school.'**
+  String get schoolLinkErrorAlreadyReported;
+
+  /// No description provided for @schoolLinkErrorNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'No connection. Check your internet and try again.'**
+  String get schoolLinkErrorNetwork;
+
+  /// No description provided for @schoolLinkErrorGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Try again.'**
+  String get schoolLinkErrorGeneric;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

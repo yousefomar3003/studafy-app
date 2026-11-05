@@ -39500,6 +39500,9 @@
           },
           "platformOperator": {
             "type": "boolean"
+          },
+          "schoolPortal": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -43035,7 +43038,7 @@
         "properties": {
           "studafyId": {
             "type": "string",
-            "pattern": "^[1-9][0-9]{9}$"
+            "pattern": "^(?:TC-)?[1-9][0-9]{9}$"
           },
           "captchaToken": {
             "type": "string",

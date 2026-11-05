@@ -19,6 +19,7 @@ import '../features/account/domain/profile_repository.dart';
 import '../features/account/presentation/delete_account_page.dart';
 import '../features/notifications/presentation/notification_preferences_page.dart';
 import '../features/safety_review/presentation/safety_reports_page.dart';
+import '../features/school_portal/presentation/schools_page.dart';
 import '../features/session/presentation/account_security_page.dart';
 import '../l10n/generated/app_l10n.dart';
 import 'account/account_switching.dart';
@@ -249,6 +250,7 @@ class _AccountHubPageState extends State<AccountHubPage> {
           memberships: profile.memberships,
           accountKind: profile.accountKind,
           platformOperator: profile.platformOperator,
+          schoolPortal: profile.schoolPortal,
         ),
         activeMembership: context_.membership,
         student: context_.selectedStudent,
@@ -276,6 +278,10 @@ class _AccountHubPageState extends State<AccountHubPage> {
     final subscription = widget.subscription;
     final account = AccountScope.maybeOf(context);
     final safetyReview = AccountScope.safetyReviewOf(context);
+    // The School Portal's teacher side, while the server runs it.
+    final schoolLinks = profile?.schoolPortal == true && _isTeacher(profile)
+        ? AccountScope.schoolLinksOf(context)
+        : null;
     final canRename = profile != null && (account?.profileAvailable ?? false);
     final name = _own?.displayName ?? profile?.displayName ?? '';
     final publicId = switch (_own?.publicId) {
@@ -354,7 +360,11 @@ class _AccountHubPageState extends State<AccountHubPage> {
                 _AccountIdRow(
                   id: publicId,
                   title: l10n.accountStudafyId,
-                  detail: l10n.accountPublicIdDetail,
+                  // While the School Portal is on, a teacher gives this to
+                  // their school, which asks to link with it.
+                  detail: schoolLinks != null
+                      ? l10n.schoolLinkIdDetail
+                      : l10n.accountPublicIdDetail,
                   copied: l10n.accountStudafyIdCopied,
                   icon: Icons.qr_code_rounded,
                 ),
@@ -418,6 +428,25 @@ class _AccountHubPageState extends State<AccountHubPage> {
           // The platform operator's safety-report review (DL-063): only for
           // an account the server marks as an operator (GET /v1/me), never
           // inferred here. The server checks every step again.
+          if (schoolLinks != null)
+            SettingsGroup(
+              title: l10n.schoolLinksTitle,
+              children: [
+                SettingsRow(
+                  icon: Icons.school_outlined,
+                  title: l10n.schoolLinksAccountRow,
+                  subtitle: switch (schoolLinks.linked) {
+                    final link? => l10n.schoolLinksAccountLinked(link.org.name),
+                    null => l10n.schoolLinksAccountNone,
+                  },
+                  onTap: () => Navigator.of(context).pushOnce(
+                    MaterialPageRoute<void>(
+                      builder: (_) => SchoolsPage(links: schoolLinks),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           if (profile?.platformOperator == true && safetyReview != null)
             SettingsGroup(
               title: l10n.safetyReviewSection,

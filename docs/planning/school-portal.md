@@ -1010,6 +1010,35 @@ branch (moved to step 2, with the download route it serves).
    decline, report, banner and unlink, switch off hides everything) and a
    Dart bounds check.
 
+**Status (2026-11-05):** done on this branch.
+
+- `GET /v1/me` returns `schoolPortal` (from `SCHOOL_PORTAL_ENABLED`);
+  `UserProfile.schoolPortal` carries it. Nothing below appears while it is
+  false, and the routes behind it answer 404 anyway.
+- `lib/features/school_portal/`: `domain/school_links.dart`,
+  `data/api_school_links_repository.dart`,
+  `application/school_links_interactor.dart` (keeps the current list for
+  the banner; telemetry: decisions, unlinks and report reasons only), and
+  `presentation/`: `school_link_request_page.dart` (who asks, what the
+  school sees and never sees, Accept, Decline, Report; the one-school
+  confirmation on `LINKED_ELSEWHERE`), `schools_page.dart` (Account →
+  Schools: linked now, waiting, earlier; Unlink, Report),
+  `school_link_banner.dart`, `report_school_dialog.dart`.
+- Wiring in `lib/app/teacher_school_links.dart`: the banner on Today (a
+  `banner` slot on `TeacherTodayPage`) and under the Classes header, the
+  notification destination `schoolLinks` (opens the request), and
+  `AccountScope.schoolLinks` for the Account page's Schools row.
+- **Studafy ID:** a teacher's Account already shows their ID as
+  `TC-` and the account's ten digits; while the portal is on its line says
+  to give it to the school. The server accepts it as shown (`TC-…`, any
+  case) or as the ten digits. Copy only; a Share button was left out.
+- EN/AR strings (`schoolLink*`, `schoolReport*`); school names are user
+  content (`UserContentText`, and isolates around the placeholders).
+- Tests: `test/features/school_portal/` (request, accept, decline, the
+  one-school confirmation, report, banner and unlink, Schools, the
+  repository's parsing and refusals) and `test/app/teacher_school_links_test.dart`
+  (off unless the server says on).
+
 ### Step 5: Website
 
 **5a. Public pages (no backend; can start now):**

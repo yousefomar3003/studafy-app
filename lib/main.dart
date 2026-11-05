@@ -212,6 +212,7 @@ class StudafyApp extends StatelessWidget {
               child: AccountScope(
                 account: deps.account,
                 safetyReview: deps.safetyReview,
+                schoolLinks: deps.schoolLinks,
                 // Above the Navigator, so a pushed conversation or hand-in
                 // screen can still reach the upload pipeline.
                 child: UploadsScope(

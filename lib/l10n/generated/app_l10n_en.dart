@@ -8452,4 +8452,249 @@ class AppL10nEn extends AppL10n {
   String familyPlusNudge(String name) {
     return 'See trends and what to focus on for $name with Family+';
   }
+
+  @override
+  String get schoolLinkIdDetail =>
+      'Give this to your school so it can ask to link with you. Studafy support may also ask for it.';
+
+  @override
+  String get schoolLinksTitle => 'Schools';
+
+  @override
+  String get schoolLinksAccountRow => 'Schools that asked to link';
+
+  @override
+  String schoolLinksAccountLinked(String school) {
+    return 'Your classes are visible to ⁨$school⁩';
+  }
+
+  @override
+  String get schoolLinksAccountNone => 'No school can see your classes';
+
+  @override
+  String get schoolLinksIntro =>
+      'A school can ask to see your classes. Nothing is shared until you accept, the school can only look, never change anything, and you can unlink at any time.';
+
+  @override
+  String get schoolLinksEmpty => 'No school has asked to link with you.';
+
+  @override
+  String get schoolLinksLinkedSection => 'Linked now';
+
+  @override
+  String get schoolLinksPendingSection => 'Waiting for your answer';
+
+  @override
+  String get schoolLinksPastSection => 'Earlier';
+
+  @override
+  String get schoolLinksReview => 'Review';
+
+  @override
+  String get schoolLinksLoadError => 'Your school links couldn\'t be loaded.';
+
+  @override
+  String get schoolLinkRetry => 'Try again';
+
+  @override
+  String get schoolLinkCancel => 'Cancel';
+
+  @override
+  String get schoolLinkStatusLinked => 'Linked';
+
+  @override
+  String get schoolLinkStatusDeclined => 'Declined';
+
+  @override
+  String get schoolLinkStatusCancelled => 'Withdrawn by the school';
+
+  @override
+  String get schoolLinkStatusExpired => 'Expired';
+
+  @override
+  String get schoolLinkStatusUnlinked => 'Unlinked';
+
+  @override
+  String get schoolLinkKindPublic => 'Public school';
+
+  @override
+  String get schoolLinkKindPrivate => 'Private school';
+
+  @override
+  String get schoolLinkKindInternational => 'International school';
+
+  @override
+  String get schoolLinkKindOther => 'School';
+
+  @override
+  String schoolLinkBanner(String school) {
+    return 'Your classes are visible to ⁨$school⁩.';
+  }
+
+  @override
+  String get schoolLinkUnlink => 'Unlink';
+
+  @override
+  String get schoolLinkUnlinkTitle => 'Unlink from this school?';
+
+  @override
+  String schoolLinkUnlinkBody(String school) {
+    return '⁨$school⁩ will stop seeing your classes at once.';
+  }
+
+  @override
+  String get schoolLinkUnlinked =>
+      'Unlinked. The school can no longer see your classes.';
+
+  @override
+  String get schoolLinkRequestTitle => 'School request';
+
+  @override
+  String schoolLinkRequestHeading(String school) {
+    return '⁨$school⁩ asks to see your classes';
+  }
+
+  @override
+  String get schoolLinkAskedBy => 'Asked by';
+
+  @override
+  String get schoolLinkSeesTitle => 'What the school will see';
+
+  @override
+  String get schoolLinkSeesClasses =>
+      'All your classes, including ones you create later';
+
+  @override
+  String get schoolLinkSeesStudents =>
+      'Every student\'s name, email and Studafy ID';
+
+  @override
+  String get schoolLinkSeesParents => 'Linked parents\' names and emails';
+
+  @override
+  String get schoolLinkSeesLessons =>
+      'Lessons, your files and class announcements';
+
+  @override
+  String get schoolLinkSeesWork => 'Hand-ins and test answers';
+
+  @override
+  String get schoolLinkSeesMarks =>
+      'All marks, including unpublished and AI-suggested ones';
+
+  @override
+  String get schoolLinkSeesAttendance =>
+      'Each student\'s attendance, day by day';
+
+  @override
+  String get schoolLinkSeesWellbeing =>
+      'Your wellbeing notes, except safeguarding-restricted ones';
+
+  @override
+  String get schoolLinkNeverTitle => 'What it will never see';
+
+  @override
+  String get schoolLinkNeverMessages => 'Messages';
+
+  @override
+  String get schoolLinkNeverTutor => 'Students\' AI Tutor chats';
+
+  @override
+  String get schoolLinkNeverNotes =>
+      'Students\' own notebooks, notes, flashcards and quizzes';
+
+  @override
+  String get schoolLinkReadOnly =>
+      'The school can only look, never change anything. You can unlink at any time.';
+
+  @override
+  String get schoolLinkAccept => 'Accept';
+
+  @override
+  String get schoolLinkDecline => 'Decline';
+
+  @override
+  String get schoolLinkReport => 'Report this school';
+
+  @override
+  String schoolLinkAcceptTitle(String school) {
+    return 'Share your classes with ⁨$school⁩?';
+  }
+
+  @override
+  String get schoolLinkAcceptBody =>
+      'Its administrators will see everything listed on this page until you unlink.';
+
+  @override
+  String get schoolLinkDeclineTitle => 'Decline this request?';
+
+  @override
+  String schoolLinkDeclineBody(String school) {
+    return '⁨$school⁩ can\'t ask again for 30 days.';
+  }
+
+  @override
+  String get schoolLinkReplaceTitle => 'You\'re linked with another school';
+
+  @override
+  String schoolLinkReplaceBody(String current, String school) {
+    return 'You\'re linked with ⁨$current⁩. To link with ⁨$school⁩, you\'ll be unlinked from ⁨$current⁩, which will stop seeing your classes.';
+  }
+
+  @override
+  String get schoolLinkReplaceConfirm => 'Unlink and accept';
+
+  @override
+  String get schoolLinkAccepted =>
+      'Linked. The school can now see your classes.';
+
+  @override
+  String get schoolLinkDeclined => 'Request declined.';
+
+  @override
+  String get schoolLinkNoLongerWaiting =>
+      'This request is no longer waiting for an answer.';
+
+  @override
+  String get schoolReportTitle => 'Report this school';
+
+  @override
+  String get schoolReportIntro =>
+      'Tell Studafy what\'s wrong. The school isn\'t told who reported it.';
+
+  @override
+  String get schoolReportNotMySchool => 'This isn\'t my school';
+
+  @override
+  String get schoolReportFake => 'This school seems fake';
+
+  @override
+  String get schoolReportPressure => 'I\'m being pressured to accept';
+
+  @override
+  String get schoolReportOther => 'Something else';
+
+  @override
+  String get schoolReportDetails => 'Details (optional)';
+
+  @override
+  String get schoolReportSend => 'Send report';
+
+  @override
+  String get schoolReportSent => 'Thank you. Studafy will review your report.';
+
+  @override
+  String get schoolLinkErrorUnavailable =>
+      'This school\'s page is no longer available.';
+
+  @override
+  String get schoolLinkErrorAlreadyReported =>
+      'You\'ve already reported this school.';
+
+  @override
+  String get schoolLinkErrorNetwork =>
+      'No connection. Check your internet and try again.';
+
+  @override
+  String get schoolLinkErrorGeneric => 'Something went wrong. Try again.';
 }

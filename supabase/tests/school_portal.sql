@@ -154,8 +154,8 @@ select is(pg_temp.cmd(:'admin1', 'requestLink', current_setting('test.org')::uui
   jsonb_build_object('studafyId', (select public_id from public.profiles where id = :'guardian_user')))
   ->>'outcome', 'teacher_not_found', 'nor a parent''s');
 select is(pg_temp.cmd(:'admin1', 'requestLink', current_setting('test.org')::uuid,
-  jsonb_build_object('studafyId', (select public_id from public.profiles where id = :'teacher_user')))
-  ->'response'->>'status', 'pending', 'a teacher is found and asked');
+  jsonb_build_object('studafyId', 'tc-' || (select public_id from public.profiles where id = :'teacher_user')))
+  ->'response'->>'status', 'pending', 'a teacher is found and asked, by the ID as their app shows it');
 select is((select count(*)::int from private.school_portal_lookups where admin_id = :'admin1'), 3,
   'every lookup is counted, found or not');
 select is(pg_temp.cmd(:'admin2', 'requestLink', current_setting('test.org')::uuid,

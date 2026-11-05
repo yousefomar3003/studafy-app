@@ -30,6 +30,7 @@ class UserProfile {
     required this.memberships,
     this.accountKind,
     this.platformOperator = false,
+    this.schoolPortal = false,
   });
 
   final String id;
@@ -46,6 +47,11 @@ class UserProfile {
   /// the device; it opens nothing by itself, since the server checks every
   /// review step again.
   final bool platformOperator;
+
+  /// The server's School Portal is on (GET /v1/me): a teacher is offered
+  /// their Studafy ID for schools and the schools' link requests. The
+  /// routes behind it are refused by the server while it is off.
+  final bool schoolPortal;
 
   /// The kind the server reported, or else what the memberships show.
   AccountKind? get effectiveKind {

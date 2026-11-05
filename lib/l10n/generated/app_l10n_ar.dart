@@ -8462,4 +8462,243 @@ class AppL10nAr extends AppL10n {
   String familyPlusNudge(String name) {
     return 'اطّلع على اتجاهات $name وما يجب التركيز عليه مع ⁦Family+⁩';
   }
+
+  @override
+  String get schoolLinkIdDetail =>
+      'أعطِ هذا الرقم لمدرستك لتطلب الربط معك. وقد يطلبه دعم Studafy أيضًا.';
+
+  @override
+  String get schoolLinksTitle => 'المدارس';
+
+  @override
+  String get schoolLinksAccountRow => 'المدارس التي طلبت الربط';
+
+  @override
+  String schoolLinksAccountLinked(String school) {
+    return 'صفوفك ظاهرة لـ ⁨$school⁩';
+  }
+
+  @override
+  String get schoolLinksAccountNone => 'لا تستطيع أي مدرسة رؤية صفوفك';
+
+  @override
+  String get schoolLinksIntro =>
+      'يمكن للمدرسة أن تطلب الاطلاع على صفوفك. لا يُشارك شيء قبل موافقتك، والمدرسة تطّلع فقط دون أن تغيّر شيئًا، ويمكنك إلغاء الربط في أي وقت.';
+
+  @override
+  String get schoolLinksEmpty => 'لم تطلب أي مدرسة الربط معك.';
+
+  @override
+  String get schoolLinksLinkedSection => 'مرتبط الآن';
+
+  @override
+  String get schoolLinksPendingSection => 'بانتظار ردّك';
+
+  @override
+  String get schoolLinksPastSection => 'سابقًا';
+
+  @override
+  String get schoolLinksReview => 'مراجعة';
+
+  @override
+  String get schoolLinksLoadError => 'تعذّر تحميل روابطك مع المدارس.';
+
+  @override
+  String get schoolLinkRetry => 'حاول مرة أخرى';
+
+  @override
+  String get schoolLinkCancel => 'إلغاء';
+
+  @override
+  String get schoolLinkStatusLinked => 'مرتبط';
+
+  @override
+  String get schoolLinkStatusDeclined => 'مرفوض';
+
+  @override
+  String get schoolLinkStatusCancelled => 'سحبته المدرسة';
+
+  @override
+  String get schoolLinkStatusExpired => 'انتهت صلاحيته';
+
+  @override
+  String get schoolLinkStatusUnlinked => 'أُلغي الربط';
+
+  @override
+  String get schoolLinkKindPublic => 'مدرسة حكومية';
+
+  @override
+  String get schoolLinkKindPrivate => 'مدرسة خاصة';
+
+  @override
+  String get schoolLinkKindInternational => 'مدرسة دولية';
+
+  @override
+  String get schoolLinkKindOther => 'مدرسة';
+
+  @override
+  String schoolLinkBanner(String school) {
+    return 'صفوفك ظاهرة لـ ⁨$school⁩.';
+  }
+
+  @override
+  String get schoolLinkUnlink => 'إلغاء الربط';
+
+  @override
+  String get schoolLinkUnlinkTitle => 'إلغاء الربط مع هذه المدرسة؟';
+
+  @override
+  String schoolLinkUnlinkBody(String school) {
+    return 'ستتوقف ⁨$school⁩ عن رؤية صفوفك فورًا.';
+  }
+
+  @override
+  String get schoolLinkUnlinked => 'تم إلغاء الربط. لم تعد المدرسة ترى صفوفك.';
+
+  @override
+  String get schoolLinkRequestTitle => 'طلب مدرسة';
+
+  @override
+  String schoolLinkRequestHeading(String school) {
+    return 'تطلب ⁨$school⁩ الاطلاع على صفوفك';
+  }
+
+  @override
+  String get schoolLinkAskedBy => 'مقدّم الطلب';
+
+  @override
+  String get schoolLinkSeesTitle => 'ما الذي ستراه المدرسة';
+
+  @override
+  String get schoolLinkSeesClasses => 'كل صفوفك، بما فيها التي تنشئها لاحقًا';
+
+  @override
+  String get schoolLinkSeesStudents =>
+      'اسم كل طالب وبريده الإلكتروني ومعرّف Studafy الخاص به';
+
+  @override
+  String get schoolLinkSeesParents =>
+      'أسماء أولياء الأمور المرتبطين وعناوين بريدهم الإلكتروني';
+
+  @override
+  String get schoolLinkSeesLessons => 'الدروس وملفاتك وإعلانات الصف';
+
+  @override
+  String get schoolLinkSeesWork => 'الأعمال المسلّمة وإجابات الاختبارات';
+
+  @override
+  String get schoolLinkSeesMarks =>
+      'كل الدرجات، بما فيها غير المنشورة والمقترحة بالذكاء الاصطناعي';
+
+  @override
+  String get schoolLinkSeesAttendance => 'حضور كل طالب يومًا بيوم';
+
+  @override
+  String get schoolLinkSeesWellbeing =>
+      'ملاحظات الرعاية التي كتبتها، ما عدا المقيّدة لأغراض الحماية';
+
+  @override
+  String get schoolLinkNeverTitle => 'ما لن تراه أبدًا';
+
+  @override
+  String get schoolLinkNeverMessages => 'الرسائل';
+
+  @override
+  String get schoolLinkNeverTutor => 'محادثات الطلاب مع المعلّم الذكي';
+
+  @override
+  String get schoolLinkNeverNotes =>
+      'دفاتر الطلاب وملاحظاتهم وبطاقات المراجعة والاختبارات الخاصة بهم';
+
+  @override
+  String get schoolLinkReadOnly =>
+      'المدرسة تطّلع فقط ولا تغيّر شيئًا. ويمكنك إلغاء الربط في أي وقت.';
+
+  @override
+  String get schoolLinkAccept => 'قبول';
+
+  @override
+  String get schoolLinkDecline => 'رفض';
+
+  @override
+  String get schoolLinkReport => 'الإبلاغ عن هذه المدرسة';
+
+  @override
+  String schoolLinkAcceptTitle(String school) {
+    return 'مشاركة صفوفك مع ⁨$school⁩؟';
+  }
+
+  @override
+  String get schoolLinkAcceptBody =>
+      'سيرى مسؤولوها كل ما هو مذكور في هذه الصفحة حتى تلغي الربط.';
+
+  @override
+  String get schoolLinkDeclineTitle => 'رفض هذا الطلب؟';
+
+  @override
+  String schoolLinkDeclineBody(String school) {
+    return 'لن تستطيع ⁨$school⁩ الطلب مرة أخرى قبل 30 يومًا.';
+  }
+
+  @override
+  String get schoolLinkReplaceTitle => 'أنت مرتبط بمدرسة أخرى';
+
+  @override
+  String schoolLinkReplaceBody(String current, String school) {
+    return 'أنت مرتبط بـ ⁨$current⁩. للربط مع ⁨$school⁩ سيُلغى ربطك بـ ⁨$current⁩، فتتوقف عن رؤية صفوفك.';
+  }
+
+  @override
+  String get schoolLinkReplaceConfirm => 'إلغاء الربط والقبول';
+
+  @override
+  String get schoolLinkAccepted => 'تم الربط. أصبحت المدرسة ترى صفوفك.';
+
+  @override
+  String get schoolLinkDeclined => 'تم رفض الطلب.';
+
+  @override
+  String get schoolLinkNoLongerWaiting => 'لم يعد هذا الطلب بانتظار رد.';
+
+  @override
+  String get schoolReportTitle => 'الإبلاغ عن هذه المدرسة';
+
+  @override
+  String get schoolReportIntro =>
+      'أخبر Studafy بالمشكلة. لن تعرف المدرسة من أبلغ عنها.';
+
+  @override
+  String get schoolReportNotMySchool => 'هذه ليست مدرستي';
+
+  @override
+  String get schoolReportFake => 'تبدو هذه المدرسة وهمية';
+
+  @override
+  String get schoolReportPressure => 'أتعرّض لضغط كي أقبل';
+
+  @override
+  String get schoolReportOther => 'سبب آخر';
+
+  @override
+  String get schoolReportDetails => 'التفاصيل (اختياري)';
+
+  @override
+  String get schoolReportSend => 'إرسال البلاغ';
+
+  @override
+  String get schoolReportSent => 'شكرًا لك. سيراجع Studafy بلاغك.';
+
+  @override
+  String get schoolLinkErrorUnavailable => 'صفحة هذه المدرسة لم تعد متاحة.';
+
+  @override
+  String get schoolLinkErrorAlreadyReported =>
+      'لقد أبلغت عن هذه المدرسة من قبل.';
+
+  @override
+  String get schoolLinkErrorNetwork =>
+      'لا يوجد اتصال. تحقّق من الإنترنت وحاول مرة أخرى.';
+
+  @override
+  String get schoolLinkErrorGeneric => 'حدث خطأ ما. حاول مرة أخرى.';
 }

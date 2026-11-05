@@ -81,6 +81,7 @@ class _ProfileSetupGateState extends State<ProfileSetupGate> {
           memberships: profile.memberships,
           accountKind: profile.accountKind,
           platformOperator: profile.platformOperator,
+          schoolPortal: profile.schoolPortal,
         ),
         activeMembership: _context.membership,
         student: _context.selectedStudent,

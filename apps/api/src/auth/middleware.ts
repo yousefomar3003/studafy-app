@@ -82,6 +82,11 @@ export interface AuthDependencies {
    * unknown subject is an anomaly to refuse, not a person to enrol.
    */
   provisionUnknownSubjects?: boolean;
+  /**
+   * SCHOOL_PORTAL_ENABLED: GET /v1/me says so, and the app then offers a
+   * teacher their school links (docs/planning/school-portal.md, 6.5).
+   */
+  schoolPortal?: boolean;
 }
 
 /**

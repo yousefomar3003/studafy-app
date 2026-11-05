@@ -39,7 +39,12 @@ class TeacherTodayPage extends StatefulWidget {
     this.onOpenLessons,
     this.visible = true,
     this.changes,
+    this.banner,
   });
+
+  /// Shown above everything else, such as the School Portal's "Your classes
+  /// are visible to" notice; null shows nothing.
+  final Widget? banner;
 
   /// Shortcuts to the things a teacher does most, built by the shell.
   final List<TodayQuickAction> quickActions;
@@ -303,6 +308,7 @@ class _TeacherTodayPageState extends State<TeacherTodayPage> {
         child: ListView(
           padding: const EdgeInsetsDirectional.fromSTEB(20, 8, 20, 32),
           children: [
+            ?widget.banner,
             StudafyHero(
               eyebrow: today,
               title: firstName.isEmpty

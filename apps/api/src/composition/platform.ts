@@ -176,6 +176,7 @@ export function buildPlatform() {
       // the hosted test copy's database is the issuer's own project.
       provisionUnknownSubjects: env.ENVIRONMENT === "development" &&
         isLocalDatabase(env.DATABASE_URL),
+      schoolPortal: env.SCHOOL_PORTAL_ENABLED,
     }
     : undefined;
   // Commands that hand an account its first membership live in other
