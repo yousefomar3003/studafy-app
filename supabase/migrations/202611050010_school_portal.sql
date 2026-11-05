@@ -801,6 +801,17 @@ begin
       end if;
       insert into private.school_portal_teacher_links(org_id, teacher_id, requested_by)
       values (p_resource_id, v_teacher, me) returning * into v_link;
+      -- The teacher's notice (in-app and push), filed under the teacher's
+      -- own workspace; the outbox resolves it to this teacher alone.
+      insert into public.notification_outbox(school_id, source_event_id, idempotency_key,
+        channel, template_key, audience, payload)
+      select m.school_id, v_link.id::text, 'school_portal.link_requested:' || v_link.id,
+        'in_app', 'school_portal.link_requested',
+        jsonb_build_object('teacherId', v_teacher), jsonb_build_object('id', v_link.id)
+      from public.memberships m
+      where m.user_id = v_teacher and m.role = 'teacher' and m.active and m.status = 'active'
+      order by m.created_at, m.id
+      limit 1;
       v_status := 201;
       response := jsonb_build_object('linkId', v_link.id,
         'teacher', private.school_portal_person(v_teacher), 'status', 'pending');
@@ -1570,3 +1581,288 @@ $grants$;
 grant execute on function private.api062_file_download(uuid, uuid, jsonb, uuid, bigint),
   private.api051_consume_download_grant(uuid, text)
   to studafy_api_runtime;
+
+-- ---------------------------------------------------------------------------
+-- 10. Notices (plan step 3). The teacher hears about a school's request;
+--     nobody else is told anything. Re-issued whole from 202609300001 with
+--     only the School Portal branch added at the top.
+-- ---------------------------------------------------------------------------
+create or replace function private.api061_notification_recipients(p_school uuid, p_template text, p_source text, p_audience jsonb)
+ RETURNS uuid[]
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare
+  v_classroom uuid;
+  v_source uuid;
+  v_staff uuid[] := array[]::uuid[];
+  v_family uuid[] := array[]::uuid[];
+  v_students uuid[] := array[]::uuid[];
+  -- Whether the child themselves hears about it, separately from their
+  -- guardians. Almost always yes; a pastoral note shared with home is the
+  -- exception the school explicitly asked for.
+  v_tell_student boolean := true;
+begin
+  -- source_event_id is text, and not every producer writes a uuid into it.
+  -- Casting it unconditionally raised inside the dispatcher, which fails the
+  -- job rather than the row and eventually poisons the queue for everyone,
+  -- so anything that is not a uuid is simply "no entity" here.
+  if p_source ~ ('^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}'
+                 || '-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$') then
+    v_source := p_source::uuid;
+  end if;
+
+  -- Studafy School Portal: a school asked a teacher to link. Only the
+  -- teacher named on the request, and only while it still waits; never a
+  -- student, a parent or anyone at the teacher's school.
+  if p_template = 'school_portal.link_requested' then
+    return (
+      select coalesce(array_agg(l.teacher_id), array[]::uuid[])
+      from private.school_portal_teacher_links l
+      join public.profiles p on p.id = l.teacher_id and p.status = 'active'
+      where l.id = v_source
+        and (p_audience->>'teacherId') = l.teacher_id::text
+        and private.school_portal_link_status(l.status, l.requested_at) = 'pending');
+  end if;
+
+  -- The staff audience, unchanged from what this function has always done.
+  -- Every existing template keeps exactly the recipients it had.
+  if p_audience->>'classroomId' is not null then
+    v_classroom := nullif(p_audience->>'classroomId', '')::uuid;
+    if v_classroom is null then return null; end if;
+    select coalesce(array_agg(m.user_id), array[]::uuid[]) into v_staff
+    from public.memberships m
+    join public.classroom_staff cs
+      on cs.school_id = m.school_id and cs.user_id = m.user_id
+    join public.profiles p on p.id = m.user_id and p.status = 'active'
+    where m.school_id = p_school and m.active and m.status = 'active'
+      and cs.classroom_id = v_classroom and cs.status = 'active'
+      and cs.role in ('lead_teacher', 'co_teacher', 'assistant');
+  elsif p_audience->>'schoolId' is not null
+        and nullif(p_audience->>'schoolId', '')::uuid = p_school then
+    select coalesce(array_agg(m.user_id), array[]::uuid[]) into v_staff
+    from public.memberships m
+    join public.profiles p on p.id = m.user_id and p.status = 'active'
+    where m.school_id = p_school and m.active and m.status = 'active'
+      and m.role in ('school_admin', 'teacher');
+  elsif p_audience ? 'gradeResultIds' then
+    -- Marks released or corrected in one go: nobody on the staff side.
+    v_staff := array[]::uuid[];
+  else
+    return null;
+  end if;
+
+  -- A guardian link concerns two named people, not a class. The requesting
+  -- guardian is not verified yet, so they are read from the link row itself
+  -- rather than through the verified-guardian join used everywhere else.
+  -- Both sides are told about all three events: the student is the one who
+  -- decides on a request, and the guardian is the one a verification or a
+  -- revocation is about.
+  if p_template like 'family.guardian_link_%' then
+    select coalesce(array_agg(distinct x.user_id), array[]::uuid[])
+      into v_family
+    from (
+      select gl.guardian_id as user_id
+      from public.guardian_links gl
+      where gl.id = v_source and gl.school_id = p_school
+      union
+      select s.user_id
+      from public.guardian_links gl
+      join public.students s
+        on s.id = gl.student_id and s.deleted_at is null
+      where gl.id = v_source and gl.school_id = p_school
+        and s.user_id is not null
+    ) x
+    join public.profiles p on p.id = x.user_id and p.status = 'active';
+    return (
+      select coalesce(array_agg(distinct u), array[]::uuid[])
+      from unnest(v_staff || v_family) as t(u)
+    );
+  end if;
+
+  -- Which children the event is about. Left empty for every template that
+  -- concerns staff alone, which is why those are untouched by this.
+  if p_template in ('academic.assignment_published',
+                    'academic.assessment_published',
+                    'academic.resource_published')
+  then
+    -- Set for the whole class, so the whole class hears about it.
+    select coalesce(array_agg(e.student_id), array[]::uuid[]) into v_students
+    from public.enrollments e
+    where e.school_id = p_school and e.classroom_id = v_classroom
+      and e.active and e.status = 'active'
+      and e.starts_on <= current_date
+      and (e.ends_on is null or e.ends_on >= current_date);
+  elsif p_template = 'academic.grade_published' then
+    -- One child's mark. Announcing it to the class would be both noise and
+    -- a statement about somebody else's child.
+    select coalesce(array_agg(g.student_id), array[]::uuid[]) into v_students
+    from public.grade_results g
+    where g.id = v_source and g.school_id = p_school
+      and g.state = 'published';
+  elsif p_template in ('academic.grades_published', 'academic.grades_corrected') then
+    -- Only marks that are still published, of this piece of work, named by
+    -- the event: a mark withdrawn since is not announced.
+    select coalesce(array_agg(g.student_id), array[]::uuid[]) into v_students
+    from public.grade_results g
+    where g.assessment_id = v_source and g.school_id = p_school
+      and g.state = 'published'
+      and g.id in (
+        select x::uuid from jsonb_array_elements_text(
+          coalesce(p_audience->'gradeResultIds', '[]'::jsonb)) x);
+  elsif p_template = 'academic.wellbeing_shared' then
+    -- Re-read the visibility here rather than trusting the template name:
+    -- if a note has since been restricted, this must not announce it. A
+    -- safeguarding-restricted note matches nothing and reaches no family.
+    select coalesce(array_agg(w.student_id), array[]::uuid[]),
+           bool_or(w.visibility = 'student_guardian_shared')
+      into v_students, v_tell_student
+    from public.wellbeing_events w
+    where w.id = v_source and w.school_id = p_school
+      and w.visibility in ('guardian_shared', 'student_guardian_shared');
+    v_tell_student := coalesce(v_tell_student, false);
+  end if;
+
+  if cardinality(v_students) = 0 then
+    return (
+      select coalesce(array_agg(distinct u), array[]::uuid[])
+      from unnest(v_staff) as t(u)
+    );
+  end if;
+
+  select coalesce(array_agg(distinct x.user_id), array[]::uuid[])
+    into v_family
+  from (
+    select s.user_id
+    from public.students s
+    where v_tell_student and s.id = any(v_students)
+      and s.deleted_at is null and s.user_id is not null
+    union
+    -- An expired or revoked link is not a link. This is the same test the
+    -- read paths use, so nobody is notified about a child whose record they
+    -- could no longer open.
+    select gl.guardian_id
+    from public.guardian_links gl
+    where gl.student_id = any(v_students) and gl.school_id = p_school
+      and gl.status = 'verified'
+      and (gl.expires_at is null or gl.expires_at > now())
+  ) x
+  join public.profiles p on p.id = x.user_id and p.status = 'active';
+
+  return (
+    select coalesce(array_agg(distinct u), array[]::uuid[])
+    from unnest(v_staff || v_family) as t(u)
+  );
+end;
+$function$;
+
+-- A teacher reporting a school alerts the operator (the safety reports'
+-- Telegram relay, as private.ai_output_alerts_* in 202611030040). The alert
+-- carries the report id, the school's id and the reason: never the
+-- teacher's words or anyone's name.
+create table private.school_portal_report_alerts (
+  report_id uuid primary key
+    references private.school_portal_reports(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  attempts integer not null default 0 check (attempts >= 0),
+  claimed_until timestamptz,
+  sent_at timestamptz,
+  last_error text check (last_error is null or last_error ~ '^[A-Z0-9_]{1,64}$')
+);
+create index school_portal_report_alerts_pending_idx
+  on private.school_portal_report_alerts (created_at) where sent_at is null;
+alter table private.school_portal_report_alerts enable row level security;
+alter table private.school_portal_report_alerts force row level security;
+revoke all on private.school_portal_report_alerts from public, anon, authenticated,
+  service_role, studafy_api_runtime, studafy_worker_runtime;
+
+create or replace function private.school_portal_alerts_enqueue()
+returns trigger language plpgsql security definer set search_path = '' as $$
+begin
+  insert into private.school_portal_report_alerts (report_id) values (new.id)
+  on conflict (report_id) do nothing;
+  return new;
+end;
+$$;
+create trigger school_portal_reports_alert_on_insert
+  after insert on private.school_portal_reports
+  for each row execute function private.school_portal_alerts_enqueue();
+
+create or replace function private.school_portal_alerts_claim(
+  p_limit integer, p_lease_seconds integer)
+returns table (report_id uuid, org_id uuid, reason text, reported_at timestamptz,
+  attempts integer)
+language plpgsql security definer set search_path = '' as $$
+#variable_conflict use_column
+begin
+  if p_limit is null or p_limit not between 1 and 100
+     or p_lease_seconds is null or p_lease_seconds not between 10 and 3600 then
+    raise exception 'SCHOOL_PORTAL_ALERTS_INVALID_CLAIM';
+  end if;
+  return query
+  with due as (
+    select a.report_id from private.school_portal_report_alerts a
+    where a.sent_at is null and (a.claimed_until is null or a.claimed_until <= now())
+    order by a.created_at limit p_limit
+    for update skip locked
+  ), claimed as (
+    update private.school_portal_report_alerts a
+    set claimed_until = now() + make_interval(secs => p_lease_seconds),
+        attempts = a.attempts + 1
+    from due where a.report_id = due.report_id
+    returning a.report_id, a.attempts
+  )
+  select c.report_id, r.org_id, r.reason, r.created_at, c.attempts
+  from claimed c join private.school_portal_reports r on r.id = c.report_id
+  order by r.created_at;
+end;
+$$;
+
+create or replace function private.school_portal_alerts_finish(
+  p_report uuid, p_sent boolean, p_error text)
+returns boolean language plpgsql security definer set search_path = '' as $$
+declare v_attempts integer;
+begin
+  if p_sent then
+    update private.school_portal_report_alerts
+    set sent_at = now(), claimed_until = null, last_error = null
+    where report_id = p_report and sent_at is null;
+    return found;
+  end if;
+  update private.school_portal_report_alerts
+  set claimed_until = now() + make_interval(
+        mins => least(30, power(2, greatest(attempts - 1, 0))::integer)),
+      last_error = case when p_error ~ '^[A-Z0-9_]{1,64}$' then p_error else 'SEND_FAILED' end
+  where report_id = p_report and sent_at is null
+  returning attempts into v_attempts;
+  return v_attempts is not null;
+end;
+$$;
+
+create or replace function private.school_portal_alerts_backlog()
+returns jsonb language sql stable security definer set search_path = '' as $$
+  select jsonb_build_object('unsent', count(*),
+    'oldestSeconds', coalesce(extract(epoch from now() - min(a.created_at))::bigint, 0))
+  from private.school_portal_report_alerts a where a.sent_at is null;
+$$;
+
+do $grants$
+declare fn text;
+begin
+  foreach fn in array array[
+    'private.api061_notification_recipients(uuid, text, text, jsonb)',
+    'private.school_portal_alerts_enqueue()',
+    'private.school_portal_alerts_claim(integer, integer)',
+    'private.school_portal_alerts_finish(uuid, boolean, text)',
+    'private.school_portal_alerts_backlog()'
+  ] loop
+    execute format('alter function %s owner to postgres', fn);
+    execute format('revoke all on function %s from public, anon, authenticated, service_role, studafy_api_runtime, studafy_worker_runtime', fn);
+  end loop;
+end
+$grants$;
+grant execute on function private.school_portal_alerts_claim(integer, integer),
+  private.school_portal_alerts_finish(uuid, boolean, text),
+  private.school_portal_alerts_backlog()
+  to studafy_worker_runtime;

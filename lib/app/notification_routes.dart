@@ -33,6 +33,7 @@ class NotificationDestinations {
     this.family,
     this.plans,
     this.reports,
+    this.schoolLinks,
   });
 
   /// Shows [FeedTarget.feed] and opens [FeedTarget.id] in it, as a tap on
@@ -51,6 +52,9 @@ class NotificationDestinations {
   /// The plan page for a subscription notification, given its feature key.
   final void Function(String? featureKey)? plans;
   final VoidCallback? reports;
+
+  /// A school's link request, given its id (teachers only).
+  final void Function(String? linkId)? schoolLinks;
 }
 
 /// Opens exactly what [item] is about, in the shell [destinations] are for:
@@ -119,6 +123,11 @@ bool openNotificationIn(
       return true;
     case NotificationTargetKind.report:
       return call(destinations.reports);
+    case NotificationTargetKind.schoolLink:
+      final links = destinations.schoolLinks;
+      if (links == null) return false;
+      links(id);
+      return true;
     case null:
       return false;
   }

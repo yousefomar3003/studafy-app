@@ -54,6 +54,10 @@ void main() {
         {'id': 'l1', 'studentId': 's1'},
         NotificationTargetKind.guardianLink,
       ),
+      'school_portal.link_requested': (
+        {'id': 'sl1'},
+        NotificationTargetKind.schoolLink,
+      ),
       'billing.subscription_renewed': (
         {'featureKey': 'studafy_plus'},
         NotificationTargetKind.plan,

@@ -266,6 +266,7 @@ const _knownTemplateKeys = <String>{
   'school_admin.student_enrolled',
   'school_admin.student_transferred',
   'school_admin.student_withdrawn',
+  'school_portal.link_requested',
   'support_access.approved',
   'support_access.requested',
   'support_access.revoked',

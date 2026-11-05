@@ -8,6 +8,8 @@ import {
   aiOutputAlertText,
   type ReportAlertRow,
   reportAlertText,
+  type SchoolPortalAlertRow,
+  schoolPortalAlertText,
   startReportAlerts,
 } from "../src/processors/reportAlerts";
 
@@ -28,15 +30,35 @@ const aiRow = (id: string, attempts = 1): AiOutputAlertRow => ({
   attempts,
 });
 
+const schoolRow = (id: string): SchoolPortalAlertRow => ({
+  report_id: id,
+  org_id: "5c900000-0000-4000-8000-000000000001",
+  reason: "pressure",
+  reported_at: new Date("2026-11-05T09:30:00Z"),
+  attempts: 1,
+});
+
 /** Answers the SQL calls the processor makes, and records them. */
 function fakeSql(
   claims: ReportAlertRow[][],
   aiClaims: AiOutputAlertRow[][] | Error = [],
+  schoolClaims: SchoolPortalAlertRow[][] = [],
 ) {
   const finished: { id: string; sent: boolean; error: string | null }[] = [];
   const aiFinished: { id: string; sent: boolean; error: string | null }[] = [];
+  const schoolFinished: { id: string; sent: boolean }[] = [];
   const sql = ((strings: TemplateStringsArray, ...values: unknown[]) => {
     const text = strings.join("?");
+    if (text.includes("school_portal_alerts_claim")) {
+      return Promise.resolve(schoolClaims.shift() ?? []);
+    }
+    if (text.includes("school_portal_alerts_finish")) {
+      schoolFinished.push({
+        id: String(values[0]),
+        sent: text.includes("true"),
+      });
+      return Promise.resolve([{ school_portal_alerts_finish: true }]);
+    }
     if (text.includes("ai_output_alerts_claim")) {
       if (aiClaims instanceof Error) return Promise.reject(aiClaims);
       return Promise.resolve(aiClaims.shift() ?? []);
@@ -68,7 +90,7 @@ function fakeSql(
     }
     return Promise.reject(new Error(`unexpected SQL: ${text}`));
   }) as unknown as Sql;
-  return { sql, finished, aiFinished };
+  return { sql, finished, aiFinished, schoolFinished };
 }
 
 function sender(fail: (text: string) => boolean = () => false) {
@@ -223,4 +245,35 @@ test("a failing AI-output pass is logged and never stops the safety reports", as
   expect(finished).toEqual([{ id: "r-1", sent: true, error: null }]);
   expect(collector.events()).toContain("ai_output_alert_poll_failed");
   expect(collector.lines.join("\n")).not.toContain("relation missing");
+});
+
+test("a reported school's message carries id, school and reason only", () => {
+  const text = schoolPortalAlertText(schoolRow("sp-1"), "production");
+  expect(text).toContain("SCHOOL REPORT Studafy production");
+  expect(text).toContain("Report: sp-1");
+  expect(text).toContain(
+    "School: 5c900000-0000-4000-8000-000000000001, reason: pressure",
+  );
+  expect(text).toContain("Filed: 2026-11-05 09:30 UTC");
+});
+
+test("reported schools are sent after the other reports, once each", async () => {
+  const { sql, schoolFinished } = fakeSql([[], []], [[], []], [[], [
+    schoolRow("sp-1"),
+  ]]);
+  const telegram = sender();
+  const runtime = startReportAlerts({
+    sql,
+    sender: telegram.value,
+    logger: createJsonLogger("worker", "test", "error"),
+    environment: "production",
+    intervalMs: 60_000,
+  });
+  await Bun.sleep(0);
+  expect(await runtime.runOnce()).toBe(1);
+  await runtime.close();
+  expect(telegram.sent.map((text) => text.split("\n")[0])).toEqual([
+    "SCHOOL REPORT Studafy production: a teacher reported a school.",
+  ]);
+  expect(schoolFinished).toEqual([{ id: "sp-1", sent: true }]);
 });

@@ -11,7 +11,7 @@ begin;
 \unset auth031_fixture_only
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(74);
+select plan(79);
 select set_config('studafy.request_id', 'school-portal-test', true);
 
 \set admin1 'f0000000-0000-4000-8000-000000000001'
@@ -189,8 +189,21 @@ select is(pg_temp.cmd(:'admin1', 'requestLink', current_setting('test.org')::uui
   ->'response'->>'status', 'pending', 'after 30 days it can');
 select set_config('test.link', (select id::text from private.school_portal_teacher_links
   where teacher_id = :'teacher_user' and status = 'pending'), true);
+select is((select count(*)::int from public.notification_outbox o
+  where o.template_key = 'school_portal.link_requested'
+    and o.source_event_id = current_setting('test.link')
+    and o.school_id = :'school_id'), 1,
+  'the request queues one notice, under the teacher''s own workspace');
+select is((select private.api061_notification_recipients(o.school_id, o.template_key,
+    o.source_event_id, o.audience) from public.notification_outbox o
+  where o.source_event_id = current_setting('test.link')),
+  array[:'teacher_user'::uuid], 'it reaches the teacher, and nobody else');
 select is(pg_temp.cmd(:'teacher_user', 'decideLink', current_setting('test.link')::uuid,
   '{"decision":"accept"}')->'response'->>'status', 'linked', 'the teacher accepts');
+select is((select private.api061_notification_recipients(o.school_id, o.template_key,
+    o.source_event_id, o.audience) from public.notification_outbox o
+  where o.source_event_id = current_setting('test.link')),
+  '{}'::uuid[], 'a request already answered notifies nobody');
 
 -- 6. Every class of the linked teacher, read-only and recorded.
 insert into public.classrooms (id, school_id, term_id, name, grade, section, teacher_id)
@@ -330,6 +343,13 @@ select is(pg_temp.cmd(:'teacher_user', 'endLink', current_setting('test.link2'):
   ->'response'->>'status', 'unlinked', 'the teacher unlinks');
 select is(pg_temp.q(:'admin4', 'roster', :'classroom_id', current_setting('test.org2')::uuid)->>'outcome',
   'not_found', 'and the school sees nothing');
+select is(pg_temp.cmd(:'teacher_user', 'reportOrg', current_setting('test.link2')::uuid,
+  '{"reason":"pressure","details":"They insisted I link."}')->>'status', '201',
+  'the teacher reports the school');
+select is((select row(c.org_id, c.reason)::text
+  from private.school_portal_alerts_claim(10, 60) c),
+  row(current_setting('test.org2')::uuid, 'pressure')::text,
+  'the operator is alerted with the school and the reason, never the teacher''s words');
 update private.school_portal_orgs set status = 'suspended', suspended_at = now()
 where id = current_setting('test.org2')::uuid;
 select is(pg_temp.q(:'admin4', 'dashboard', current_setting('test.org2')::uuid)->>'outcome',

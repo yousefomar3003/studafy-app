@@ -975,6 +975,28 @@ branch (moved to step 2, with the download route it serves).
    school.
 4. Worker and pgTAP tests.
 
+**Status (2026-11-05):** done on this branch.
+
+- `requestLink` queues `school_portal.link_requested` in
+  `public.notification_outbox`, filed under the teacher's own workspace
+  (their earliest live teacher membership) with payload `{id: linkId}`.
+  `private.api061_notification_recipients` (re-issued whole) resolves it to
+  the teacher named on the request, only while it still waits; nobody else.
+- Push and email copy (`apps/worker/src/processors/notificationCopy.ts`):
+  the new `school_portal` category and the template's own fixed text, EN/AR,
+  never the school's name. Push is on by default, email off, as for every
+  category; the app shows which school after sign-in.
+- App: notification kind `schoolLink` (payload `id`), the template's EN/AR
+  copy, and `NotificationDestinations.schoolLinks`. No shell sets it yet,
+  so a tap opens the notifications list until step 4 adds the request
+  screen and wires it in `teacher_shell.dart`.
+- Reports: `private.school_portal_report_alerts` filled by a trigger on
+  each report; the worker's report-alert pass sends "SCHOOL REPORT" to the
+  operators' Telegram chat with the report id, the school's id and the
+  reason only (`schoolPortalAlertText`).
+- Tests: pgTAP (notice queued and resolved to the teacher only, nobody once
+  answered, the alert carries no words), worker alert tests, app routing.
+
 ### Step 4: Phone app (teacher side)
 
 1. Data: `lib/features/school_portal/data/api_school_links_repository.dart`

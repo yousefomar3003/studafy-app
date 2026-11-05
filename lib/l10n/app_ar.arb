@@ -902,6 +902,8 @@
   "notificationCopyFamilyGuardianLinkRevokedDetail": "تمت إزالة ربط عائلي.",
   "notificationCopyFamilyGuardianLinkVerifiedTitle": "تم تأكيد الربط العائلي",
   "notificationCopyFamilyGuardianLinkVerifiedDetail": "تم تأكيد ربط عائلي.",
+  "notificationCopySchoolPortalLinkRequestedTitle": "طلبت مدرسة الربط معك",
+  "notificationCopySchoolPortalLinkRequestedDetail": "طلبت مدرسة الاطلاع على صفوفك. افتح الطلب للقبول أو الرفض.",
   "notificationCopyInvitationsIssuedTitle": "تم إرسال دعوة",
   "notificationCopyInvitationsIssuedDetail": "تم إصدار دعوة.",
   "notificationCopyMeetingsCancelledTitle": "تم إلغاء الاجتماع",

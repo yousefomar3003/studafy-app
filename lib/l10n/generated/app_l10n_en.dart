@@ -3208,6 +3208,14 @@ class AppL10nEn extends AppL10n {
       'A family connection was verified.';
 
   @override
+  String get notificationCopySchoolPortalLinkRequestedTitle =>
+      'A school asked to link';
+
+  @override
+  String get notificationCopySchoolPortalLinkRequestedDetail =>
+      'A school asked to see your classes. Open the request to accept or decline.';
+
+  @override
   String get notificationCopyInvitationsIssuedTitle => 'Invitation sent';
 
   @override

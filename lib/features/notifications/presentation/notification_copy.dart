@@ -87,6 +87,10 @@ String notificationCopy(AppL10n l10n, String key) => switch (key) {
     l10n.notificationCopyFamilyGuardianLinkVerifiedTitle,
   'notification.family.guardian_link_verified.detail' =>
     l10n.notificationCopyFamilyGuardianLinkVerifiedDetail,
+  'notification.school_portal.link_requested.title' =>
+    l10n.notificationCopySchoolPortalLinkRequestedTitle,
+  'notification.school_portal.link_requested.detail' =>
+    l10n.notificationCopySchoolPortalLinkRequestedDetail,
   'notification.invitations.issued.title' =>
     l10n.notificationCopyInvitationsIssuedTitle,
   'notification.invitations.issued.detail' =>

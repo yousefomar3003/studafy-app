@@ -3222,6 +3222,14 @@ class AppL10nAr extends AppL10n {
       'تم تأكيد ربط عائلي.';
 
   @override
+  String get notificationCopySchoolPortalLinkRequestedTitle =>
+      'طلبت مدرسة الربط معك';
+
+  @override
+  String get notificationCopySchoolPortalLinkRequestedDetail =>
+      'طلبت مدرسة الاطلاع على صفوفك. افتح الطلب للقبول أو الرفض.';
+
+  @override
   String get notificationCopyInvitationsIssuedTitle => 'تم إرسال دعوة';
 
   @override

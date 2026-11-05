@@ -1830,6 +1830,8 @@
   "notificationCopyFamilyGuardianLinkRevokedDetail": "A family connection was removed.",
   "notificationCopyFamilyGuardianLinkVerifiedTitle": "Connection verified",
   "notificationCopyFamilyGuardianLinkVerifiedDetail": "A family connection was verified.",
+  "notificationCopySchoolPortalLinkRequestedTitle": "A school asked to link",
+  "notificationCopySchoolPortalLinkRequestedDetail": "A school asked to see your classes. Open the request to accept or decline.",
   "notificationCopyInvitationsIssuedTitle": "Invitation sent",
   "notificationCopyInvitationsIssuedDetail": "An invitation was issued.",
   "notificationCopyMeetingsCancelledTitle": "Meeting cancelled",

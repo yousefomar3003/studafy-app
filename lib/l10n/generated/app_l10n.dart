@@ -5521,6 +5521,18 @@ abstract class AppL10n {
   /// **'A family connection was verified.'**
   String get notificationCopyFamilyGuardianLinkVerifiedDetail;
 
+  /// No description provided for @notificationCopySchoolPortalLinkRequestedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A school asked to link'**
+  String get notificationCopySchoolPortalLinkRequestedTitle;
+
+  /// No description provided for @notificationCopySchoolPortalLinkRequestedDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'A school asked to see your classes. Open the request to accept or decline.'**
+  String get notificationCopySchoolPortalLinkRequestedDetail;
+
   /// No description provided for @notificationCopyInvitationsIssuedTitle.
   ///
   /// In en, this message translates to:

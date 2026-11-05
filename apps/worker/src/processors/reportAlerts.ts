@@ -45,6 +45,19 @@ export interface AiOutputAlertRow {
   attempts: number;
 }
 
+/**
+ * Studafy School Portal: a teacher reported a school that asked to link
+ * with them (private.school_portal_alerts_*). The message carries the report
+ * id, the school's id and the reason: never the teacher's words or a name.
+ */
+export interface SchoolPortalAlertRow {
+  report_id: string;
+  org_id: string;
+  reason: string;
+  reported_at: Date | string;
+  attempts: number;
+}
+
 export interface ReportAlertsRuntime {
   close(): Promise<void>;
   /** One pass; returns how many alerts were sent. */
@@ -84,6 +97,21 @@ export function aiOutputAlertText(
     `Filed: ${iso(row.reported_at)}`,
     ...(row.attempts > 1 ? [`(delivery attempt ${row.attempts})`] : []),
     "Review it in private.ai_output_reports (DL-076).",
+  ].join("\n");
+}
+
+/** The whole message for a reported school. */
+export function schoolPortalAlertText(
+  row: SchoolPortalAlertRow,
+  environment: string,
+): string {
+  return [
+    `SCHOOL REPORT Studafy ${environment}: a teacher reported a school.`,
+    `Report: ${row.report_id}`,
+    `School: ${row.org_id}, reason: ${row.reason}`,
+    `Filed: ${iso(row.reported_at)}`,
+    ...(row.attempts > 1 ? [`(delivery attempt ${row.attempts})`] : []),
+    "Review it in private.school_portal_reports; suspend the school if needed.",
   ].join("\n");
 }
 
@@ -198,7 +226,44 @@ export function startReportAlerts(options: {
     return sent;
   };
 
-  // Safety reports first; a failing AI-output pass never holds them up.
+  const runSchoolPortalReports = async (): Promise<number> => {
+    const rows = await sql<SchoolPortalAlertRow[]>`
+      select report_id, org_id, reason, reported_at, attempts
+      from private.school_portal_alerts_claim(${batchSize}, ${leaseSeconds})
+    `;
+    let sent = 0;
+    for (const row of rows) {
+      if (closed) break;
+      try {
+        await sender.send(schoolPortalAlertText(row, environment));
+        await sql`
+          select private.school_portal_alerts_finish(${row.report_id}::uuid, true, null)
+        `;
+        sent += 1;
+        logger.info("school_portal_alert_sent", {
+          report_id: row.report_id,
+          reason: row.reason,
+          attempts: row.attempts,
+        });
+      } catch (error) {
+        const code = error instanceof AlertSendError
+          ? error.code
+          : "SEND_FAILED";
+        await sql`
+          select private.school_portal_alerts_finish(${row.report_id}::uuid, false, ${code})
+        `.catch(() => undefined);
+        logger.error("school_portal_alert_send_failed", {
+          report_id: row.report_id,
+          attempts: row.attempts,
+          error_code: code,
+        });
+      }
+    }
+    return sent;
+  };
+
+  // Safety reports first; a failing AI-output or school pass never holds
+  // them up, nor each other.
   const runOnce = async (): Promise<number> => {
     const safety = await runSafetyReports();
     if (closed) return safety;
@@ -206,7 +271,14 @@ export function startReportAlerts(options: {
       logger.error("ai_output_alert_poll_failed", { ...errorFields(error) });
       return 0;
     });
-    return safety + aiOutput;
+    if (closed) return safety + aiOutput;
+    const schools = await runSchoolPortalReports().catch((error) => {
+      logger.error("school_portal_alert_poll_failed", {
+        ...errorFields(error),
+      });
+      return 0;
+    });
+    return safety + aiOutput + schools;
   };
 
   const tick = () => {
