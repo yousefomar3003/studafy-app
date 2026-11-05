@@ -514,7 +514,8 @@ export const en: Copy = {
         {
           icon: "book",
           title: "Lessons and files",
-          text: "What each teacher has shared with their classes.",
+          text:
+            "What each teacher has shared with their classes, and class announcements.",
         },
         {
           icon: "clipboard",

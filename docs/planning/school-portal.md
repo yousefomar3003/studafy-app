@@ -109,10 +109,14 @@ keep their teacher account in the app; the two do not mix.
   *Linked*, *Declined*, *Unlinked*, *Expired*.
 - When linked, **all** of the teacher's classes are visible, including
   classes created later, for as long as the link lasts. No class picking.
+- **One school at a time:** a teacher is linked with at most one school.
+  Accepting another school's request first asks the teacher to unlink the
+  current one, so no school ever sees another school's classes.
 - Per class, read-only:
   - **Students:** name, email, Studafy ID; the parents linked to each
     student, with their names and emails.
-  - **Lessons** and the teacher's files.
+  - **Lessons**, the teacher's files and the class's **announcements**
+    (posts to the whole class; never private messages).
   - **Assignments** with every student's hand-in (files, photos, typed
     answers).
   - **Online tests** with every student's answers.
@@ -505,7 +509,7 @@ Header: class name, teacher, term, number of students. Tabs:
 |---|---|
 | Overview | Upcoming assignments and tests; average marks; attendance rate this month. |
 | Students | Name · email · Studafy ID · linked parents (name and email), alphabetical. |
-| Lessons | Lessons by date with their notes, links and files (files open through the delivery route). |
+| Lessons | Lessons by date with their notes, links and files (files open through the delivery route), and the class's announcements, read-only. |
 | Assignments | Title · due date · handed in (n of m) · marked (n of m). Opening one lists every student's hand-in: typed answer, photos and files. |
 | Online tests | Title · date · sat (n of m) · average mark. Opening one shows every student's answers and marks. |
 | Marks | Grid of students × items; every mark labelled *Published*, *Not published* or *AI suggestion*; averages per student and per item. |
@@ -553,7 +557,7 @@ Modelled on the guardian link flow (request → decision by the person asked).
   - the administrator's name, job title and email;
   - **What the school will see**, as a list: all your classes, including
     new ones; every student's name, email and Studafy ID; linked parents'
-    names and emails; lessons and your files; hand-ins and test answers;
+    names and emails; lessons, your files and class announcements; hand-ins and test answers;
     all marks, including unpublished and AI-suggested ones; daily
     attendance; your wellbeing notes;
   - **What it will never see:** messages, students' AI Tutor chats,
@@ -561,6 +565,11 @@ Modelled on the guardian link flow (request → decision by the person asked).
   - "The school can only look, never change anything. You can unlink at
     any time."
   - **Accept** · **Decline** · **Report this school**.
+- If the teacher is already linked with another school, **Accept** first
+  says: "You are linked with *<school>*. To link with *<new school>*, you
+  will be unlinked from *<school>*, which will stop seeing your classes."
+  with **Unlink and accept** · **Cancel**. The two steps happen in one
+  database transaction.
 - A request expires after 14 days.
 
 ### 6.3 While linked
@@ -637,7 +646,7 @@ Supabase Postgres (existing)  ── new tables in schema "private"
 | `school_portal_orgs` | A school's page | `id`, `name`, `country`, `city`, `kind`, `contact_email`, `status` (`active`, `suspended`, `closed`), `created_by`, `suspended_by`, `suspended_at`, `suspended_reason`, timestamps |
 | `school_portal_admins` | Who administers which org | `org_id`, `user_id`, `job_title`, `added_by`, `removed_at`; unique live (`org_id`, `user_id`); at most **3** live per org (checked in SQL) |
 | `school_portal_admin_invites` | An administrator adding another | `org_id`, `email`, `invited_by`, `created_at`, `accepted_at`, `revoked_at` |
-| `school_portal_teacher_links` | A school's request and the link | `id`, `org_id`, `teacher_id`, `requested_by` (admin), `status` (`pending`, `linked`, `declined`, `cancelled`, `expired`, `unlinked`), `requested_at`, `decided_at`, `ended_at`, `ended_by`; one live (`pending` or `linked`) row per (`org_id`, `teacher_id`) |
+| `school_portal_teacher_links` | A school's request and the link | `id`, `org_id`, `teacher_id`, `requested_by` (admin), `status` (`pending`, `linked`, `declined`, `cancelled`, `expired`, `unlinked`), `requested_at`, `decided_at`, `ended_at`, `ended_by`; one live (`pending` or `linked`) row per (`org_id`, `teacher_id`), and at most one `linked` row per `teacher_id` (unique partial index: one school at a time) |
 | `school_portal_reports` | A teacher reporting a school | `id`, `org_id`, `link_id`, `reported_by`, `reason`, `created_at`, `handled_at`, `handled_by` |
 | `school_portal_views` | The activity record | `admin_id`, `org_id`, `classroom_id`, `student_id` (nullable), `file_id` (nullable), `view` (`roster`, `lessons`, `file`, `assignments`, `hand_in`, `tests`, `test_answers`, `marks`, `attendance`, `wellbeing`), `at` |
 
@@ -1206,15 +1215,9 @@ branch until the gate.
 | Company details on the site | None; footer "© Studafy" |
 | Contact email | `hello@studafy.com` |
 | Design | Polished, company-grade, with tasteful motion |
+| A teacher and two schools | One school at a time; accepting a second request unlinks the first (with a warning) |
+| Class announcements | Shown to the school, read-only, with the lessons |
 
 ### Still open
 
-1. **A teacher linked with two schools:** allowed? Because a link shows
-   *all* of a teacher's classes, a teacher who works at two schools would
-   show each school the other school's classes too. (Recommended: one
-   school at a time; accepting a second request asks the teacher to unlink
-   the first.)
-2. **Class announcements:** the decisions cover lessons and files but do
-   not mention the teacher's class announcements. Include them in the
-   school's view? (Recommended: yes, read-only, on the Lessons tab, since
-   they are posts to the whole class, not private messages.)
+None. New questions found while building go here.

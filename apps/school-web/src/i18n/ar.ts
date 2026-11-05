@@ -500,7 +500,7 @@ export const ar: Copy = {
         {
           icon: "book",
           title: "الدروس والملفات",
-          text: "ما شاركه كل معلم مع صفوفه.",
+          text: "ما شاركه كل معلم مع صفوفه، وإعلانات الصف.",
         },
         {
           icon: "clipboard",
