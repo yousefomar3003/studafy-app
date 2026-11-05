@@ -39,8 +39,12 @@ export interface PlatformMiddlewareOptions {
 export function isSchoolPortalPath(method: string, path: string): boolean {
   return path === "/v1/school-portal" ||
     path.startsWith("/v1/school-portal/") ||
-    ((method === "GET" || method === "OPTIONS") && path === "/v1/me");
+    ((method === "GET" || method === "OPTIONS") &&
+      (path === "/v1/me" || DELIVERY_CONTENT.test(path)));
 }
+
+/** FILE-051 delivery: the website fetches a file it was given a link for. */
+const DELIVERY_CONTENT = /^\/delivery\/v1\/files\/[^/]+\/content$/;
 
 export function requestContext(
   now: () => number = Date.now,

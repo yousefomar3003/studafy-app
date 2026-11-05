@@ -190,7 +190,8 @@ export const apiEnvSchema = z.object({
   /**
    * The School Portal website's own addresses (https://school.studafy.com
    * and staging). Unlike API_ALLOWED_ORIGINS, a browser from one of these
-   * may call only the portal's routes and GET /v1/me.
+   * may call only the portal's routes, GET /v1/me and the FILE-051 delivery
+   * route that serves the files it was given links for.
    */
   SCHOOL_PORTAL_ORIGINS: origins,
   /**

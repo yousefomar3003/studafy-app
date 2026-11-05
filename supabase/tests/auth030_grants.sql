@@ -114,6 +114,7 @@ select is(
     -- administrator reads a linked teacher's classes, re-checked per read;
     -- the teacher decides every link.
     'api062_command',
+    'api062_file_download',
     'api062_query',
     'api_idempotency_complete',
     'api_idempotency_fail',

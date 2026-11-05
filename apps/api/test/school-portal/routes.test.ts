@@ -39,6 +39,8 @@ interface Calls {
 function app(options: {
   calls: Calls;
   enabled?: boolean;
+  delivery?: boolean;
+  download?: Record<string, unknown>;
   query?: Record<string, Record<string, unknown>>;
   command?: Record<string, Record<string, unknown>>;
 }) {
@@ -129,11 +131,34 @@ function app(options: {
       options.calls.commands.push({ operation, resourceId, body });
       return (commands[operation] ?? { outcome: "invalid" }) as never;
     },
+    fileDownload: async (_c, orgId, fileId, internal) => {
+      options.calls.commands.push({
+        operation: "fileDownload",
+        resourceId: fileId,
+        body: { orgId, ...internal },
+      });
+      return (options.download ?? {
+        outcome: "ok",
+        response: {
+          downloadUrl: internal.downloadUrl,
+          expiresAt: internal.expiresAt,
+          displayName: "trip-letter.pdf",
+          mediaType: "application/pdf",
+        },
+      }) as never;
+    },
   };
   routes.route(
     "/",
     createSchoolPortalRoutes(
-      { repository, enabled: options.enabled ?? true },
+      {
+        repository,
+        enabled: options.enabled ?? true,
+        delivery: options.delivery === false ? null : {
+          signingKey: "portal-delivery-test-signing-key-0123456789abcdef",
+          publicBaseUrl: "https://api.studafy.test",
+        },
+      },
       createAuthorizationDependencies(logger),
       { repository: new FakeIdempotencyRepository(), logger },
     ),
@@ -341,5 +366,60 @@ describe("commands", () => {
       { decision: "decline" },
     );
     expect(response.status).toBe(500);
+  });
+});
+
+describe("opening a file", () => {
+  const FILE = "00000000-0000-4000-8000-0000000000f1";
+  const path = `/v1/school-portal/orgs/${ORG}/files/${FILE}/download-intent`;
+
+  test("answers a single-use link on the delivery route, never the bytes", async () => {
+    const seen = calls();
+    const response = await post(app({ calls: seen }), path, {});
+    expect(response.status).toBe(200);
+    const body = await response.json() as { downloadUrl: string };
+    const url = new URL(body.downloadUrl);
+    expect(url.origin).toBe("https://api.studafy.test");
+    expect(url.pathname).toBe(`/delivery/v1/files/${FILE}/content`);
+    expect(url.searchParams.get("token")).toBeTruthy();
+    const sent = seen.commands[0]!;
+    expect(sent.operation).toBe("fileDownload");
+    expect(sent.body["orgId"]).toBe(ORG);
+    // The database keeps a hash of the link's secret, never the secret.
+    expect(String(sent.body["nonceHash"])).toMatch(/^[0-9a-f]{64}$/);
+    expect(String(sent.body["downloadUrl"])).not.toContain(
+      String(sent.body["nonceHash"]),
+    );
+  });
+
+  test("a file the school may not open is a plain 404", async () => {
+    const response = await post(
+      app({ calls: calls(), download: { outcome: "not_found" } }),
+      path,
+      {},
+    );
+    expect(response.status).toBe(404);
+  });
+
+  test("a file still being scanned says so", async () => {
+    const response = await post(
+      app({ calls: calls(), download: { outcome: "file_not_clean" } }),
+      path,
+      {},
+    );
+    expect(response.status).toBe(409);
+    expect(await code(response)).toBe("FILE_NOT_CLEAN");
+  });
+
+  test("without delivery configured, nothing is asked of the database", async () => {
+    const seen = calls();
+    const response = await post(
+      app({ calls: seen, delivery: false }),
+      path,
+      {},
+    );
+    expect(response.status).toBe(409);
+    expect(await code(response)).toBe("FILE_DELIVERY_DISABLED");
+    expect(seen.commands).toEqual([]);
   });
 });

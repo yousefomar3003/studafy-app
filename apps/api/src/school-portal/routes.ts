@@ -1,5 +1,5 @@
 import { type Context, Hono, type MiddlewareHandler } from "hono";
-import { v1Route } from "@studafy/contracts";
+import { V1DownloadIntentRequest, v1Route } from "@studafy/contracts";
 import type { Sql } from "@studafy/database";
 import type {
   AuthorizationDependencies,
@@ -23,6 +23,7 @@ import type { CatalogueCommandResult } from "../platform/dispatchRepository";
 import { outcomeProblem, type OutcomeTable } from "../platform/outcomes";
 import { requireStudentLookupChallenge } from "../turnstile/middleware";
 import type { TurnstileOptions } from "../turnstile/verification";
+import { type DeliveryConfig, mintDeliveryLink } from "../files/routes";
 
 type QueryOperation =
   | "orgs"
@@ -75,6 +76,19 @@ export interface SchoolPortalRepository {
     body: Record<string, unknown>,
     reservation: { id: string; generation: number },
   ): Promise<CatalogueCommandResult & { reason?: string }>;
+  /** A FILE-051 download grant for a file of a linked teacher's class. */
+  fileDownload(
+    context: RequestDbContext,
+    orgId: string,
+    fileId: string,
+    internal: {
+      nonceHash: string;
+      downloadUrl: string;
+      expiresAt: string;
+      variant: "original" | "preview";
+    },
+    reservation: { id: string; generation: number },
+  ): Promise<CatalogueCommandResult>;
 }
 
 export class PostgresSchoolPortalRepository implements SchoolPortalRepository {
@@ -116,6 +130,24 @@ export class PostgresSchoolPortalRepository implements SchoolPortalRepository {
       return rows[0]?.result ?? { outcome: "invalid" };
     });
   }
+
+  async fileDownload(
+    context: RequestDbContext,
+    orgId: string,
+    fileId: string,
+    internal: Record<string, string>,
+    reservation: { id: string; generation: number },
+  ): Promise<CatalogueCommandResult> {
+    return await withRequestContext(this.sql, context, async (tx) => {
+      const rows = await tx<{ result: CatalogueCommandResult }[]>`
+        select private.api062_file_download(
+          ${orgId}::uuid, ${fileId}::uuid, ${tx.json(internal as never)},
+          ${reservation.id}::uuid, ${reservation.generation}
+        ) as result
+      `;
+      return rows[0]?.result ?? { outcome: "invalid" };
+    });
+  }
 }
 
 export interface SchoolPortalRoutesDependencies {
@@ -124,6 +156,8 @@ export interface SchoolPortalRoutesDependencies {
   enabled: boolean;
   /** Creating a school and finding a teacher need a solved challenge. */
   turnstile?: TurnstileOptions;
+  /** FILE-051 delivery; without it files are listed but cannot be opened. */
+  delivery?: DeliveryConfig | null;
 }
 
 /** Refusals particular to the portal; a conflict carries its reason. */
@@ -140,6 +174,8 @@ const PORTAL_REFUSALS: OutcomeTable = {
   already_reported: ["ALREADY_REPORTED", 409],
   not_pending: ["INVALID_STATE", 409],
   not_linked: ["INVALID_STATE", 409],
+  file_not_clean: ["FILE_NOT_CLEAN", 409],
+  preview_unavailable: ["NOT_FOUND", 404],
 };
 
 /** The portal never acts inside a school of the request's choosing. */
@@ -436,6 +472,43 @@ export function createSchoolPortalRoutes(
     "reportOrg",
     "school_link.manage",
     "linkId",
+  );
+
+  // Opening a file: a single-use link on the FILE-051 delivery route, which
+  // re-checks the portal's rule when it is used. The link is minted here and
+  // disclosed only after the grant has committed.
+  const download = v1Route("createSchoolPortalFileDownload");
+  routes.post(
+    `${ORG}/files/:fileId/download-intent`,
+    validateRouteInput(download),
+    requirePermission(authorization, "school_portal.read"),
+    idempotency(idempotencyDependencies, download.operationId, "required"),
+    async (c) => {
+      const delivery = deps.delivery;
+      if (!delivery) return problem(c, "FILE_DELIVERY_DISABLED", 409);
+      const reservation = c.get("idempotencyReservation");
+      if (!reservation) return problem(c, "FORBIDDEN", 403);
+      const fileId = routeParam(c, "fileId");
+      const variant =
+        V1DownloadIntentRequest.parse(validatedBody(c) ?? {}).variant ??
+          "original";
+      const result = await deps.repository.fileDownload(
+        selfContext(c),
+        routeParam(c, "orgId"),
+        fileId,
+        await mintDeliveryLink(
+          delivery,
+          fileId,
+          c.get("actor").token.subject,
+          variant,
+        ),
+        reservation,
+      );
+      if (result.outcome !== "ok") return refusal(c, result);
+      const parsed = download.response.safeParse(result.response);
+      if (!parsed.success) return problem(c, "INTERNAL_ERROR", 500);
+      return committedJson(c, parsed.data);
+    },
   );
 
   return routes;

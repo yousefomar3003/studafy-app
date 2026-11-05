@@ -2603,6 +2603,19 @@ export const V1_ROUTE_CATALOGUE = [
     201,
     portalParams("linkId"),
   ),
+  // Opening a file of a linked teacher's class: a FILE-051 single-use link,
+  // re-authorized by the portal's rule when it is served.
+  cataloguePost(
+    "createSchoolPortalFileDownload",
+    "/v1/school-portal/orgs/{orgId}/files/{fileId}/download-intent",
+    "school_portal.read",
+    Files.V1DownloadIntentRequest,
+    "V1DownloadIntentRequest",
+    Files.V1DownloadIntentResponse,
+    "V1DownloadIntentResponse",
+    200,
+    portalParams("orgId", "fileId"),
+  ),
 ] as const satisfies readonly V1RouteContract[];
 
 function params(key: string) {

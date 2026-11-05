@@ -917,7 +917,7 @@ branch (moved to step 2, with the download route it serves).
    SQL; the switch-off test (every route 404s); the catalogue mounting test.
 6. `bun run generate` → `bun run generate:check`.
 
-**Status (2026-11-05):** done on this branch except the file branch (below).
+**Status (2026-11-05):** done on this branch.
 
 - 27 routes in `V1_ROUTE_CATALOGUE` (`SchoolPortal.*` in
   `packages/contracts/src/v1/schoolPortal.ts`), served by
@@ -947,12 +947,19 @@ branch (moved to step 2, with the download route it serves).
   shapes, contract), `schoolPortal.integration.test.ts` (real SQL end to
   end), the CORS case in `apps/api/test/platform/middleware.test.ts`, the
   catalogue mounting test. OpenAPI and the Dart client regenerated.
-- **Still to do in this step:** opening files. The download intent
-  (`apps/api/src/files/routes.ts`) needs a portal branch in
-  `private.file051_authorize_download` (re-issued whole) that admits a live
+- **Opening files (done):** `POST /v1/school-portal/orgs/{orgId}/files/{fileId}/download-intent`
+  answers a FILE-051 single-use link (minted by `mintDeliveryLink` in
+  `apps/api/src/files/routes.ts`, the one place links are built). The grant
+  comes from `private.api062_file_download`, which admits a live
   administrator of an active school for a file bound to a linked teacher's
-  class, writes a `file` activity row, and never mints a storage-signed URL.
-  Until then the portal lists files but cannot open them.
+  class (`private.school_portal_file_visible`: published lessons,
+  announcements, assignments, hand-ins, tests and their questions, results;
+  never a message's file), records a `file` activity row and an audit row in
+  the teacher's school, and stores the school on the grant
+  (`file_delivery_grants.portal_org_id`). `api051_consume_download_grant`
+  (re-issued whole) serves a portal grant only by that same rule at the
+  moment of serving, so a link issued before an unlink is refused. The
+  website's origin may fetch `/delivery/v1/files/{id}/content`.
 - `GET /v1/me`'s `schoolPortal` flag moves to step 4, with the app screen
   that reads it.
 

@@ -225,6 +225,14 @@ describe("API-040 response controls", () => {
       headers: { ...origin, "access-control-request-method": "GET" },
     });
     expect(me.status).toBe(204);
+    const file = await app.request(
+      "/delivery/v1/files/00000000-0000-4000-8000-0000000000f1/content",
+      {
+        method: "OPTIONS",
+        headers: { ...origin, "access-control-request-method": "GET" },
+      },
+    );
+    expect(file.status).toBe(204);
     const notMe = await app.request("/v1/me/school-links", {
       method: "OPTIONS",
       headers: { ...origin, "access-control-request-method": "GET" },

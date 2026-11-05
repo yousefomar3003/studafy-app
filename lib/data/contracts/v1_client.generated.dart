@@ -3406,6 +3406,23 @@ class V1ApiClient {
       requiresIdempotency: true,
     ),
   );
+
+  Future<V1DownloadIntentResponseDto> createSchoolPortalFileDownload(
+    V1DownloadIntentRequestDto request, {
+    required String orgId,
+    required String fileId,
+    String? idempotencyKey,
+  }) async => V1DownloadIntentResponseDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/school-portal/orgs/{orgId}/files/{fileId}/download-intent', {
+        'orgId': orgId,
+        'fileId': fileId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
 }
 
 String _v1Path(

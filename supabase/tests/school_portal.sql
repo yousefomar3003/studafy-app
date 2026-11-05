@@ -11,7 +11,7 @@ begin;
 \unset auth031_fixture_only
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(66);
+select plan(74);
 select set_config('studafy.request_id', 'school-portal-test', true);
 
 \set admin1 'f0000000-0000-4000-8000-000000000001'
@@ -63,6 +63,42 @@ end $$;
 create function pg_temp.seed(items jsonb, id uuid) returns jsonb language sql as $$
   select i from jsonb_array_elements(items) i where i->>'studentId' = id::text limit 1;
 $$;
+-- A clean file, as the scan leaves one.
+create function pg_temp.file(p_id uuid, p_name text) returns void language sql as $$
+  insert into public.file_objects (id, school_id, bucket, object_key, uploader_id,
+    size_bytes, declared_media_type, detected_media_type, sha256, scan_state,
+    owner_id, purpose, display_name)
+  values (p_id, '11111111-1111-4111-8111-111111111111', 'private-school-files',
+    'quarantine/v1/' || p_id::text || '/abcdefghijklmnopqrstuvwx',
+    'aaaa0000-0000-4000-8000-000000000001', 10, 'application/pdf', 'application/pdf',
+    encode(extensions.digest(p_id::text, 'sha256'), 'hex'), 'quarantined',
+    'aaaa0000-0000-4000-8000-000000000001', 'lesson_resource', p_name);
+  update public.file_objects set scan_state = 'clean', scanned_at = now(),
+    stored_sha256 = sha256, stored_size_bytes = size_bytes
+  where id = p_id;
+$$;
+-- The portal's download intent, and serving it, as the given user.
+create function pg_temp.open(actor uuid, org uuid, p_file uuid, seq int)
+returns jsonb language plpgsql as $$
+declare r jsonb;
+begin
+  perform set_config('request.jwt.claim.sub', actor::text, true);
+  r := private.api_idempotency_reserve(null, 'v1.createSchoolPortalFileDownload',
+    'portal-download-' || lpad(seq::text, 8, '0') || '-' || gen_random_uuid(),
+    encode(extensions.digest(gen_random_uuid()::text, 'sha256'), 'hex'), 3600, 60);
+  return private.api062_file_download(org, p_file,
+    jsonb_build_object('nonceHash', md5('pnonce' || seq) || md5('pnonce:' || seq),
+      'downloadUrl', 'https://api.studafy.test/delivery/v1/files/' || p_file || '/content?token=t',
+      'expiresAt', now() + interval '5 minutes'),
+    (r->>'id')::uuid, (r->>'generation')::bigint);
+end $$;
+create function pg_temp.serve(actor uuid, p_file uuid, seq int)
+returns jsonb language plpgsql as $$
+begin
+  perform set_config('request.jwt.claim.sub', actor::text, true);
+  return private.api051_consume_download_grant(p_file,
+    md5('pnonce' || seq) || md5('pnonce:' || seq));
+end $$;
 create function pg_temp.views(actor uuid) returns bigint language sql as $$
   select count(*) from private.school_portal_views where admin_id = actor;
 $$;
@@ -204,6 +240,29 @@ values (:'school_id', :'classroom_id', 'Trip on Friday', 'Bring a packed lunch.'
 select is(pg_temp.q(:'admin1', 'lessons', :'classroom_id', current_setting('test.org')::uuid)
   ->'announcements'->0->>'title', 'Trip on Friday', 'lessons come with the class''s announcements');
 
+\set trip_file 'f0000000-0000-4000-8000-000000000021'
+\set loose_file 'f0000000-0000-4000-8000-000000000022'
+select pg_temp.file(:'trip_file', 'trip-letter.pdf');
+select pg_temp.file(:'loose_file', 'not-shared.pdf');
+insert into public.file_bindings (school_id, file_object_id, announcement_id)
+select :'school_id', :'trip_file', id from public.announcements where title = 'Trip on Friday';
+select is(pg_temp.open(:'admin1', current_setting('test.org')::uuid, :'trip_file', 1)
+  ->'response'->>'displayName', 'trip-letter.pdf',
+  'an administrator gets a single-use link for a file of a linked class');
+select is((select count(*)::int from private.school_portal_views
+  where admin_id = :'admin1' and view = 'file' and file_id = :'trip_file'), 1,
+  'and the activity record says which file');
+select is(pg_temp.serve(:'admin1', :'trip_file', 1)->>'outcome', 'ok',
+  'the link is served once, re-checked when it is used');
+select is(pg_temp.serve(:'admin1', :'trip_file', 1)->>'outcome', 'grant_invalid',
+  'and never twice');
+select is(pg_temp.open(:'admin1', current_setting('test.org')::uuid, :'loose_file', 2)->>'outcome',
+  'not_found', 'a file of no visible class is not the school''s to open');
+select is(pg_temp.open(:'admin4', current_setting('test.org2')::uuid, :'trip_file', 3)->>'outcome',
+  'not_found', 'nor another school''s');
+select is(pg_temp.open(:'admin1', current_setting('test.org')::uuid, :'trip_file', 4)->>'outcome',
+  'ok', 'a second link, issued while linked');
+
 insert into public.assignments (id, school_id, classroom_id, title, due_at, state, created_by, published_at)
 values (:'assignment', :'school_id', :'classroom_id', 'Essay on rivers', now() + interval '3 days',
   'published', :'teacher_user', now());
@@ -263,6 +322,8 @@ select is(pg_temp.cmd(:'teacher_user', 'decideLink', current_setting('test.link2
   'agreeing links the new school');
 select is(jsonb_array_length(pg_temp.q(:'admin1', 'classes', current_setting('test.org')::uuid)->'classes'),
   0, 'and the first school stops seeing the classes at once');
+select is(pg_temp.serve(:'admin1', :'trip_file', 4)->>'outcome', 'not_found',
+  'a link issued before the teacher left is refused when used');
 
 -- 10. Unlinking, suspension.
 select is(pg_temp.cmd(:'teacher_user', 'endLink', current_setting('test.link2')::uuid, '{}')

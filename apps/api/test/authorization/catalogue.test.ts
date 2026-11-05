@@ -670,6 +670,7 @@ function routeTable() {
         repository: {
           query: async () => ({ outcome: "not_found" }),
           command: async () => ({ outcome: "invalid" as const }),
+          fileDownload: async () => ({ outcome: "invalid" as const }),
         },
         enabled: true,
       },

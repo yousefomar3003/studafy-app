@@ -1353,3 +1353,220 @@ grant execute on function private.api062_query(text, uuid, jsonb),
   private.api062_command(text, uuid, jsonb, uuid, bigint)
   to studafy_api_runtime;
 grant execute on function private.school_portal_purge(integer) to studafy_worker_runtime;
+
+-- ---------------------------------------------------------------------------
+-- 9. Opening files from the portal (plan 7.4, "Files").
+--
+-- An administrator opens a file only through FILE-051 delivery: a
+-- single-use grant, a signed link that expires in minutes, and a second
+-- authorization when the bytes are served. The portal's own grant names the
+-- school it was issued for (portal_org_id), and at serving time the file
+-- must still belong to a class of a teacher linked with that school, read
+-- by a live administrator of it. Never a storage-signed URL.
+-- ---------------------------------------------------------------------------
+
+alter table public.file_delivery_grants
+  add column if not exists portal_org_id uuid
+    references private.school_portal_orgs(id) on delete cascade;
+
+-- A file the org may open right now: bound (not detached) to something of a
+-- visible class - a published lesson, an announcement, an assignment, a
+-- student's hand-in, a test or one of its questions, or a mark's results.
+-- Never a message's file, never a student's own notebook or upload session.
+create or replace function private.school_portal_file_visible(p_org uuid, p_file uuid)
+returns boolean language sql stable security definer set search_path = '' as $$
+  with visible as (select id from private.school_portal_visible_classes(p_org) v(id))
+  select exists (
+    select 1 from public.file_bindings fb
+    where fb.file_object_id = p_file and fb.detached_at is null and (
+      exists (select 1 from public.resource_publications rp
+        where rp.resource_version_id = fb.resource_version_id
+          and rp.state::text = 'published' and rp.withdrawn_at is null
+          and rp.classroom_id in (select id from visible))
+      or exists (select 1 from public.announcements an
+        where an.id = fb.announcement_id and an.deleted_at is null
+          and an.classroom_id in (select id from visible))
+      or exists (select 1 from public.assignments a
+        where a.id = fb.assignment_id and a.deleted_at is null
+          and a.classroom_id in (select id from visible))
+      or exists (select 1 from public.submission_attempts sa
+        join public.submissions sb on sb.id = sa.submission_id
+        join public.assignments a on a.id = sb.assignment_id and a.deleted_at is null
+        where sa.id = fb.submission_attempt_id and a.classroom_id in (select id from visible))
+      or exists (select 1 from public.assessments t
+        where t.id = fb.assessment_id and t.deleted_at is null
+          and t.classroom_id in (select id from visible))
+      or exists (select 1 from public.assessment_questions q
+        join public.assessments t on t.id = q.assessment_id and t.deleted_at is null
+        where q.id = fb.assessment_question_id and t.classroom_id in (select id from visible))
+      or exists (select 1 from public.grade_results g
+        join public.assessments t on t.id = g.assessment_id and t.deleted_at is null
+        where g.id = fb.grade_result_id and t.classroom_id in (select id from visible))));
+$$;
+
+-- The portal's download grant: api051_create_download_grant's checks, with
+-- the portal's authorization in place of a school member's.
+create or replace function private.api062_file_download(
+  p_org uuid, p_file_id uuid, p_internal jsonb,
+  p_idempotency_id uuid, p_idempotency_generation bigint)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare
+  f public.file_objects%rowtype;
+  expires timestamptz := (p_internal->>'expiresAt')::timestamptz;
+  response jsonb;
+  request_id text := nullif(current_setting('studafy.request_id', true), '');
+  v_variant text := coalesce(p_internal->>'variant', 'original');
+  v_media text;
+  v_name text;
+begin
+  if auth.uid() is null or request_id is null or not private.is_active_user()
+     or not private.school_portal_reserved(p_idempotency_id, p_idempotency_generation) then
+    return jsonb_build_object('outcome', 'forbidden');
+  end if;
+  select * into f from public.file_objects fo where fo.id = p_file_id for update;
+  -- Authorize before revealing anything about the object's state.
+  if f.id is null or f.deleted_at is not null
+     or not private.school_portal_admin_ok(p_org)
+     or not private.school_portal_file_visible(p_org, p_file_id) then
+    return jsonb_build_object('outcome', 'not_found');
+  end if;
+  if f.scan_state <> 'clean' then
+    return jsonb_build_object('outcome', 'file_not_clean');
+  end if;
+  if (p_internal->>'nonceHash') is null or (p_internal->>'nonceHash') !~ '^[0-9a-f]{64}$'
+    or (p_internal->>'downloadUrl') is null
+    or expires is null or expires <= now() + interval '30 seconds'
+    or expires > now() + interval '10 minutes'
+    or v_variant not in ('original', 'preview') then
+    return jsonb_build_object('outcome', 'invalid');
+  end if;
+  if f.dedup_source_file_id is not null and not coalesce(
+    (private.file051_effective_object(p_file_id)->>'rootClean')::boolean, false) then
+    return jsonb_build_object('outcome', 'invalid_state');
+  end if;
+
+  v_media := f.detected_media_type;
+  v_name := f.display_name;
+  if v_variant = 'preview' then
+    if f.detected_media_type = 'application/pdf' then
+      v_variant := 'original';
+    elsif exists (
+      select 1 from private.file_renditions r
+      where r.file_object_id = coalesce(f.dedup_source_file_id, f.id)
+        and r.kind = 'pdf_preview' and r.status = 'ready') then
+      v_media := 'application/pdf';
+      v_name := private.file_preview_name(f.display_name);
+    else
+      return jsonb_build_object('outcome', 'preview_unavailable');
+    end if;
+  end if;
+
+  insert into public.file_delivery_grants(
+    school_id, file_object_id, recipient_id, nonce_hash, expires_at, request_id,
+    variant, portal_org_id)
+  values (f.school_id, f.id, auth.uid(), p_internal->>'nonceHash', expires,
+    request_id, v_variant, p_org);
+  perform private.school_portal_log(p_org, 'file', null, null, f.id);
+
+  response := jsonb_build_object(
+    'downloadUrl', p_internal->>'downloadUrl', 'expiresAt', expires,
+    'displayName', v_name, 'mediaType', v_media);
+  -- In the teacher's school's audit trail too: a school opened this file.
+  insert into public.audit_events(school_id, actor_id, action, entity_type, entity_id, after_value, request_id)
+  values (f.school_id, auth.uid(), 'file_download_grant_issued', 'file_object', f.id,
+    jsonb_build_object('reason', 'school_portal', 'portalOrgId', p_org,
+      'expiresAt', expires, 'variant', v_variant), request_id);
+  if not private.api_idempotency_complete(p_idempotency_id, p_idempotency_generation, 200, response) then
+    raise exception 'API062_IDEMPOTENCY_COMPLETION_FAILED';
+  end if;
+  return jsonb_build_object('outcome', 'ok', 'response', response);
+end;
+$$;
+
+-- As 202611030060, with one addition: a grant issued by the portal is
+-- re-authorized by the portal's own rule (still an administrator, file still
+-- in a linked class) when a school member's rule does not admit the caller.
+create or replace function private.api051_consume_download_grant(
+  p_file_id uuid, p_nonce_hash text)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare
+  f public.file_objects%rowtype;
+  authz jsonb;
+  effective jsonb;
+  request_id text := nullif(current_setting('studafy.request_id', true), '');
+  v_variant text;
+  v_portal_org uuid;
+  r private.file_renditions%rowtype;
+begin
+  if auth.uid() is null or p_nonce_hash is null or p_nonce_hash !~ '^[0-9a-f]{64}$' then
+    return jsonb_build_object('outcome', 'grant_invalid');
+  end if;
+  update public.file_delivery_grants
+    set state = 'consumed', consumed_at = now()
+    where nonce_hash = p_nonce_hash and file_object_id = p_file_id
+      and recipient_id = auth.uid() and state = 'available' and expires_at > now()
+    returning variant, portal_org_id into v_variant, v_portal_org;
+  if not found then
+    return jsonb_build_object('outcome', 'grant_invalid');
+  end if;
+
+  select * into f from public.file_objects fo where fo.id = p_file_id;
+  if f.id is null or f.deleted_at is not null or f.scan_state <> 'clean' then
+    return jsonb_build_object('outcome', 'not_found');
+  end if;
+  if v_portal_org is not null then
+    -- A portal grant is served only by the portal's rule, never widened by
+    -- whatever else the administrator might be.
+    authz := case when private.school_portal_admin_ok(v_portal_org)
+        and private.school_portal_file_visible(v_portal_org, p_file_id)
+      then jsonb_build_object('allowed', true, 'reason', 'school_portal')
+      else jsonb_build_object('allowed', false) end;
+  else
+    authz := private.file051_authorize_download(p_file_id);
+  end if;
+  if not coalesce((authz->>'allowed')::boolean, false) then
+    return jsonb_build_object('outcome', 'not_found');
+  end if;
+  effective := private.file051_effective_object(p_file_id);
+  if not coalesce((effective->>'rootClean')::boolean, false)
+    or (effective->>'objectKey') is null then
+    return jsonb_build_object('outcome', 'invalid_state');
+  end if;
+  if v_variant = 'preview' then
+    select * into r from private.file_renditions x
+    where x.file_object_id = coalesce(f.dedup_source_file_id, f.id)
+      and x.kind = 'pdf_preview' and x.status = 'ready';
+    if r.id is null then
+      return jsonb_build_object('outcome', 'not_found');
+    end if;
+    effective := jsonb_build_object(
+      'schoolId', f.school_id, 'bucket', r.bucket, 'objectKey', r.storage_path,
+      'storedSha256', r.sha256, 'storedSizeBytes', r.size_bytes,
+      'mediaType', 'application/pdf',
+      'displayName', private.file_preview_name(f.display_name),
+      'rootClean', true);
+  end if;
+  insert into public.audit_events(school_id, actor_id, action, entity_type, entity_id, after_value, request_id)
+  values (f.school_id, auth.uid(), 'file_download_delivered', 'file_object', f.id,
+    jsonb_strip_nulls(jsonb_build_object('reason', authz->>'reason', 'variant', v_variant,
+      'portalOrgId', v_portal_org)), request_id);
+  return jsonb_build_object('outcome', 'ok', 'response', effective);
+end;
+$$;
+
+do $grants$
+declare fn text;
+begin
+  foreach fn in array array[
+    'private.school_portal_file_visible(uuid, uuid)',
+    'private.api062_file_download(uuid, uuid, jsonb, uuid, bigint)',
+    'private.api051_consume_download_grant(uuid, text)'
+  ] loop
+    execute format('alter function %s owner to postgres', fn);
+    execute format('revoke all on function %s from public, anon, authenticated, service_role, studafy_api_runtime, studafy_worker_runtime', fn);
+  end loop;
+end
+$grants$;
+grant execute on function private.api062_file_download(uuid, uuid, jsonb, uuid, bigint),
+  private.api051_consume_download_grant(uuid, text)
+  to studafy_api_runtime;

@@ -254,28 +254,15 @@ export function createFileRoutes(
       // The link is minted before the transaction and disclosed only after
       // the grant (nonce hash, recipient, expiry) has committed with the
       // idempotency completion. The database never sees the nonce itself.
-      const ttlSeconds = delivery.ttlSeconds ?? DELIVERY_TTL_SECONDS;
-      const nowSeconds = Math.floor((delivery.now ?? Date.now)() / 1000);
-      const nonce = createDeliveryNonce();
-      const token = await signDeliveryToken(
-        {
-          fileId: id,
-          userId: c.get("actor").token.subject,
-          nonce,
-          ttlSeconds,
-          nowSeconds,
-        },
-        delivery.signingKey,
-      );
       const result = await deps.repository.createDownloadGrant(
         resolvedSchoolDbContext(c),
         id,
-        {
-          nonceHash: await hashDeliveryNonce(nonce),
-          downloadUrl: deliveryUrl(delivery.publicBaseUrl, id, token),
-          expiresAt: new Date((nowSeconds + ttlSeconds) * 1000).toISOString(),
+        await mintDeliveryLink(
+          delivery,
+          id,
+          c.get("actor").token.subject,
           variant,
-        },
+        ),
         reservation,
       );
       const failure = mapOutcome(c, result);
@@ -411,6 +398,38 @@ export function createFileRoutes(
   });
 
   return routes;
+}
+
+/**
+ * A single-use delivery link for one file and one recipient: the signed
+ * link to disclose once its grant has committed, and the grant's database
+ * fields (the nonce's hash, never the nonce). Every FILE-051 link is minted
+ * here, for the file routes and the School Portal alike.
+ */
+export async function mintDeliveryLink(
+  delivery: DeliveryConfig,
+  fileId: string,
+  userId: string,
+  variant: "original" | "preview",
+): Promise<{
+  nonceHash: string;
+  downloadUrl: string;
+  expiresAt: string;
+  variant: "original" | "preview";
+}> {
+  const ttlSeconds = delivery.ttlSeconds ?? DELIVERY_TTL_SECONDS;
+  const nowSeconds = Math.floor((delivery.now ?? Date.now)() / 1000);
+  const nonce = createDeliveryNonce();
+  const token = await signDeliveryToken(
+    { fileId, userId, nonce, ttlSeconds, nowSeconds },
+    delivery.signingKey,
+  );
+  return {
+    nonceHash: await hashDeliveryNonce(nonce),
+    downloadUrl: deliveryUrl(delivery.publicBaseUrl, fileId, token),
+    expiresAt: new Date((nowSeconds + ttlSeconds) * 1000).toISOString(),
+    variant,
+  };
 }
 
 function deliveryUrl(base: string, fileId: string, token: string): string {
