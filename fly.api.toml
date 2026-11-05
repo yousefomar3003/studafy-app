@@ -60,6 +60,9 @@ primary_region = "fra"
   # teachers with the plan ask for suggested marks, and the teacher always
   # decides the mark. Off, asking answers 409 AI_FEATURE_DISABLED.
   MARKING_SUGGESTIONS_ENABLED = "true"
+  # Studafy School Portal (docs/planning/school-portal.md): off until the
+  # portal passes its release gate (plan 11.2). Off, every portal route is 404.
+  SCHOOL_PORTAL_ENABLED = "false"
   # DL-063: messaging launches (superseding DL-061's launch block), with the
   # owner as the one report reviewer (docs/security/safe043-operator-runbook.md).
   # The switch stays so messaging can be turned off for everyone fast:

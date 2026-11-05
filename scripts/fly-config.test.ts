@@ -107,6 +107,8 @@ describe("Fly configs pass production validation", () => {
     expect(env.ORIGIN_REQUIRE_CLOUDFLARE).toBe(false);
     // DL-079: Studafy AI Marking is sold from launch (ADR-0046).
     expect(env.MARKING_SUGGESTIONS_ENABLED).toBe(true);
+    // The School Portal stays off until its release gate.
+    expect(env.SCHOOL_PORTAL_ENABLED).toBe(false);
     // Launch plan 2.2: AI calls need longer than the 10 s default.
     expect(env.API_REQUEST_TIMEOUT_MS).toBe(20_000);
     expect(env.RATE_LIMIT_ENABLED).toBe(true);
@@ -296,6 +298,7 @@ describe("Fly configs pass production validation", () => {
     expect(api.PAY071_BILLING_ENABLED).toBe("true");
     // ADR-0046: AI Marking on the test copy, as in production (DL-079).
     expect(api.MARKING_SUGGESTIONS_ENABLED).toBe("true");
+    expect(api.SCHOOL_PORTAL_ENABLED).toBe("false");
     expect(api.PAY071_ENVIRONMENT).toBe("development");
     expect(api.GOOGLE_PUBSUB_AUDIENCE).toBe(
       "https://studafy-api-test.fly.dev/webhooks/google",

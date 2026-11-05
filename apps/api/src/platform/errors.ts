@@ -294,6 +294,44 @@ const DEFINITIONS: Record<
     detail:
       "Nothing was saved. The errors list which files or links to remove and why.",
   },
+  TEACHER_NOT_FOUND: {
+    title: "Teacher not found",
+    detail: "No teacher has that Studafy ID. Check it and try again.",
+  },
+  SCHOOL_ADMIN_LIMIT: {
+    title: "Administrator limit reached",
+    detail: "A school can have up to three administrators.",
+  },
+  ALREADY_ADMIN: {
+    title: "Already an administrator",
+    detail: "That person already administers this school.",
+  },
+  SCHOOL_LINK_EXISTS: {
+    title: "Already asked",
+    detail:
+      "This teacher already has a request from, or a link with, this school.",
+  },
+  SCHOOL_LINK_RECENTLY_DECLINED: {
+    title: "Recently declined",
+    detail: "This teacher declined less than 30 days ago.",
+  },
+  TEACHER_REQUESTS_FULL: {
+    title: "Too many waiting requests",
+    detail: "This teacher has too many requests waiting. Try again later.",
+  },
+  LINKED_ELSEWHERE: {
+    title: "Linked with another school",
+    detail:
+      "A teacher links with one school at a time. Accept again to leave the current school first.",
+  },
+  SCHOOL_UNAVAILABLE: {
+    title: "School unavailable",
+    detail: "This school's page is closed or suspended.",
+  },
+  ALREADY_REPORTED: {
+    title: "Already reported",
+    detail: "You have already reported this school.",
+  },
 };
 
 export class RequestTimeoutError extends Error {

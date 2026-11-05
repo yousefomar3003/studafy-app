@@ -776,13 +776,9 @@ begin
       insert into private.school_portal_lookups(admin_id, org_id, found)
       values (me, p_resource_id, v_teacher is not null);
       if v_teacher is null then
-        -- Committed, so the lookup counts towards the limit.
-        response := jsonb_build_object('found', false);
-        if not private.api_idempotency_complete(
-            p_idempotency_id, p_idempotency_generation, 404, response) then
-          raise exception 'API062_IDEMPOTENCY_COMPLETION_FAILED';
-        end if;
-        return jsonb_build_object('outcome', 'ok', 'status', 404, 'response', response);
+        -- A refusal, but the transaction still commits, so the lookup counts
+        -- towards the limit; the API releases the idempotency record.
+        return jsonb_build_object('outcome', 'teacher_not_found');
       end if;
       -- A request left waiting 14 days has expired; it makes way.
       update private.school_portal_teacher_links set status = 'expired'
@@ -806,7 +802,7 @@ begin
       insert into private.school_portal_teacher_links(org_id, teacher_id, requested_by)
       values (p_resource_id, v_teacher, me) returning * into v_link;
       v_status := 201;
-      response := jsonb_build_object('found', true, 'linkId', v_link.id,
+      response := jsonb_build_object('linkId', v_link.id,
         'teacher', private.school_portal_person(v_teacher), 'status', 'pending');
 
     when 'cancelLink' then

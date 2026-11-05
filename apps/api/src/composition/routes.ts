@@ -41,6 +41,10 @@ import {
   createOutputReportRoutes,
   PostgresOutputReportRepository,
 } from "../output-reports/routes";
+import {
+  createSchoolPortalRoutes,
+  PostgresSchoolPortalRepository,
+} from "../school-portal/routes";
 import { createAiConsentRoutes } from "../study/aiConsentRoutes";
 import { createMessagingSwitch } from "../communications/messagingSwitch";
 import { PostgresMaterialRepository } from "../study/material";
@@ -770,6 +774,20 @@ export function buildRoutes(platform: Platform) {
       idempotencyDependencies,
     )
     : undefined;
+  // Studafy School Portal (docs/planning/school-portal.md), appended last in
+  // the catalogue. Always mounted so the switch can answer 404 for every
+  // route while SCHOOL_PORTAL_ENABLED is off.
+  const schoolPortal = sql && idempotencyDependencies
+    ? createSchoolPortalRoutes(
+      {
+        repository: new PostgresSchoolPortalRepository(sql),
+        enabled: env.SCHOOL_PORTAL_ENABLED,
+        ...(turnstile ? { turnstile } : {}),
+      },
+      authorization,
+      idempotencyDependencies,
+    )
+    : undefined;
   // DL-061: with messaging off server-wide, in front of every module.
   const messagingSwitch = env.MESSAGING_ENABLED
     ? undefined
@@ -815,6 +833,7 @@ export function buildRoutes(platform: Platform) {
     personalNotebook,
     marking,
     outputReports,
+    schoolPortal,
   ].filter((module) => module !== undefined && module !== null);
   const combinedRoutes = modules.length > 0
     ? modules.reduce(

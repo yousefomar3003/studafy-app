@@ -917,6 +917,45 @@ branch (moved to step 2, with the download route it serves).
    SQL; the switch-off test (every route 404s); the catalogue mounting test.
 6. `bun run generate` → `bun run generate:check`.
 
+**Status (2026-11-05):** done on this branch except the file branch (below).
+
+- 27 routes in `V1_ROUTE_CATALOGUE` (`SchoolPortal.*` in
+  `packages/contracts/src/v1/schoolPortal.ts`), served by
+  `apps/api/src/school-portal/routes.ts` over `api062_query/command`.
+  Whole-list reads are named `list…` (they cost 2 on the rate limiter); the
+  dashboard costs 1. There is no PATCH: editing a school is
+  `POST /v1/school-portal/orgs/{orgId}`. Hand-ins and test answers sit under
+  the school (`…/orgs/{orgId}/assignments/{id}/hand-ins`,
+  `…/orgs/{orgId}/tests/{id}/answers`), since the SQL finds the class.
+- Permissions `school_portal.read|manage` and `school_link.read|manage`
+  (self-scoped). New error codes: `TEACHER_NOT_FOUND`,
+  `SCHOOL_ADMIN_LIMIT`, `ALREADY_ADMIN`, `SCHOOL_LINK_EXISTS`,
+  `SCHOOL_LINK_RECENTLY_DECLINED`, `TEACHER_REQUESTS_FULL`,
+  `LINKED_ELSEWHERE`, `SCHOOL_UNAVAILABLE`, `ALREADY_REPORTED`.
+- `SCHOOL_PORTAL_ENABLED` (off; `"false"` in `fly.api.toml` and
+  `fly.test.api.toml`, pinned by `scripts/fly-config.test.ts`): off, every
+  portal and `/v1/me/school-links*` route answers 404 before anything else.
+- `SCHOOL_PORTAL_ORIGINS`: the website's origins may call only
+  `/v1/school-portal/*` and `GET /v1/me` (preflight checked against the real
+  method). Read only while the switch is on.
+- Turnstile on creating a school and on asking for a teacher (same
+  `captchaToken` field as the student lookup; the token never reaches SQL).
+  At release, add the website's host to `TURNSTILE_HOSTNAMES` and the site
+  key's hostname list. Rate limits: asking for a teacher is on the
+  `linking` flow, creating a school on `registration`.
+- Tests: `apps/api/test/school-portal/routes.test.ts` (switch, refusals,
+  shapes, contract), `schoolPortal.integration.test.ts` (real SQL end to
+  end), the CORS case in `apps/api/test/platform/middleware.test.ts`, the
+  catalogue mounting test. OpenAPI and the Dart client regenerated.
+- **Still to do in this step:** opening files. The download intent
+  (`apps/api/src/files/routes.ts`) needs a portal branch in
+  `private.file051_authorize_download` (re-issued whole) that admits a live
+  administrator of an active school for a file bound to a linked teacher's
+  class, writes a `file` activity row, and never mints a storage-signed URL.
+  Until then the portal lists files but cannot open them.
+- `GET /v1/me`'s `schoolPortal` flag moves to step 4, with the app screen
+  that reads it.
+
 ### Step 3: Notices (worker)
 
 1. One new notification template key, `school_portal.link_requested`, to

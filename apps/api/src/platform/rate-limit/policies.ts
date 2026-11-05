@@ -297,6 +297,24 @@ export function flowFor(
   if (path === "/v1/students/locate" || path.startsWith("/v1/guardian-links")) {
     return { flow: "linking", weight: 2 };
   }
+  // School Portal: asking for a teacher by Studafy ID is a lookup, and
+  // creating a school's page is a sign-up (docs/planning/school-portal.md).
+  if (
+    method === "post" &&
+    /^\/v1\/school-portal\/orgs\/[^/]+\/link-requests$/.test(path)
+  ) {
+    return { flow: "linking", weight: 2 };
+  }
+  if (method === "post" && path === "/v1/school-portal/orgs") {
+    return { flow: "registration", weight: 1 };
+  }
+  // The School Portal's dashboard is one summary, not a collection.
+  if (
+    method === "get" &&
+    /^\/v1\/school-portal\/orgs\/[^/]+\/dashboard$/.test(path)
+  ) {
+    return { flow: "authenticatedApi", weight: 1 };
+  }
   // JOIN-053: redemption accepts an eight-character class code, which is a
   // guessable secret in a way the 43-character link token is not. Every
   // redemption is charged against the code-probing budget rather than the

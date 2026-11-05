@@ -113,10 +113,10 @@ select is(jsonb_array_length(pg_temp.q(:'admin2', 'orgs', null)->'orgs'->0->'adm
 -- 3. Finding a teacher by Studafy ID: teachers only, counted.
 select is(pg_temp.cmd(:'admin1', 'requestLink', current_setting('test.org')::uuid,
   jsonb_build_object('studafyId', (select public_id from public.profiles where id = :'student_user')))
-  ->'response'->>'found', 'false', 'a student''s account is never found');
+  ->>'outcome', 'teacher_not_found', 'a student''s account is never found');
 select is(pg_temp.cmd(:'admin1', 'requestLink', current_setting('test.org')::uuid,
   jsonb_build_object('studafyId', (select public_id from public.profiles where id = :'guardian_user')))
-  ->'response'->>'found', 'false', 'nor a parent''s');
+  ->>'outcome', 'teacher_not_found', 'nor a parent''s');
 select is(pg_temp.cmd(:'admin1', 'requestLink', current_setting('test.org')::uuid,
   jsonb_build_object('studafyId', (select public_id from public.profiles where id = :'teacher_user')))
   ->'response'->>'status', 'pending', 'a teacher is found and asked');

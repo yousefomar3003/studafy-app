@@ -752,6 +752,42 @@ export const PERMISSION_CATALOGUE = {
     description:
       "Opt one's own work out of AI-suggested marks, or back in: student accounts only.",
   },
+  // Studafy School Portal (docs/planning/school-portal.md). The caller is
+  // checked in SQL on every call: a live administrator of an active school
+  // for school_portal.*, the asked teacher for school_link.*. A portal
+  // administrator holds no membership anywhere.
+  "school_portal.read": {
+    resource: "school_portal",
+    scope: "self",
+    concealDeniedResource: true,
+    tenantRequired: false,
+    description:
+      "Read the school pages one administers and a linked teacher's classes, read-only.",
+  },
+  "school_portal.manage": {
+    resource: "school_portal",
+    scope: "self",
+    concealDeniedResource: true,
+    tenantRequired: false,
+    description:
+      "Create or run a school page one administers, and ask teachers to link.",
+  },
+  "school_link.read": {
+    resource: "school_link",
+    scope: "self",
+    concealDeniedResource: false,
+    tenantRequired: false,
+    description:
+      "Read the schools that asked to link with oneself as a teacher.",
+  },
+  "school_link.manage": {
+    resource: "school_link",
+    scope: "self",
+    concealDeniedResource: true,
+    tenantRequired: false,
+    description:
+      "Accept, decline, end or report a school's link with oneself as a teacher.",
+  },
   // DL-076: reporting an AI answer is the person's own, school or not.
   "output_report.create": {
     resource: "output_report",

@@ -54,6 +54,7 @@ const app = createApp({
   checks: { database: databaseCheck, redis: redisCheck },
   platform: {
     allowedOrigins: env.API_ALLOWED_ORIGINS,
+    portalOrigins: env.SCHOOL_PORTAL_ENABLED ? env.SCHOOL_PORTAL_ORIGINS : [],
     limits: {
       maxBodyBytes: env.API_MAX_BODY_BYTES,
       requestTimeoutMs: env.API_REQUEST_TIMEOUT_MS,
