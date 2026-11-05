@@ -14,7 +14,7 @@
 1. [What we are building, in one page](#1-what-we-are-building-in-one-page)
 2. [Who uses it and what each person can do](#2-who-uses-it-and-what-each-person-can-do)
 3. [Version 1 scope (and what is deliberately left out)](#3-version-1-scope-and-what-is-deliberately-left-out)
-4. [The website's public landing page](#4-the-websites-public-landing-page)
+4. [The website's public pages](#4-the-websites-public-pages)
 5. [Screens of the portal](#5-screens-of-the-portal)
 6. [The teacher's side, in the phone app](#6-the-teachers-side-in-the-phone-app)
 7. [How it is built: architecture](#7-how-it-is-built-architecture)
@@ -71,7 +71,8 @@ safe quickly, and shows schools the value before the bigger features
 | **Studafy (platform operator)** | Existing operator tools | Approves each new school before it can send codes ([9.5](#95-stopping-fake-schools)); can suspend a school. |
 
 The administrator is **not** a new role in the phone app. An administrator
-signs in to the website with a Google or Microsoft account. If the same
+signs in to the website with an Apple, Google or Microsoft (Outlook,
+Hotmail, Microsoft 365) account. If the same
 person is also a teacher, they keep their teacher account in the app; the
 two do not mix.
 
@@ -81,8 +82,10 @@ two do not mix.
 
 ### In version 1
 
-- Public landing page (section 4).
-- Sign in with Google or Microsoft on the website.
+- Public website (section 4): the landing page, a page about the Studafy
+  app, a "Who we are" page and a contact page.
+- Sign in with Apple, Google or Microsoft (Outlook, Hotmail, Microsoft
+  365) on the website.
 - Create a school: name, country, city, type (public/private), the
   administrator's job title, a contact phone. It waits for Studafy's
   approval before its code works.
@@ -120,18 +123,37 @@ two do not mix.
 
 ---
 
-## 4. The website's public landing page
+## 4. The website's public pages
 
-The landing page is what someone sees at `https://school.studafy.com`
-before signing in. It must say plainly what the portal does and what it
-does **not** do, because principals, teachers and parents will all read
-it. English and Arabic; the language follows the browser, with a switch
-in the header.
+The public pages are what someone sees at `https://school.studafy.com`
+before signing in. They say who Studafy is, what the Studafy app does, and
+plainly what the portal does and does **not** do, because principals,
+teachers and parents will all read them. English and Arabic; the language
+follows the browser, with a switch in the header.
 
-### 4.1 Sections, top to bottom
+### 4.1 The pages
 
-1. **Header:** Studafy logo · "For schools" · language switch (English /
-   العربية) · **Sign in** button.
+| Address | Page | Section |
+|---|---|---|
+| `/` | Landing page (for schools) | [4.2](#42-landing-page-sections-top-to-bottom) |
+| `/app` | The Studafy app: everything it does | [4.3](#43-the-studafy-app-page-app) |
+| `/about` | Who we are | [4.4](#44-who-we-are-page-about) |
+| `/contact` | Contact | [4.5](#45-contact-page-contact) |
+| `/signin` | Sign in (Apple, Google, Microsoft) | [5.1](#51-sign-in) |
+| Privacy, Terms | Links to `https://legal.studafy.com/privacy` and `/terms` (never copies) | |
+
+Every public page has the same header and footer:
+
+- **Header:** Studafy logo (goes to `/`) · **The app** · **For schools** ·
+  **Who we are** · **Contact** · language switch (English / العربية) ·
+  **Sign in** button. On a phone the links fold into a menu button.
+- **Footer:** © Studafy Limited · The app · For schools · Who we are ·
+  Contact · Privacy · Terms · App Store and Google Play badges · language
+  switch.
+
+### 4.2 Landing page sections, top to bottom
+
+1. **Header** (as above).
 2. **Hero:**
    - Heading: **"See your school's classes in one place."**
    - Text: "Studafy School Portal lets a principal see the classes,
@@ -140,19 +162,27 @@ in the header.
    - Buttons: **Create your school's page** (primary, goes to sign-in) ·
      **How it works** (scrolls down).
    - Image: a clean screenshot of the dashboard with invented data.
-3. **How it works, in three steps:**
-   1. "**Create your school's page.** Sign in with your school Google or
-      Microsoft account. We check every school before it goes live."
+3. **What is Studafy:** a short band about the app the portal is built on.
+   - Heading: **"Studafy: one app for a class's everyday work."**
+   - Text: "Teachers, students and parents use Studafy for lessons,
+     homework, online and paper tests, marks, attendance and messages, in
+     English or Arabic. The School Portal adds a view for the school."
+   - Three small cards: **For teachers** · **For students** · **For
+     parents**, each with two lines taken from [4.3](#43-the-studafy-app-page-app).
+   - Link: **See everything the app does** (goes to `/app`).
+4. **How it works, in three steps:**
+   1. "**Create your school's page.** Sign in with Apple, Google or
+      Microsoft. We check every school before it goes live."
    2. "**Share your school code with your teachers.** Each teacher enters
       it in the Studafy app and chooses which classes to share."
    3. "**See everything in one place.** Classes, homework, tests, marks
       and attendance, always up to date."
-4. **What you can see:** five cards with icons: Classes and students ·
+5. **What you can see:** five cards with icons: Classes and students ·
    Homework · Online tests · Marks · Attendance.
-5. **Teachers stay in control:** "Nothing is shared until a teacher
+6. **Teachers stay in control:** "Nothing is shared until a teacher
    approves. A teacher can stop sharing a class, or leave the school, at
    any time. The portal is read-only: it cannot change marks or classes."
-6. **Privacy, in plain words:**
+7. **Privacy, in plain words:**
    - "Only what teachers share. Only read-only."
    - "Private messages, AI tutor chats and students' notes are never
      shown to the school."
@@ -160,10 +190,13 @@ in the header.
      school."
    - "Every page a school administrator opens is recorded."
    - Link: "Read the Privacy Policy" (`https://legal.studafy.com/privacy`).
-7. **For teachers:** "Already teaching on Studafy? Nothing changes for you
+8. **For teachers:** "Already teaching on Studafy? Nothing changes for you
    unless you choose to link with your school." Link to the app on the
    App Store and Google Play.
-8. **Questions (FAQ):**
+9. **Who we are (short):** two or three sentences from
+   [4.4](#44-who-we-are-page-about) and a link **More about us** (goes to
+   `/about`).
+10. **Questions (FAQ):**
    - *Does it cost anything?* "The portal is free for schools during the
      pilot."
    - *Can the school change marks?* "No. The portal is read-only."
@@ -172,16 +205,136 @@ in the header.
      the school stops seeing their classes at once."
    - *Who can create a school page?* "A principal or someone they
      authorise. We check every school before it goes live."
-9. **Footer:** © Studafy · Privacy · Terms · Contact (`hello@studafy.com`)
-   · Language switch.
+   - *Which accounts can I sign in with?* "Apple, Google or Microsoft
+     (including Outlook, Hotmail and Microsoft 365 school accounts)."
+   - *Do students need to do anything?* "No. Students and parents keep
+     using the Studafy app as they do now."
+11. **Footer** (as above).
 
-### 4.2 Landing page rules
+### 4.3 The Studafy app page (`/app`)
+
+What the whole app does, for someone who has never used it. The text comes
+from the store listing (`docs/store/listing-copy.md` on `main`), so the
+website never promises more than the app does. Re-read that file when
+writing this page, and again before the release gate: anything added to or
+removed from the listing is added to or removed from this page.
+
+1. **Top:** heading **"Studafy: lessons, homework, tests, marks and
+   attendance in one app."** Text: "For teachers, students and parents.
+   In English and Arabic. No ads, and we never sell your data." App
+   Store and Google Play badges. Three phone screenshots (teacher,
+   student, parent) with invented data, the same pictures as the store
+   listing.
+2. **For teachers:**
+   - Create classes, set the timetable, invite students with a class code
+     or link.
+   - Share lessons with notes, files (PDF, Word, PowerPoint, images) and
+     links.
+   - Set homework with a due date, see who handed in, give extra time.
+   - Online exams: single-answer, multiple-answer, true or false,
+     short-answer and essay questions. Questions with a set answer are
+     marked automatically; the teacher marks the rest and chooses when
+     students see the correct answers.
+   - One gradebook for paper tests and online work. Marks stay private
+     until the teacher publishes them; a corrected mark keeps a record of
+     the change and the reason.
+   - Attendance (present, absent, late, excused), wellbeing notes,
+     announcements and messages to students and parents.
+   - **Studafy AI Marking** (optional monthly subscription for teachers):
+     AI suggests marks for written answers and hand-ins against the
+     teacher's own model answer, and **the teacher decides every mark**.
+3. **For students:**
+   - Join a class with a code, or start on your own and join one later.
+   - Read lessons by date, keep your own notes, hand in homework as typed
+     answers, photos or documents, take online exams on the phone.
+   - See published marks, feedback and attendance; message teachers.
+   - **AI Tutor** about your lessons and your own notes, in a class or on
+     your own. **Studafy Plus** adds photos in questions, study notes made
+     from a lesson or a photo, and notebooks with highlights and
+     bookmarks. **Studafy Max** adds quizzes and flashcards made from your
+     lessons and notes. Text under it: "The AI Tutor's answers can be
+     wrong, so check them. Email addresses and marks are never sent to
+     the AI service, and names are replaced first."
+4. **For parents:**
+   - Link to your child with their Studafy ID; the child approves on
+     their own device.
+   - Follow published marks, homework and attendance; read announcements;
+     message teachers.
+   - Create an account for a younger child who has no email address, and
+     switch between accounts on one phone.
+   - **Family+** (optional monthly subscription): what to focus on this
+     week, marks over time, each class at a glance, missing work and
+     missed tests.
+5. **For schools:** one paragraph about the School Portal and a link to
+   `/`.
+6. **Privacy and safety:** no ads; data never sold; marks shown only after
+   the teacher publishes; report or block anyone in a conversation;
+   download your data or delete your account inside the app; sign in with
+   Apple, Google or Microsoft.
+7. **English and Arabic:** the whole app, with right-to-left layout in
+   Arabic.
+8. **Free and paid:** "Lessons, homework, marks and attendance are free.
+   Studafy Plus, Studafy Max, Family+ and Studafy AI Marking are optional
+   monthly subscriptions, bought in the app." **No prices on the
+   website:** they differ by country and are shown by the App Store and
+   Google Play.
+9. **Get the app:** App Store and Google Play badges again.
+
+### 4.4 Who we are page (`/about`)
+
+Facts about the company come only from the owner. Every `[OWNER: …]` below
+is filled in by the owner before the page goes live; the build never
+invents names, dates, places or numbers.
+
+1. **Heading:** "Who we are".
+2. **Our mission:** "We make the everyday work of a class simpler for
+   teachers, clearer for students and easier to follow for parents, in
+   English and Arabic." (The owner may rewrite it.)
+3. **Our story:** [OWNER: why Studafy was started, by whom, when and
+   where; two or three short paragraphs].
+4. **What we believe** (four short cards, each a promise the app already
+   keeps):
+   - **Teachers decide.** Marks are private until a teacher publishes
+     them, and AI only suggests; the teacher decides.
+   - **Privacy first.** No ads, we never sell data, and the school sees
+     only what a teacher shares.
+   - **Built for English and Arabic.** Written, not machine-translated,
+     with a real right-to-left layout.
+   - **Free where it matters.** Lessons, homework, marks and attendance
+     are free.
+5. **The team:** [OWNER: names, roles and, only if wanted, photos. Can be
+   left out entirely; see 14].
+6. **The company:** "Studafy is made by Studafy Limited." [OWNER: country
+   of registration, company number and registered address if they are to
+   be shown; the legal pages already name the data controller].
+7. **Get in touch:** link to `/contact`.
+
+### 4.5 Contact page (`/contact`)
+
+- Email `hello@studafy.com` (a `mailto:` link) for questions, schools that
+  want to join the pilot, privacy requests and press.
+- Ready-made links with a subject line: "School Portal pilot", "Privacy
+  request", "Help with the app".
+- Text: "We usually answer within two working days."
+- **No contact form in version 1:** a form needs storage, spam protection
+  and its own privacy text; email is enough to start.
+- Links to the Privacy Policy and Terms.
+
+### 4.6 Rules for every public page
 
 - No tracking scripts, no ads, no third-party analytics. The only
   external services are Studafy's own API, Supabase Auth and Cloudflare
   Turnstile (on the create-school form).
 - Must work on a phone browser too (single column below 720 px).
 - Images use invented people and schools only.
+- Claims about the app follow the store listing's rules: only what the
+  code does, no "best" or "#1", no competitor names, no prices, nothing
+  aimed at children in marketing language.
+- App Store and Google Play badges use the official artwork and the
+  stores' badge rules, and link to the real store pages.
+- The public pages are built to plain HTML at build time (prerendered), so
+  they load fast on slow phones and search engines can read them. Each
+  page has its own title, description and social-share image.
 - Arabic copy is written, not machine-translated, and reviewed like the
   app's Arabic strings (`lib/l10n/app_ar.arb` style: "Studafy", plan and
   product names in Latin letters).
@@ -195,17 +348,31 @@ phone.
 
 ### 5.1 Sign in
 
-- "Continue with Google" · "Continue with Microsoft".
+- Three buttons, in this order: **Sign in with Apple** · **Continue with
+  Google** · **Continue with Microsoft**. Under the Microsoft button, in
+  small text: "Outlook, Hotmail or Microsoft 365 school account".
+- Each button follows its company's design rules (Apple's black or white
+  button with the Apple logo; Google's and Microsoft's official logos).
 - Under the buttons: "By continuing you agree to the Terms of Use and
   Privacy Policy."
-- Apple sign-in is not offered on the website in version 1 (it needs a
-  separate Apple web setup; see 14).
+- **Apple's "Hide My Email":** a person who signs in with Apple can hide
+  their email, and Studafy then gets an address ending in
+  `@privaterelay.appleid.com`. In that case the create-school form (5.2)
+  also asks for a **contact email** at the school, because Studafy's check
+  needs a real address.
+- **Same person, same button:** signing in with a different button reaches
+  the same account only when it carries the same email address (an Apple
+  hidden address never matches). The sign-in page says: "Use the same way
+  to sign in each time."
+- Errors are plain: "Sign-in was cancelled", "That account could not sign
+  in. Try another way." Nothing technical is shown.
 
 ### 5.2 Create your school (first sign-in only)
 
 Fields: school name · country · city · type (public / private /
 international / other) · your job title · a phone number we can call to
-verify · tick box "I am authorised by this school to create its Studafy
+verify · a contact email (filled in from the sign-in and editable; required
+when the sign-in address is an Apple hidden one) · tick box "I am authorised by this school to create its Studafy
 page". Turnstile check. Button **Send for checking**.
 
 After sending: "Thanks. We check every school, usually within two working
@@ -447,9 +614,38 @@ New file `apps/api/src/school-portal/routes.ts`, mounted in
 - **Built with:** Vite + React + TypeScript, built to static files. It
   imports request/response types from `@studafy/contracts`, so the website
   and the API cannot drift apart.
-- **Sign-in:** `@supabase/supabase-js` with the PKCE flow, Google and
-  Microsoft providers. Redirect URL `https://school.studafy.com/auth/callback`
-  (add to Supabase → Authentication → URL Configuration).
+- **Sign-in:** `@supabase/supabase-js` with the PKCE flow
+  (`signInWithOAuth`) and three providers: Apple, Google and Microsoft
+  (Supabase calls it `azure`). The site's return address is
+  `https://school.studafy.com/auth/callback` (add it, and the staging
+  address, to Supabase → Authentication → URL Configuration → Redirect
+  URLs). The phone app already uses the same Supabase project's Google and
+  Microsoft providers and, on iPhone, Apple; the website reuses them and
+  adds only what a website needs:
+  - **Google:** in Google Cloud Console, the existing *web* OAuth client
+    used by Supabase needs nothing new (its redirect is Supabase's own
+    `https://<project-ref>.supabase.co/auth/v1/callback`). Add
+    `school.studafy.com` to the OAuth consent screen's authorised domains.
+  - **Microsoft:** the existing Microsoft Entra app registration, with the
+    tenant set to `common` so personal (Outlook, Hotmail) and work or
+    school (Microsoft 365) accounts both work. Check that the `email` and
+    `xms_edov` (email verified) optional claims are on, as Supabase asks.
+  - **Apple (new for the web):** in Apple Developer → Certificates,
+    Identifiers & Profiles: create a **Services ID** (for example
+    `com.studafy.school.web`), tick *Sign in with Apple*, set the domain
+    `<project-ref>.supabase.co` and the return URL
+    `https://<project-ref>.supabase.co/auth/v1/callback`. In Supabase →
+    Authentication → Providers → Apple, add the Services ID to the client
+    ids (next to the app's bundle id `com.studafy.light`) and give the
+    secret made from the Sign in with Apple key (`.p8`). **That secret
+    expires after at most 6 months:** a calendar reminder and a line in
+    `docs/deployment/school-portal.md` say how to make a new one. To email
+    people who hid their address, register `studafy.com` and the sending
+    address under *Sign in with Apple for Email Communication*. This needs
+    the Apple account working again (the organisation migration finished).
+  - The website shows a button only when its provider is set up (a small
+    `providers` list in the site's config), so a missing provider never
+    shows a broken button.
 - **Talking to the API:** `fetch` with `Authorization: Bearer <access
   token>`, against `https://api.studafy.com`. The API's CORS allow-list
   gains exactly `https://school.studafy.com` (and the staging site's
@@ -486,6 +682,11 @@ tests passing.
    this work.
 3. Pick one **pilot school** the owner knows, to try it with real people
    (using staging first).
+4. Owner fills in every `[OWNER: …]` in the "Who we are" page
+   ([4.4](#44-who-we-are-page-about)).
+5. Sign-in setup for the website ([7.6](#76-the-website)): the Apple
+   Services ID and secret, the Microsoft tenant check, the Google
+   authorised domain, and the redirect URLs, on staging first.
 
 ### Step 1: Database
 
@@ -548,8 +749,10 @@ tests passing.
 1. Create `apps/school-web/` (Vite + React + TS), add to the workspace,
    add its build and tests to CI (a job that runs only on this branch
    until the gate).
-2. Landing page (section 4), sign-in, create school, dashboard, teachers,
-   classes, class tabs, settings (section 5).
+2. Public pages (section 4): landing page, `/app`, `/about`, `/contact`,
+   with the shared header and footer, prerendered to HTML.
+3. Sign-in with Apple, Google and Microsoft, then create school,
+   dashboard, teachers, classes, class tabs, settings (section 5).
 3. EN/AR, RTL, phone layout.
 4. Tests: unit tests for data formatting; component tests for each
    screen's empty, loading, error and full states; an end-to-end test
@@ -739,7 +942,6 @@ branch until the gate.
 | 4 | Reports (attendance and marks across classes, trends) | |
 | 4 | **School billing** by invoice (outside the app stores), and a paid "school plan" that, for example, gives Studafy Max to every student in the school. | Apple and Google allow selling to organisations outside in-app purchase. |
 | 4 | Several administrator roles (principal, deputy, IT) | |
-| later | Sign in with Apple on the website | Needs an Apple Services ID and return URL. |
 
 ---
 
@@ -758,3 +960,10 @@ branch until the gate.
    schools), or one school per teacher? (Recommended: allowed, each class
    shared with at most one school.)
 7. **Name on the website:** "Studafy School Portal", or another name?
+8. **Who we are page:** the story, and whether to show the team's names
+   and photos (or leave the team out). The company details to show.
+9. **Where the "about the app" pages live:** only on
+   `school.studafy.com` (this plan), or also replace the waitlist page at
+   `studafy.com` with them once the app is live? (Recommended: build them
+   here first, and decide on `studafy.com` after launch; the
+   `waitlist-app` Vercel project is never touched by this branch.)
