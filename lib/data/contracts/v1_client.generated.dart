@@ -3506,6 +3506,116 @@ class V1ApiClient {
       V1MySchoolAnnouncementsDto.fromJson(
         await _transport.get(_v1Path('/v1/me/school-announcements', {}, {})),
       );
+
+  Future<V1SchoolPortalGroupsDto> listSchoolPortalGroups({
+    required String orgId,
+  }) async => V1SchoolPortalGroupsDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/school-portal/orgs/{orgId}/groups', {'orgId': orgId}, {}),
+    ),
+  );
+
+  Future<V1SchoolPortalGroupDto> createSchoolPortalGroup(
+    V1CreateSchoolPortalGroupRequestDto request, {
+    required String orgId,
+    String? idempotencyKey,
+  }) async => V1SchoolPortalGroupDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/school-portal/orgs/{orgId}/groups', {'orgId': orgId}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1SchoolPortalGroupDto> renewSchoolPortalGroupCode(
+    V1SchoolPortalEmptyRequestDto request, {
+    required String orgId,
+    required String groupId,
+    String? idempotencyKey,
+  }) async => V1SchoolPortalGroupDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/school-portal/orgs/{orgId}/groups/{groupId}/code', {
+        'orgId': orgId,
+        'groupId': groupId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1CloseSchoolPortalGroupResultDto> closeSchoolPortalGroup(
+    V1SchoolPortalEmptyRequestDto request, {
+    required String orgId,
+    required String groupId,
+    String? idempotencyKey,
+  }) async => V1CloseSchoolPortalGroupResultDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/school-portal/orgs/{orgId}/groups/{groupId}/close', {
+        'orgId': orgId,
+        'groupId': groupId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1SchoolPortalGroupDto> addSchoolPortalGroupClass(
+    V1SchoolPortalGroupClassRequestDto request, {
+    required String orgId,
+    required String groupId,
+    String? idempotencyKey,
+  }) async => V1SchoolPortalGroupDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/school-portal/orgs/{orgId}/groups/{groupId}/classes', {
+        'orgId': orgId,
+        'groupId': groupId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1SchoolPortalGroupDto> removeSchoolPortalGroupClass(
+    V1SchoolPortalGroupClassRequestDto request, {
+    required String orgId,
+    required String groupId,
+    String? idempotencyKey,
+  }) async => V1SchoolPortalGroupDto.fromJson(
+    await _transport.post(
+      _v1Path(
+        '/v1/school-portal/orgs/{orgId}/groups/{groupId}/classes/remove',
+        {'orgId': orgId, 'groupId': groupId},
+        {},
+      ),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1MySchoolGroupClassesDto> listMySchoolGroupClasses() async =>
+      V1MySchoolGroupClassesDto.fromJson(
+        await _transport.get(_v1Path('/v1/me/school-group-classes', {}, {})),
+      );
+
+  Future<V1DecideMySchoolGroupClassResultDto> decideMySchoolGroupClass(
+    V1DecideMySchoolGroupClassRequestDto request, {
+    required String entryId,
+    String? idempotencyKey,
+  }) async => V1DecideMySchoolGroupClassResultDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/me/school-group-classes/{entryId}/decision', {
+        'entryId': entryId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
 }
 
 String _v1Path(
@@ -6060,6 +6170,25 @@ class V1CloseLessonSessionResponseDto {
   Map<String, Object?> toJson() => {'id': id, 'filedAt': filedAt};
 }
 
+class V1CloseSchoolPortalGroupResultDto {
+  const V1CloseSchoolPortalGroupResultDto({
+    required this.id,
+    required this.status,
+  });
+
+  factory V1CloseSchoolPortalGroupResultDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1CloseSchoolPortalGroupResultDto(
+    id: json['id'] as String,
+    status: json['status'] as String,
+  );
+
+  final String id;
+  final String status;
+
+  Map<String, Object?> toJson() => {'id': id, 'status': status};
+}
+
 class V1CompleteUploadRequestDto {
   const V1CompleteUploadRequestDto();
 
@@ -6991,6 +7120,18 @@ class V1CreateResourceRequestDto {
   };
 }
 
+class V1CreateSchoolPortalGroupRequestDto {
+  const V1CreateSchoolPortalGroupRequestDto({required this.name});
+
+  factory V1CreateSchoolPortalGroupRequestDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1CreateSchoolPortalGroupRequestDto(name: json['name'] as String);
+
+  final String name;
+
+  Map<String, Object?> toJson() => {'name': name};
+}
+
 class V1CreateSchoolPortalOrgRequestDto {
   const V1CreateSchoolPortalOrgRequestDto({
     required this.name,
@@ -7383,6 +7524,39 @@ class V1DecideGuardianLinkRequestDto {
   final String decision;
 
   Map<String, Object?> toJson() => {'decision': decision};
+}
+
+class V1DecideMySchoolGroupClassRequestDto {
+  const V1DecideMySchoolGroupClassRequestDto({required this.decision});
+
+  factory V1DecideMySchoolGroupClassRequestDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1DecideMySchoolGroupClassRequestDto(
+    decision: json['decision'] as String,
+  );
+
+  final String decision;
+
+  Map<String, Object?> toJson() => {'decision': decision};
+}
+
+class V1DecideMySchoolGroupClassResultDto {
+  const V1DecideMySchoolGroupClassResultDto({
+    required this.id,
+    required this.status,
+  });
+
+  factory V1DecideMySchoolGroupClassResultDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1DecideMySchoolGroupClassResultDto(
+    id: json['id'] as String,
+    status: json['status'] as String,
+  );
+
+  final String id;
+  final String status;
+
+  Map<String, Object?> toJson() => {'id': id, 'status': status};
 }
 
 class V1DecidePurchaseApprovalRequestDto {
@@ -11039,6 +11213,69 @@ class V1MySchoolAnnouncementsDto {
   };
 }
 
+class V1MySchoolGroupClassDto {
+  const V1MySchoolGroupClassDto({
+    required this.id,
+    required this.status,
+    required this.groupName,
+    required this.school,
+    required this.classroomId,
+    required this.className,
+    required this.requestedAt,
+    required this.decidedAt,
+  });
+
+  factory V1MySchoolGroupClassDto.fromJson(Map<String, dynamic> json) =>
+      V1MySchoolGroupClassDto(
+        id: json['id'] as String,
+        status: json['status'] as String,
+        groupName: json['groupName'] as String,
+        school: json['school'] as String,
+        classroomId: json['classroomId'] as String,
+        className: json['className'] as String,
+        requestedAt: json['requestedAt'] as String,
+        decidedAt: json['decidedAt'] as String?,
+      );
+
+  final String id;
+  final String status;
+  final String groupName;
+  final String school;
+  final String classroomId;
+  final String className;
+  final String requestedAt;
+  final String? decidedAt;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'status': status,
+    'groupName': groupName,
+    'school': school,
+    'classroomId': classroomId,
+    'className': className,
+    'requestedAt': requestedAt,
+    'decidedAt': decidedAt,
+  };
+}
+
+class V1MySchoolGroupClassesDto {
+  const V1MySchoolGroupClassesDto({required this.classes});
+
+  factory V1MySchoolGroupClassesDto.fromJson(Map<String, dynamic> json) =>
+      V1MySchoolGroupClassesDto(
+        classes: [
+          for (final item in json['classes'] as List<dynamic>)
+            V1MySchoolGroupClassDto.fromJson(item as Map<String, dynamic>),
+        ],
+      );
+
+  final List<V1MySchoolGroupClassDto> classes;
+
+  Map<String, Object?> toJson() => {
+    'classes': [for (final item in classes) item.toJson()],
+  };
+}
+
 class V1MySchoolLinksDto {
   const V1MySchoolLinksDto({required this.links});
 
@@ -12328,6 +12565,7 @@ class V1RedeemClassJoinLinkResponseDto {
     required this.schoolId,
     required this.classroomId,
     required this.classroomName,
+    this.group,
   });
 
   factory V1RedeemClassJoinLinkResponseDto.fromJson(
@@ -12336,16 +12574,19 @@ class V1RedeemClassJoinLinkResponseDto {
     schoolId: json['schoolId'] as String,
     classroomId: json['classroomId'] as String,
     classroomName: json['classroomName'] as String,
+    group: json['group'] as Map<String, dynamic>?,
   );
 
   final String schoolId;
   final String classroomId;
   final String classroomName;
+  final Map<String, dynamic>? group;
 
   Map<String, Object?> toJson() => {
     'schoolId': schoolId,
     'classroomId': classroomId,
     'classroomName': classroomName,
+    'group': ?group,
   };
 }
 
@@ -13759,6 +14000,76 @@ class V1SchoolPortalEmptyRequestDto {
       const V1SchoolPortalEmptyRequestDto();
 
   Map<String, Object?> toJson() => const <String, Object?>{};
+}
+
+class V1SchoolPortalGroupDto {
+  const V1SchoolPortalGroupDto({
+    required this.id,
+    required this.name,
+    required this.status,
+    required this.createdAt,
+    required this.code,
+    required this.classes,
+  });
+
+  factory V1SchoolPortalGroupDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalGroupDto(
+        id: json['id'] as String,
+        name: json['name'] as String,
+        status: json['status'] as String,
+        createdAt: json['createdAt'] as String,
+        code: json['code'] as String?,
+        classes: (json['classes'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+      );
+
+  final String id;
+  final String name;
+  final String status;
+  final String createdAt;
+  final String? code;
+  final List<Map<String, dynamic>> classes;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'name': name,
+    'status': status,
+    'createdAt': createdAt,
+    'code': code,
+    'classes': classes,
+  };
+}
+
+class V1SchoolPortalGroupClassRequestDto {
+  const V1SchoolPortalGroupClassRequestDto({required this.classroomId});
+
+  factory V1SchoolPortalGroupClassRequestDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1SchoolPortalGroupClassRequestDto(
+    classroomId: json['classroomId'] as String,
+  );
+
+  final String classroomId;
+
+  Map<String, Object?> toJson() => {'classroomId': classroomId};
+}
+
+class V1SchoolPortalGroupsDto {
+  const V1SchoolPortalGroupsDto({required this.groups});
+
+  factory V1SchoolPortalGroupsDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalGroupsDto(
+        groups: [
+          for (final item in json['groups'] as List<dynamic>)
+            V1SchoolPortalGroupDto.fromJson(item as Map<String, dynamic>),
+        ],
+      );
+
+  final List<V1SchoolPortalGroupDto> groups;
+
+  Map<String, Object?> toJson() => {
+    'groups': [for (final item in groups) item.toJson()],
+  };
 }
 
 class V1SchoolPortalHandInsDto {

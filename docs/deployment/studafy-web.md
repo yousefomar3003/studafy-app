@@ -136,7 +136,9 @@ At the portal's release (plan 11.2), also:
 2. The API: `SCHOOL_PORTAL_ENABLED = "true"`, and
    `SCHOOL_PORTAL_ORIGINS = "https://school.studafy.com"` (comma-separated,
    staging's too where it has one). Those origins may call only the
-   portal's routes, `GET /v1/me` and the file delivery route.
+   portal's routes, `GET /v1/me` and the file delivery route. Class
+   groups use the API's existing `CLASS_JOIN_CODE_KEY`; without it a group
+   can't be made and the portal says so.
 3. Turnstile: add `school.studafy.com` to the widget's hostnames and to the
    API's `TURNSTILE_HOSTNAMES`.
 4. Vercel: add `school.studafy.com` to `studafy-web` → Settings → Domains.

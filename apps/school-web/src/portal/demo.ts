@@ -97,9 +97,42 @@ const org = {
   invites: [],
 };
 
+const GROUP = {
+  id: "d0000000-0000-4000-8000-000000001301",
+  name: "Grade 7 – Section A",
+  status: "active",
+  createdAt: "2026-11-02T08:00:00Z",
+  code: "K7QM-4XTR",
+  classes: [
+    {
+      id: "d0000000-0000-4000-8000-000000001311",
+      classroomId: CLASSES[0]!.id,
+      name: CLASSES[0]!.name,
+      teachers: [{ id: TEACHER.id, name: TEACHER.name, role: "lead_teacher" }],
+      status: "approved",
+      requestedAt: "2026-11-02T08:05:00Z",
+      decidedAt: "2026-11-02T10:00:00Z",
+    },
+    {
+      id: "d0000000-0000-4000-8000-000000001312",
+      classroomId: CLASSES[1]!.id,
+      name: CLASSES[1]!.name,
+      teachers: [{ id: TEACHER.id, name: TEACHER.name, role: "lead_teacher" }],
+      status: "pending",
+      requestedAt: "2026-11-04T08:05:00Z",
+      decidedAt: null,
+    },
+  ],
+};
+
 /** The invented answer to one API call. */
 export function demoAnswer(method: string, path: string): unknown {
   if (method === "POST") {
+    if (path.includes("/groups")) {
+      return path.endsWith("/close")
+        ? { id: GROUP.id, status: "closed" }
+        : GROUP;
+    }
     if (path.endsWith("/exports")) return { recorded: true };
     if (path.endsWith("/announcements")) return { id: ORG, recipients: 14 };
     if (path.endsWith("/download-intent")) {
@@ -125,6 +158,7 @@ export function demoAnswer(method: string, path: string): unknown {
       }],
     };
   }
+  if (path.endsWith("/groups")) return { groups: [GROUP] };
   if (path.endsWith("/announcements")) {
     return {
       announcements: [{

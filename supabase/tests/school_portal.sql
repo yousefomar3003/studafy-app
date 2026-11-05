@@ -11,7 +11,7 @@ begin;
 \unset auth031_fixture_only
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(102);
+select plan(130);
 select set_config('studafy.request_id', 'school-portal-test', true);
 
 \set admin1 'f0000000-0000-4000-8000-000000000001'
@@ -100,6 +100,21 @@ begin
   return private.api051_consume_download_grant(p_file,
     md5('pnonce' || seq) || md5('pnonce:' || seq));
 end $$;
+-- A student typing a code in "Join a class" (the API sends its HMAC).
+create function pg_temp.redeem(actor uuid, code_hash text)
+returns jsonb language plpgsql as $$
+declare r jsonb;
+begin
+  perform set_config('request.jwt.claim.sub', actor::text, true);
+  r := private.api_idempotency_reserve(null, 'v1.redeemClassJoinLink', gen_random_uuid()::text,
+    encode(extensions.digest(gen_random_uuid()::text, 'sha256'), 'hex'), 3600, 60);
+  return private.api044_command('redeemClassJoinLink', null,
+    jsonb_build_object('body', jsonb_build_object('codeHash', code_hash)),
+    (r->>'id')::uuid, (r->>'generation')::bigint);
+end $$;
+create function pg_temp.hash(code text) returns text language sql as $$
+  select encode(extensions.digest(code, 'sha256'), 'hex');
+$$;
 create function pg_temp.views(actor uuid) returns bigint language sql as $$
   select count(*) from private.school_portal_views where admin_id = actor;
 $$;
@@ -388,6 +403,94 @@ select ok((select bool_or(c->>'classroomId' = :'classroom_id') from jsonb_array_
 select is(pg_temp.q(:'admin1', 'teacher', :'other_school_user', current_setting('test.org')::uuid)->>'outcome',
   'not_found', 'a teacher who is not linked has no page');
 
+-- 6e. One code for many classes: the teacher approves each class; the
+--     student joins every approved class through the class-join steps.
+\set kid 'f0000000-0000-4000-8000-000000000021'
+\set kid2 'f0000000-0000-4000-8000-000000000022'
+insert into auth.users (id, email, encrypted_password, aud, role, email_confirmed_at,
+  created_at, updated_at, instance_id, raw_app_meta_data, raw_user_meta_data)
+select id::uuid, email, 'synthetic-not-a-secret', 'authenticated', 'authenticated', now(),
+  now(), now(), '00000000-0000-0000-0000-000000000000', '{}'::jsonb,
+  jsonb_build_object('full_name', name)
+from (values (:'kid', 'kid1@synthetic.studafy.test', 'Kid One'),
+  (:'kid2', 'kid2@synthetic.studafy.test', 'Kid Two')) v(id, email, name);
+update public.profiles set account_kind = 'student' where id in (:'kid', :'kid2');
+select is(pg_temp.cmd(:'admin1', 'createGroup', current_setting('test.org')::uuid,
+  '{"name":"Grade 6 - A"}')->>'outcome', 'invalid', 'a group needs the code the API mints');
+select is(pg_temp.cmd(:'admin1', 'createGroup', current_setting('test.org')::uuid,
+  jsonb_build_object('name', 'Grade 6 - A', 'codeHash', pg_temp.hash('GROUPONE'),
+    'derivationSalt', 'abcdefghijklmnopqrstuvwxyz01'))->>'status', '201',
+  'an administrator makes a group');
+select set_config('test.group', (select id::text from private.school_portal_groups
+  where name = 'Grade 6 - A'), true);
+select is(pg_temp.cmd(:'teacher_user', 'createGroup', current_setting('test.org')::uuid,
+  jsonb_build_object('name', 'Mine', 'codeHash', pg_temp.hash('GROUPTWO'),
+    'derivationSalt', 'abcdefghijklmnopqrstuvwxyz02'))->>'outcome', 'not_found',
+  'a teacher cannot');
+select is(pg_temp.cmd(:'admin1', 'addGroupClass', current_setting('test.group')::uuid,
+  jsonb_build_object('classroomId', :'classroom_id'))->>'status', '201',
+  'the school adds a linked class');
+select set_config('test.gc', (select id::text from private.school_portal_group_classes
+  where group_id = current_setting('test.group')::uuid), true);
+select is(pg_temp.cmd(:'admin1', 'addGroupClass', current_setting('test.group')::uuid,
+  jsonb_build_object('classroomId', :'classroom_id'))->>'reason', 'already_in_group',
+  'once');
+select is(pg_temp.cmd(:'admin1', 'addGroupClass', current_setting('test.group')::uuid,
+  jsonb_build_object('classroomId', gen_random_uuid()))->>'outcome', 'not_found',
+  'never a class it cannot see');
+select is((select private.api061_notification_recipients(o.school_id, o.template_key,
+    o.source_event_id, o.audience) from public.notification_outbox o
+  where o.source_event_id = current_setting('test.gc')),
+  array[:'teacher_user'::uuid], 'the class''s teacher is asked, and nobody else');
+select is(pg_temp.q(:'teacher_user', 'myGroupClasses', null)->'classes'->0->>'groupName',
+  'Grade 6 - A', 'and sees the request in the app');
+select is(pg_temp.cmd(:'student_user', 'decideGroupClass', current_setting('test.gc')::uuid,
+  '{"decision":"approve"}')->>'outcome', 'not_found', 'only the class''s teacher answers');
+select is(pg_temp.redeem(:'kid', pg_temp.hash('GROUPONE'))->>'outcome', 'not_found',
+  'before the teacher approves, the code joins nothing');
+select is(pg_temp.cmd(:'teacher_user', 'decideGroupClass', current_setting('test.gc')::uuid,
+  '{"decision":"approve"}')->'response'->>'status', 'approved', 'the teacher approves');
+select is(pg_temp.cmd(:'admin1', 'addGroupClass', current_setting('test.group')::uuid,
+  jsonb_build_object('classroomId', :'later_class'))->>'status', '201', 'a second class is added');
+select is(pg_temp.cmd(:'teacher_user', 'decideGroupClass', (select id from private.school_portal_group_classes
+  where classroom_id = :'later_class'), '{"decision":"approve"}')->'response'->>'status', 'approved',
+  'and approved');
+select is(jsonb_array_length(pg_temp.redeem(:'kid', pg_temp.hash('GROUPONE'))
+  ->'response'->'group'->'classrooms'), 2, 'one code joins the student to both classes');
+select is((select count(*)::int from public.enrollments e join public.students st on st.id = e.student_id
+  where st.user_id = :'kid' and e.active and e.classroom_id in (:'classroom_id', :'later_class')), 2,
+  'as an enrolled student of each');
+select is(pg_temp.redeem(:'kid', pg_temp.hash('GROUPONE'))->>'outcome', 'invalid_state',
+  'typing it again says they are already in');
+select is(pg_temp.redeem(:'admin2', pg_temp.hash('GROUPONE'))->>'outcome', 'forbidden',
+  'an adult account never joins');
+select is(jsonb_array_length(pg_temp.q(:'admin1', 'groups', current_setting('test.org')::uuid,
+  current_setting('test.org')::uuid)->'groups'->0->'classes'), 2, 'the school sees its group');
+select is(pg_temp.cmd(:'admin1', 'renewGroupCode', current_setting('test.group')::uuid,
+  jsonb_build_object('codeHash', pg_temp.hash('GROUPNEW'),
+    'derivationSalt', 'abcdefghijklmnopqrstuvwxyz03'))->>'outcome', 'ok', 'a new code');
+select is(pg_temp.redeem(:'kid2', pg_temp.hash('GROUPONE'))->>'outcome', 'not_found',
+  'and the old one stops working');
+select is(pg_temp.redeem(:'kid2', pg_temp.hash('GROUPNEW'))->>'outcome', 'ok', 'the new one works');
+update public.enrollments e set active = false, status = 'withdrawn', ends_on = current_date
+from public.students st
+where st.id = e.student_id and st.user_id = :'kid2' and e.classroom_id = :'later_class';
+select is(pg_temp.redeem(:'kid2', pg_temp.hash('GROUPNEW'))->>'outcome', 'invalid_state',
+  'a student the teacher removed is never put back by the code');
+select is(pg_temp.cmd(:'teacher_user', 'decideGroupClass', (select id from private.school_portal_group_classes
+  where classroom_id = :'later_class'), '{"decision":"remove"}')->'response'->>'status', 'removed',
+  'the teacher takes a class out');
+select is(pg_temp.cmd(:'admin1', 'closeGroup', current_setting('test.group')::uuid, '{}')
+  ->'response'->>'status', 'closed', 'the school closes the group');
+select is(pg_temp.redeem(:'kid2', pg_temp.hash('GROUPNEW'))->>'outcome', 'not_found',
+  'and its code joins nothing');
+select is(pg_temp.cmd(:'admin1', 'createGroup', current_setting('test.org')::uuid,
+  jsonb_build_object('name', 'Grade 6 - B', 'codeHash', pg_temp.hash('GROUPTHR'),
+    'derivationSalt', 'abcdefghijklmnopqrstuvwxyz04'))->>'status', '201', 'another group');
+select is(pg_temp.cmd(:'admin1', 'addGroupClass', (select id from private.school_portal_groups
+  where name = 'Grade 6 - B'), jsonb_build_object('classroomId', :'classroom_id'))->>'status', '201',
+  'with a class waiting for the teacher');
+
 -- 7. Never: messages, AI Tutor material, students' own notes and practice.
 select ok(pg_get_functiondef('private.api062_query(text, uuid, jsonb)'::regprocedure)
   !~ '(messages|conversation|notebook|study_sets|practice_sessions|material_outputs|ai_material|lesson_notes_cache|flashcard)',
@@ -414,6 +517,10 @@ select is(pg_temp.cmd(:'teacher_user', 'decideLink', current_setting('test.link2
   'agreeing links the new school');
 select is(jsonb_array_length(pg_temp.q(:'admin1', 'classes', current_setting('test.org')::uuid)->'classes'),
   0, 'and the first school stops seeing the classes at once');
+select is((select count(*)::int from private.school_portal_group_classes gc
+  join private.school_portal_groups g on g.id = gc.group_id
+  where g.org_id = current_setting('test.org')::uuid and gc.status in ('pending', 'approved')), 0,
+  'and its groups lose those classes for good');
 select is(pg_temp.serve(:'admin1', :'trip_file', 4)->>'outcome', 'not_found',
   'a link issued before the teacher left is refused when used');
 

@@ -134,6 +134,12 @@ bool openNotificationIn(
       if (links == null) return false;
       links(id);
       return true;
+    case NotificationTargetKind.schoolGroupClass:
+      // Answered on the Schools list, beside the school's link.
+      final links = destinations.schoolLinks;
+      if (links == null) return false;
+      links(null);
+      return true;
     case null:
       return false;
   }

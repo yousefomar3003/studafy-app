@@ -2,6 +2,8 @@ import { describe, expect, test } from "bun:test";
 import {
   CLASS_CODE_ALPHABET,
   CLASS_CODE_LENGTH,
+  deriveGroupCode,
+  deriveJoinCredentials,
   formatClassCode,
   generateClassCode,
   hashClassCode,
@@ -80,5 +82,24 @@ describe("class codes", () => {
       .map((byte) => byte.toString(16).padStart(2, "0"))
       .join("");
     expect(keyed).not.toBe(plainHex);
+  });
+});
+
+describe("School Portal group codes (plan 13a.7)", () => {
+  const key = "synthetic-key-not-a-secret";
+  const salt = "abcdefghijklmnopqrstuvwxyz01";
+
+  test("the same salt always gives the same code, in the class code alphabet", async () => {
+    const code = await deriveGroupCode(key, salt);
+    expect(code).toHaveLength(CLASS_CODE_LENGTH);
+    expect([...code].every((char) => CLASS_CODE_ALPHABET.includes(char)))
+      .toBe(true);
+    expect(await deriveGroupCode(key, salt)).toBe(code);
+    expect(normalizeClassCode(formatClassCode(code))).toBe(code);
+  });
+
+  test("never the code a class link with the same salt would have", async () => {
+    const { code } = await deriveJoinCredentials(key, salt);
+    expect(await deriveGroupCode(key, salt)).not.toBe(code);
   });
 });

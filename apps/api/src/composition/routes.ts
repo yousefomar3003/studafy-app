@@ -782,7 +782,10 @@ export function buildRoutes(platform: Platform) {
   const schoolPortal = sql && idempotencyDependencies
     ? createSchoolPortalRoutes(
       {
-        repository: new PostgresSchoolPortalRepository(sql),
+        repository: new PostgresSchoolPortalRepository(
+          sql,
+          env.CLASS_JOIN_CODE_KEY,
+        ),
         enabled: env.SCHOOL_PORTAL_ENABLED,
         ...(turnstile ? { turnstile } : {}),
         delivery: fileDelivery,

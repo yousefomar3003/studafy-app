@@ -83,6 +83,16 @@ export const V1RedeemClassJoinLinkResponse = z.strictObject({
   schoolId: Id,
   classroomId: Id,
   classroomName: z.string().min(1).max(160),
+  /// A school's group code (School Portal, plan 13a.7): every class it
+  /// joined, the first of which is also named above.
+  group: z.strictObject({
+    name: z.string().min(1).max(80),
+    classrooms: z.array(z.strictObject({
+      schoolId: Id,
+      classroomId: Id,
+      classroomName: z.string().min(1).max(160),
+    })).min(1).max(60),
+  }).optional(),
 });
 export type V1RedeemClassJoinLinkResponse = z.infer<
   typeof V1RedeemClassJoinLinkResponse

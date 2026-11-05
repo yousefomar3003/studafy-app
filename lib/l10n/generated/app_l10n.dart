@@ -14802,6 +14802,78 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Open it to read what the school sent.'**
   String get notificationCopySchoolPortalAnnouncementDetail;
+
+  /// No description provided for @schoolGroupsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Class groups'**
+  String get schoolGroupsSection;
+
+  /// School Portal (teacher side). Placeholders are user content, wrapped in isolates.
+  ///
+  /// In en, this message translates to:
+  /// **'⁨{school}⁩ asks to add this class to its group ⁨{group}⁩. Students who type the group\'s code will join this class.'**
+  String schoolGroupAsk(String school, String group);
+
+  /// School Portal (teacher side). Placeholders are user content, wrapped in isolates.
+  ///
+  /// In en, this message translates to:
+  /// **'In ⁨{school}⁩\'s group ⁨{group}⁩. Students who type its code join this class.'**
+  String schoolGroupIn(String school, String group);
+
+  /// No description provided for @schoolGroupApprove.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve'**
+  String get schoolGroupApprove;
+
+  /// No description provided for @schoolGroupDecline.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline'**
+  String get schoolGroupDecline;
+
+  /// No description provided for @schoolGroupRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Take out of the group'**
+  String get schoolGroupRemove;
+
+  /// No description provided for @schoolGroupApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved. Students can join with the group\'s code.'**
+  String get schoolGroupApproved;
+
+  /// No description provided for @schoolGroupDeclined.
+  ///
+  /// In en, this message translates to:
+  /// **'Declined.'**
+  String get schoolGroupDeclined;
+
+  /// No description provided for @schoolGroupRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Taken out of the group. Students already in the class stay.'**
+  String get schoolGroupRemoved;
+
+  /// After a school's group code joined several classes. groupName is user content.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{You joined 1 class in ⁨{groupName}⁩} other{You joined {count} classes in ⁨{groupName}⁩}}'**
+  String joinClassGroupDone(int count, String groupName);
+
+  /// No description provided for @notificationCopySchoolPortalGroupClassRequestedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A school asked to group your class'**
+  String get notificationCopySchoolPortalGroupClassRequestedTitle;
+
+  /// No description provided for @notificationCopySchoolPortalGroupClassRequestedDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'A school asked to add your class to a class group. Open Schools to approve or decline.'**
+  String get notificationCopySchoolPortalGroupClassRequestedDetail;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

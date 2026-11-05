@@ -352,6 +352,51 @@ describe("commands", () => {
     expect(await code(response)).toBe("LINKED_ELSEWHERE");
   });
 
+  test("a group's refusals keep their own codes", async () => {
+    const cases: [Record<string, unknown>, string][] = [
+      [{ outcome: "conflict", reason: "already_in_group" }, "ALREADY_IN_GROUP"],
+      [{ outcome: "conflict", reason: "group_full" }, "SCHOOL_GROUP_FULL"],
+    ];
+    for (const [result, expected] of cases) {
+      const response = await post(
+        app({ calls: calls(), command: { addGroupClass: result } }),
+        `/v1/school-portal/orgs/${ORG}/groups/${LINK}/classes`,
+        { classroomId: CLASS },
+      );
+      expect(response.status).toBe(409);
+      expect(await code(response)).toBe(expected);
+    }
+  });
+
+  test("a teacher answers for a class in a group: approve, decline or remove", async () => {
+    const recorded = calls();
+    const ok = await post(
+      app({
+        calls: recorded,
+        command: {
+          decideGroupClass: {
+            outcome: "ok",
+            response: { id: LINK, status: "approved" },
+          },
+        },
+      }),
+      `/v1/me/school-group-classes/${LINK}/decision`,
+      { decision: "approve" },
+    );
+    expect(ok.status).toBe(200);
+    expect(recorded.commands).toEqual([{
+      operation: "decideGroupClass",
+      resourceId: LINK,
+      body: { decision: "approve" },
+    }]);
+    const other = await post(
+      app({ calls: calls() }),
+      `/v1/me/school-group-classes/${LINK}/decision`,
+      { decision: "accept" },
+    );
+    expect(other.status).toBe(400);
+  });
+
   test("a decision is accept or decline, nothing else", async () => {
     const response = await post(
       app({ calls: calls() }),

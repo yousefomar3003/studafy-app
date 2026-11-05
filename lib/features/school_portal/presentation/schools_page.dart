@@ -40,7 +40,10 @@ class _SchoolsPageState extends State<SchoolsPage> {
       _loading = true;
       _failed = false;
     });
-    final result = await widget.links.load();
+    final (result, _) = await (
+      widget.links.load(),
+      widget.links.loadGroupClasses(),
+    ).wait;
     if (!mounted) return;
     setState(() {
       _loading = false;
@@ -76,6 +79,28 @@ class _SchoolsPageState extends State<SchoolsPage> {
     messenger.showMessage(
       result.fold(
         onSuccess: (_) => l10n.schoolLinkUnlinked,
+        onFailure: (failure) => schoolLinkFailureText(l10n, failure),
+      ),
+    );
+  }
+
+  Future<void> _decideGroup(
+    SchoolGroupClass entry,
+    SchoolGroupClassDecision decision,
+  ) async {
+    final l10n = AppL10n.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _busy = true);
+    final result = await widget.links.decideGroupClass(entry, decision);
+    if (!mounted) return;
+    setState(() => _busy = false);
+    messenger.showMessage(
+      result.fold(
+        onSuccess: (_) => switch (decision) {
+          SchoolGroupClassDecision.approve => l10n.schoolGroupApproved,
+          SchoolGroupClassDecision.decline => l10n.schoolGroupDeclined,
+          SchoolGroupClassDecision.remove => l10n.schoolGroupRemoved,
+        },
         onFailure: (failure) => schoolLinkFailureText(l10n, failure),
       ),
     );
@@ -129,8 +154,16 @@ class _SchoolsPageState extends State<SchoolsPage> {
                   actionLabel: l10n.schoolLinkRetry,
                   onAction: _load,
                 )
-              else
+              else ...[
                 ..._sections(l10n, list ?? const []),
+                ValueListenableBuilder(
+                  valueListenable: widget.links.groupClasses,
+                  builder: (context, entries, _) => Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: _groupSection(l10n, entries),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -196,6 +229,72 @@ class _SchoolsPageState extends State<SchoolsPage> {
             onTap: () => _open(link),
           ),
       ],
+    ];
+  }
+}
+
+extension on _SchoolsPageState {
+  /// Plan 13a.7: the teacher answers for each class a school asks to group.
+  List<Widget> _groupSection(AppL10n l10n, List<SchoolGroupClass> entries) {
+    if (entries.isEmpty) return const [];
+    final theme = Theme.of(context).textTheme;
+    return [
+      SectionHeader(l10n.schoolGroupsSection),
+      for (final entry in entries)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: FeatureCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                UserContentText(entry.className, style: theme.titleMedium),
+                const SizedBox(height: 6),
+                Text(
+                  entry.approved
+                      ? l10n.schoolGroupIn(entry.school, entry.groupName)
+                      : l10n.schoolGroupAsk(entry.school, entry.groupName),
+                  style: theme.bodyMedium,
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  children: entry.approved
+                      ? [
+                          TextButton(
+                            onPressed: _busy
+                                ? null
+                                : () => _decideGroup(
+                                    entry,
+                                    SchoolGroupClassDecision.remove,
+                                  ),
+                            child: Text(l10n.schoolGroupRemove),
+                          ),
+                        ]
+                      : [
+                          FilledButton(
+                            onPressed: _busy
+                                ? null
+                                : () => _decideGroup(
+                                    entry,
+                                    SchoolGroupClassDecision.approve,
+                                  ),
+                            child: Text(l10n.schoolGroupApprove),
+                          ),
+                          TextButton(
+                            onPressed: _busy
+                                ? null
+                                : () => _decideGroup(
+                                    entry,
+                                    SchoolGroupClassDecision.decline,
+                                  ),
+                            child: Text(l10n.schoolGroupDecline),
+                          ),
+                        ],
+                ),
+              ],
+            ),
+          ),
+        ),
     ];
   }
 }

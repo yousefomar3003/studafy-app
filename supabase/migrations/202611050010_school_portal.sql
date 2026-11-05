@@ -172,6 +172,54 @@ begin
 end
 $tables$;
 
+-- Groups of classes with one code (plan 13a.7; see section 12).
+create table private.school_portal_groups (
+  id uuid primary key default gen_random_uuid(),
+  org_id uuid not null references private.school_portal_orgs(id) on delete cascade,
+  name text not null check (char_length(btrim(name)) between 1 and 80),
+  code_hash text not null check (code_hash ~ '^[0-9a-f]{64}$'),
+  derivation_salt text not null check (derivation_salt ~ '^[A-Za-z0-9_-]{22,64}$'),
+  status text not null default 'active' check (status in ('active', 'closed')),
+  created_by uuid references public.profiles(id) on delete set null,
+  created_at timestamptz not null default now(),
+  closed_at timestamptz,
+  check ((status = 'closed') = (closed_at is not null))
+);
+create index school_portal_groups_org_idx
+  on private.school_portal_groups (org_id, created_at);
+create index school_portal_groups_code_idx
+  on private.school_portal_groups (code_hash) where status = 'active';
+
+create table private.school_portal_group_classes (
+  id uuid primary key default gen_random_uuid(),
+  group_id uuid not null references private.school_portal_groups(id) on delete cascade,
+  classroom_id uuid not null references public.classrooms(id) on delete cascade,
+  status text not null default 'pending' check (status in
+    ('pending', 'approved', 'declined', 'removed')),
+  requested_by uuid references public.profiles(id) on delete set null,
+  requested_at timestamptz not null default now(),
+  decided_by uuid references public.profiles(id) on delete set null,
+  decided_at timestamptz,
+  ended_at timestamptz
+);
+create unique index school_portal_group_classes_live_idx
+  on private.school_portal_group_classes (group_id, classroom_id)
+  where status in ('pending', 'approved');
+create index school_portal_group_classes_classroom_idx
+  on private.school_portal_group_classes (classroom_id, status);
+
+do $tables$
+declare t text;
+begin
+  foreach t in array array['school_portal_groups', 'school_portal_group_classes'] loop
+    execute format('alter table private.%I enable row level security', t);
+    execute format('alter table private.%I force row level security', t);
+    execute format('revoke all on private.%I from public, anon, authenticated, '
+      'service_role, studafy_api_runtime, studafy_worker_runtime', t);
+  end loop;
+end
+$tables$;
+
 -- ---------------------------------------------------------------------------
 -- 2. Who may see what.
 -- ---------------------------------------------------------------------------
@@ -606,6 +654,9 @@ begin
       where a.removed_at is null and a.created_at > now() - interval '12 months'
         and exists (select 1 from private.school_portal_announcement_recipients(a.id) r
           where r.user_id = auth.uid())), '[]'::jsonb));
+  elsif p_operation = 'myGroupClasses' then
+    return jsonb_build_object('outcome', 'ok',
+      'classes', private.school_portal_my_group_classes());
   elsif p_operation = 'orgs' then
     return jsonb_build_object('outcome', 'ok', 'orgs', coalesce((
       select jsonb_agg(jsonb_build_object(
@@ -629,7 +680,7 @@ begin
 
   -- Everything else is an administrator reading their org.
   v_org := case when p_operation in ('dashboard', 'teachers', 'classes', 'overview', 'reports',
-      'announcements')
+      'announcements', 'groups')
     then p_resource_id else nullif(p_input->>'orgId', '')::uuid end;
   if v_org is null or not private.school_portal_admin_ok(v_org) then
     return jsonb_build_object('outcome', 'not_found');
@@ -688,6 +739,11 @@ begin
       perform private.school_portal_log(v_org, 'overview');
       return private.school_portal_overview(v_org);
 
+    when 'groups' then
+      return jsonb_build_object('outcome', 'ok', 'groups', coalesce((
+        select jsonb_agg(private.school_portal_group_json(g.id) order by g.created_at)
+        from private.school_portal_groups g
+        where g.org_id = v_org and g.status = 'active'), '[]'::jsonb));
     when 'classes' then
       perform private.school_portal_log(v_org, 'classes');
       return jsonb_build_object('outcome', 'ok', 'classes', coalesce((
@@ -936,11 +992,14 @@ $$;
 
 -- Ends every live link of an org (when it closes or is suspended for good).
 create or replace function private.school_portal_end_org_links(p_org uuid, p_by uuid)
-returns void language sql security definer set search_path = '' as $$
+returns void language plpgsql security definer set search_path = '' as $$
+begin
   update private.school_portal_teacher_links
   set status = case when status = 'linked' then 'unlinked' else 'cancelled' end,
       ended_at = now(), ended_by = p_by
   where org_id = p_org and status in ('pending', 'linked');
+  perform private.school_portal_drop_hidden_group_classes(p_org);
+end;
 $$;
 
 -- A person who signs in on the website only belongs to no school, so
@@ -965,6 +1024,8 @@ declare
   v_org private.school_portal_orgs%rowtype;
   v_link private.school_portal_teacher_links%rowtype;
   v_invite private.school_portal_admin_invites%rowtype;
+  v_group private.school_portal_groups%rowtype;
+  v_entry private.school_portal_group_classes%rowtype;
   v_teacher uuid;
   v_current uuid;
   v_id uuid;
@@ -1196,6 +1257,8 @@ begin
           end if;
           update private.school_portal_teacher_links
           set status = 'unlinked', ended_at = now(), ended_by = me where id = v_current;
+          perform private.school_portal_drop_hidden_group_classes(
+            (select l.org_id from private.school_portal_teacher_links l where l.id = v_current));
         end if;
         update private.school_portal_teacher_links
         set status = 'linked', decided_at = now() where id = v_link.id;
@@ -1216,6 +1279,7 @@ begin
       end if;
       update private.school_portal_teacher_links
       set status = 'unlinked', ended_at = now(), ended_by = me where id = v_link.id;
+      perform private.school_portal_drop_hidden_group_classes(v_link.org_id);
       response := jsonb_build_object('linkId', v_link.id, 'status', 'unlinked');
 
     when 'sendAnnouncement' then
@@ -1281,6 +1345,102 @@ begin
       v_status := 201;
       response := jsonb_build_object('recorded', true);
 
+    when 'createGroup' then
+      if not private.school_portal_admin_ok(p_resource_id) then
+        return jsonb_build_object('outcome', 'not_found');
+      end if;
+      if (select count(*) from private.school_portal_groups g
+          where g.org_id = p_resource_id and g.status = 'active') >= 50 then
+        return jsonb_build_object('outcome', 'conflict', 'reason', 'group_limit');
+      end if;
+      -- The API mints the code and sends only its HMAC and salt.
+      insert into private.school_portal_groups(org_id, name, code_hash, derivation_salt, created_by)
+      values (p_resource_id, btrim(body->>'name'), body->>'codeHash', body->>'derivationSalt', me)
+      returning id into v_id;
+      v_status := 201;
+      response := private.school_portal_group_json(v_id);
+
+    when 'renewGroupCode', 'closeGroup', 'addGroupClass', 'removeGroupClass' then
+      select * into v_group from private.school_portal_groups
+      where id = p_resource_id and status = 'active' for update;
+      if v_group.id is null or not private.school_portal_admin_ok(v_group.org_id) then
+        return jsonb_build_object('outcome', 'not_found');
+      end if;
+      if p_operation = 'renewGroupCode' then
+        -- The old code stops working at once.
+        update private.school_portal_groups
+        set code_hash = body->>'codeHash', derivation_salt = body->>'derivationSalt'
+        where id = v_group.id;
+      elsif p_operation = 'closeGroup' then
+        update private.school_portal_groups set status = 'closed', closed_at = now()
+        where id = v_group.id;
+        update private.school_portal_group_classes set status = 'removed', ended_at = now()
+        where group_id = v_group.id and status in ('pending', 'approved');
+        response := jsonb_build_object('id', v_group.id, 'status', 'closed');
+      elsif p_operation = 'addGroupClass' then
+        v_id := nullif(body->>'classroomId', '')::uuid;
+        if not private.school_portal_class_visible(v_group.org_id, v_id) then
+          return jsonb_build_object('outcome', 'not_found');
+        end if;
+        if exists (select 1 from private.school_portal_group_classes gc
+            where gc.group_id = v_group.id and gc.classroom_id = v_id
+              and gc.status in ('pending', 'approved')) then
+          return jsonb_build_object('outcome', 'conflict', 'reason', 'already_in_group');
+        end if;
+        if (select count(*) from private.school_portal_group_classes gc
+            where gc.group_id = v_group.id and gc.status in ('pending', 'approved')) >= 30 then
+          return jsonb_build_object('outcome', 'conflict', 'reason', 'group_full');
+        end if;
+        insert into private.school_portal_group_classes(group_id, classroom_id, requested_by)
+        values (v_group.id, v_id, me) returning * into v_entry;
+        -- The class's teachers hear about it in their own workspace.
+        insert into public.notification_outbox(school_id, source_event_id, idempotency_key,
+          channel, template_key, audience, payload)
+        select c.school_id, v_entry.id::text,
+          'school_portal.group_class_requested:' || v_entry.id, 'in_app',
+          'school_portal.group_class_requested',
+          jsonb_build_object('groupClassId', v_entry.id), jsonb_build_object('id', v_entry.id)
+        from public.classrooms c where c.id = v_id;
+        v_status := 201;
+      else
+        update private.school_portal_group_classes set status = 'removed', ended_at = now()
+        where group_id = v_group.id
+          and classroom_id = nullif(body->>'classroomId', '')::uuid
+          and status in ('pending', 'approved');
+        if not found then
+          return jsonb_build_object('outcome', 'not_found');
+        end if;
+      end if;
+      response := coalesce(response, private.school_portal_group_json(v_group.id));
+
+    when 'decideGroupClass' then
+      -- The class's teacher: approve or decline a request, or take an
+      -- approved class out of the group.
+      select * into v_entry from private.school_portal_group_classes
+      where id = p_resource_id for update;
+      select * into v_group from private.school_portal_groups
+      where id = v_entry.group_id and status = 'active';
+      if v_entry.id is null or v_group.id is null
+         or not private.school_portal_teaches(v_group.org_id, v_entry.classroom_id, me) then
+        return jsonb_build_object('outcome', 'not_found');
+      end if;
+      if body->>'decision' in ('approve', 'decline') and v_entry.status = 'pending' then
+        update private.school_portal_group_classes
+        set status = case when body->>'decision' = 'approve' then 'approved' else 'declined' end,
+          decided_by = me, decided_at = now()
+        where id = v_entry.id;
+      elsif body->>'decision' = 'remove' and v_entry.status = 'approved' then
+        update private.school_portal_group_classes
+        set status = 'removed', ended_at = now(), decided_by = me
+        where id = v_entry.id;
+      elsif body->>'decision' in ('approve', 'decline', 'remove') then
+        return jsonb_build_object('outcome', 'conflict', 'reason', 'not_pending');
+      else
+        return jsonb_build_object('outcome', 'invalid', 'path', 'decision');
+      end if;
+      response := jsonb_build_object('id', v_entry.id, 'status',
+        (select gc.status from private.school_portal_group_classes gc where gc.id = v_entry.id));
+
     when 'reportOrg' then
       select * into v_link from private.school_portal_teacher_links
       where id = p_resource_id and teacher_id = me;
@@ -1323,8 +1483,8 @@ begin
     after_value, request_id)
   values (null, me, 'school_portal_' || p_operation, 'school_portal',
     coalesce(p_resource_id, (response->>'id')::uuid),
-    -- What was done - never a student's details.
-    jsonb_strip_nulls(response - 'teacher'),
+    -- What was done - never a student's details, nor a group code's salt.
+    jsonb_strip_nulls(response - 'teacher' - 'derivationSalt'),
     nullif(current_setting('studafy.request_id', true), ''));
   if not private.api_idempotency_complete(
       p_idempotency_id, p_idempotency_generation, v_status, response) then
@@ -1398,6 +1558,16 @@ begin
   delete from private.school_portal_announcements where id in (
     select id from private.school_portal_announcements
     where created_at < now() - interval '12 months' order by created_at limit p_limit);
+  -- Closed groups, and classes taken out of one, after a year.
+  delete from private.school_portal_groups where id in (
+    select id from private.school_portal_groups
+    where status = 'closed' and closed_at < now() - interval '12 months'
+    order by closed_at limit p_limit);
+  delete from private.school_portal_group_classes where id in (
+    select id from private.school_portal_group_classes
+    where status in ('declined', 'removed')
+      and coalesce(ended_at, decided_at) < now() - interval '12 months'
+    order by requested_at limit p_limit);
   return jsonb_build_object('school_portal_expired', v_expired,
     'school_portal_views', v_views, 'school_portal_lookups', v_lookups);
 end;
@@ -2116,6 +2286,18 @@ begin
       from private.school_portal_announcement_recipients(v_source) r
       where r.school_id = p_school);
   end if;
+  if p_template = 'school_portal.group_class_requested' then
+    return (
+      select coalesce(array_agg(distinct cs.user_id), array[]::uuid[])
+      from private.school_portal_group_classes gc
+      join private.school_portal_groups g on g.id = gc.group_id and g.status = 'active'
+      join public.classroom_staff cs on cs.classroom_id = gc.classroom_id
+        and cs.status = 'active' and cs.role in ('lead_teacher', 'co_teacher')
+      join public.profiles p on p.id = cs.user_id and p.status = 'active'
+      where gc.id = v_source and gc.status = 'pending'
+        and (p_audience->>'groupClassId') = gc.id::text
+        and private.school_portal_teaches(g.org_id, gc.classroom_id, cs.user_id));
+  end if;
   if p_template = 'school_portal.link_requested' then
     return (
       select coalesce(array_agg(l.teacher_id), array[]::uuid[])
@@ -2379,3 +2561,258 @@ begin
   end loop;
 end
 $grants$;
+
+-- ---------------------------------------------------------------------------
+-- 12. One code for many classes (plan 13a.7). The school makes a group of
+--     linked teachers' classes; each class's teacher approves it joining;
+--     a student types the group's code where they type a class code and
+--     joins every approved class through the class-join steps. Like a class
+--     code (202609270004), the code exists only as an HMAC under the API's
+--     key, with the salt the API re-derives it from.
+-- ---------------------------------------------------------------------------
+
+
+-- The user teaches this class and is linked with the school now: they
+-- answer for the class joining the school's groups.
+create or replace function private.school_portal_teaches(
+  p_org uuid, p_classroom uuid, p_user uuid)
+returns boolean language sql stable security definer set search_path = '' as $$
+  select exists (
+      select 1 from public.classroom_staff cs
+      join private.school_portal_teacher_links l on l.teacher_id = cs.user_id
+        and l.org_id = p_org and l.status = 'linked'
+      where cs.classroom_id = p_classroom and cs.user_id = p_user
+        and cs.status = 'active' and cs.role in ('lead_teacher', 'co_teacher'))
+    and private.school_portal_class_visible(p_org, p_classroom);
+$$;
+
+-- The classes a group's code joins now: approved by their teacher and still
+-- linked with an active school. An unlink takes a class out at once.
+create or replace function private.school_portal_group_live_classes(p_group uuid)
+returns setof uuid language sql stable security definer set search_path = '' as $$
+  select gc.classroom_id from private.school_portal_group_classes gc
+  join private.school_portal_groups g on g.id = gc.group_id and g.status = 'active'
+  join private.school_portal_orgs o on o.id = g.org_id and o.status = 'active'
+  where gc.group_id = p_group and gc.status = 'approved'
+    and private.school_portal_class_visible(g.org_id, gc.classroom_id);
+$$;
+
+-- A group as its school sees it: only classes the school can see now, and
+-- a decline for 30 days. The salt is for the API, which turns it back into
+-- the code and never passes it on (nor does the audit record keep it).
+create or replace function private.school_portal_group_json(p_group uuid)
+returns jsonb language sql stable security definer set search_path = '' as $$
+  select jsonb_build_object('id', g.id, 'name', g.name, 'status', g.status,
+    'createdAt', g.created_at, 'derivationSalt', g.derivation_salt,
+    'classes', coalesce((select jsonb_agg(jsonb_build_object(
+        'id', gc.id, 'classroomId', gc.classroom_id, 'name', c.name,
+        'teachers', (private.school_portal_class_json(g.org_id, c.id))->'teachers',
+        'status', gc.status, 'requestedAt', gc.requested_at, 'decidedAt', gc.decided_at)
+        order by c.name, c.id)
+      from private.school_portal_group_classes gc
+      join public.classrooms c on c.id = gc.classroom_id
+      where gc.group_id = g.id
+        and (gc.status in ('pending', 'approved')
+          or (gc.status = 'declined' and gc.decided_at > now() - interval '30 days'))
+        and private.school_portal_class_visible(g.org_id, gc.classroom_id)), '[]'::jsonb))
+  from private.school_portal_groups g where g.id = p_group;
+$$;
+
+-- After an unlink: classes the school can no longer see leave its groups for
+-- good, so linking again never brings back an old approval.
+create or replace function private.school_portal_drop_hidden_group_classes(p_org uuid)
+returns void language sql security definer set search_path = '' as $$
+  update private.school_portal_group_classes gc set status = 'removed', ended_at = now()
+  from private.school_portal_groups g
+  where g.id = gc.group_id and g.org_id = p_org and gc.status in ('pending', 'approved')
+    and not private.school_portal_class_visible(p_org, gc.classroom_id);
+$$;
+
+-- What the teacher is asked, and what they agreed to.
+create or replace function private.school_portal_my_group_classes()
+returns jsonb language sql stable security definer set search_path = '' as $$
+  select coalesce(jsonb_agg(jsonb_build_object(
+      'id', gc.id, 'status', gc.status, 'groupName', g.name, 'school', o.name,
+      'classroomId', c.id, 'className', c.name,
+      'requestedAt', gc.requested_at, 'decidedAt', gc.decided_at)
+      order by gc.requested_at desc), '[]'::jsonb)
+  from private.school_portal_group_classes gc
+  join private.school_portal_groups g on g.id = gc.group_id and g.status = 'active'
+  join private.school_portal_orgs o on o.id = g.org_id and o.status = 'active'
+  join public.classrooms c on c.id = gc.classroom_id
+  where gc.status in ('pending', 'approved')
+    and private.school_portal_teaches(g.org_id, gc.classroom_id, auth.uid());
+$$;
+
+-- A student's group code: every class of the group, joined exactly as a
+-- class code joins one (202609200002's redemption): never an adult account,
+-- never a teacher of that workspace, a student membership and record made
+-- where missing; a class the student is in, or was removed from, is skipped.
+create or replace function private.school_portal_group_redeem(
+  p_code_hash text, p_idempotency_id uuid, p_idempotency_generation bigint)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare
+  me uuid := auth.uid();
+  tenant uuid := nullif(current_setting('studafy.school_id', true), '')::uuid;
+  request_id text := nullif(current_setting('studafy.request_id', true), '');
+  idem_key text;
+  v_group private.school_portal_groups%rowtype;
+  v_class record;
+  v_name text;
+  v_membership uuid;
+  v_student uuid;
+  v_live int := 0;
+  v_joined jsonb := '[]'::jsonb;
+begin
+  if me is null or request_id is null then
+    return jsonb_build_object('outcome', 'forbidden');
+  end if;
+  select r.idempotency_key into idem_key from public.idempotency_records r
+  where r.id = p_idempotency_id and r.actor_id = me
+    and r.school_id is not distinct from tenant
+    and r.generation = p_idempotency_generation and r.status = 'reserved'
+  for update;
+  if idem_key is null then
+    return jsonb_build_object('outcome', 'forbidden');
+  end if;
+  if private.account_kind(me) = 'adult' then
+    return jsonb_build_object('outcome', 'forbidden');
+  end if;
+  select g.* into v_group from private.school_portal_groups g
+  join private.school_portal_orgs o on o.id = g.org_id and o.status = 'active'
+  where g.code_hash = p_code_hash and g.status = 'active';
+  if v_group.id is null then
+    return jsonb_build_object('outcome', 'not_found');
+  end if;
+  select p.display_name into v_name from public.profiles p where p.id = me;
+
+  for v_class in
+    select c.id, c.school_id, c.name from public.classrooms c
+    where c.id in (select private.school_portal_group_live_classes(v_group.id))
+    order by c.name, c.id
+  loop
+    v_live := v_live + 1;
+    if exists (select 1 from public.memberships m
+        where m.school_id = v_class.school_id and m.user_id = me
+          and m.active and m.status = 'active' and m.role <> 'student') then
+      continue;
+    end if;
+    v_membership := null;
+    select m.id into v_membership from public.memberships m
+    where m.school_id = v_class.school_id and m.user_id = me and m.role = 'student';
+    if v_membership is null then
+      insert into public.memberships(school_id, user_id, role, active, status, version)
+      values (v_class.school_id, me, 'student', true, 'active', 1)
+      returning id into v_membership;
+      insert into public.membership_events(school_id, membership_id, actor_id, event_type,
+        reason, idempotency_key)
+      values (v_class.school_id, v_membership, me, 'granted', 'school_group_code_redeemed',
+        idem_key);
+    else
+      update public.memberships set active = true, status = 'active',
+        version = version + 1, updated_at = now()
+      where id = v_membership and (not active or status <> 'active');
+    end if;
+    v_student := null;
+    select s.id into v_student from public.students s
+    where s.school_id = v_class.school_id and s.user_id = me and s.deleted_at is null;
+    if v_student is null then
+      insert into public.students(school_id, user_id, studafy_id, display_name,
+        provisional, created_by)
+      values (v_class.school_id, me,
+        'SJ-' || upper(substring(replace(gen_random_uuid()::text, '-', '') for 10)),
+        coalesce(v_name, 'Student'), true, me)
+      returning id into v_student;
+    end if;
+    -- Already in the class, or taken out of it by the teacher: a group code
+    -- never puts a removed student back.
+    if exists (select 1 from public.enrollments e
+        where e.classroom_id = v_class.id and e.student_id = v_student) then
+      continue;
+    end if;
+    insert into public.enrollments(classroom_id, student_id, active, school_id, status, starts_on)
+    values (v_class.id, v_student, true, v_class.school_id, 'active', current_date);
+    insert into public.audit_events(school_id, actor_id, action, entity_type, entity_id,
+      after_value, request_id)
+    values (v_class.school_id, me, 'school_group_code_redeemed', 'membership', v_membership,
+      jsonb_build_object('groupId', v_group.id, 'classroomId', v_class.id), request_id);
+    v_joined := v_joined || jsonb_build_array(jsonb_build_object('schoolId', v_class.school_id,
+      'classroomId', v_class.id, 'classroomName', v_class.name));
+  end loop;
+
+  if v_live = 0 then
+    return jsonb_build_object('outcome', 'not_found');
+  end if;
+  if jsonb_array_length(v_joined) = 0 then
+    -- Already in every class: said plainly, as a class code says it.
+    return jsonb_build_object('outcome', 'invalid_state');
+  end if;
+  return jsonb_build_object('outcome', 'ok', 'response', (v_joined->0)
+    || jsonb_build_object('group', jsonb_build_object('name', v_group.name,
+      'classrooms', v_joined)));
+end;
+$$;
+
+-- Redeeming: a code that is a live class code stays that class's; a code
+-- no class has may be a group's. Re-issued from 202610010002 with that
+-- branch added; otherwise unchanged (ADR-0030: replaced, not wrapped).
+create or replace function private.api044_command(
+  p_operation text, p_resource_id uuid, p_input jsonb,
+  p_idempotency_id uuid, p_idempotency_generation bigint)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare
+  v_salt text := nullif((p_input->'body')->>'derivationSalt', '');
+  v_code_hash text := nullif((p_input->'body')->>'codeHash', '');
+  result jsonb;
+begin
+  -- One kind of account per email: an adult account never joins a class as
+  -- a pupil, by link or by code.
+  if p_operation = 'redeemClassJoinLink'
+     and private.account_kind(auth.uid()) = 'adult' then
+    return jsonb_build_object('outcome', 'forbidden');
+  end if;
+  if p_operation = 'redeemClassJoinLink' and v_code_hash is not null
+     and nullif((p_input->'body')->>'tokenHash', '') is null
+     and not exists (select 1 from public.class_join_links l
+       where l.code_hash = v_code_hash and l.status = 'active')
+     and exists (select 1 from private.school_portal_groups g
+       where g.code_hash = v_code_hash and g.status = 'active') then
+    return private.school_portal_group_redeem(v_code_hash, p_idempotency_id,
+      p_idempotency_generation);
+  end if;
+  result := private.api044_command_pre_salt(
+    p_operation, p_resource_id,
+    -- The delegate's body is strict about what it reads; the salt is this
+    -- wrapper's alone.
+    case when p_input ? 'body'
+      then jsonb_set(p_input, array['body'], (p_input->'body') - 'derivationSalt')
+      else p_input end,
+    p_idempotency_id, p_idempotency_generation);
+  if p_operation = 'createClassJoinLink' and v_salt is not null
+    and coalesce(result->>'outcome', '') = 'ok' then
+    update public.class_join_links set derivation_salt = v_salt
+    where id = ((result->'response')->>'id')::uuid;
+  end if;
+  return result;
+end;
+$$;
+
+do $grants$
+declare fn text;
+begin
+  foreach fn in array array[
+    'private.school_portal_teaches(uuid, uuid, uuid)',
+    'private.school_portal_drop_hidden_group_classes(uuid)',
+    'private.school_portal_group_live_classes(uuid)',
+    'private.school_portal_group_json(uuid)',
+    'private.school_portal_my_group_classes()',
+    'private.school_portal_group_redeem(text, uuid, bigint)',
+    'private.api044_command(text, uuid, jsonb, uuid, bigint)'
+  ] loop
+    execute format('alter function %s owner to postgres', fn);
+    execute format('revoke all on function %s from public, anon, authenticated, service_role, studafy_api_runtime, studafy_worker_runtime', fn);
+  end loop;
+end
+$grants$;
+grant execute on function private.api044_command(text, uuid, jsonb, uuid, bigint)
+  to studafy_api_runtime;

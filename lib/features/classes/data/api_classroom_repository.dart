@@ -175,10 +175,19 @@ class ApiClassroomRepository implements ClassroomRepository {
       V1RedeemClassJoinLinkRequestDto(code: code),
       idempotencyKey: newIdempotencyKey('join-code'),
     );
+    // A school's group code joined every class of the group.
+    final group = response.group;
+    final names = [
+      for (final item in (group?['classrooms'] as List<dynamic>?) ?? const [])
+        if (item is Map<String, dynamic> && item['classroomName'] is String)
+          item['classroomName'] as String,
+    ];
     return JoinedClass(
       schoolId: response.schoolId,
       classroomId: ClassroomId(response.classroomId),
       classroomName: response.classroomName,
+      groupName: group?['name'] is String ? group!['name'] as String : null,
+      groupClassNames: names,
     );
   }
 

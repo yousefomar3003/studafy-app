@@ -44,6 +44,9 @@ enum NotificationTargetKind {
 
   /// An announcement from a school (School Portal).
   schoolAnnouncement,
+
+  /// A school's request to put one of the teacher's classes in a group.
+  schoolGroupClass,
 }
 
 /// The one thing a notification opens: a kind and the server's id for it.
@@ -140,6 +143,10 @@ class NotificationTarget {
       'id',
     ),
     'school_portal.link_requested' => (NotificationTargetKind.schoolLink, 'id'),
+    'school_portal.group_class_requested' => (
+      NotificationTargetKind.schoolGroupClass,
+      'id',
+    ),
     'safety.report_resolved' ||
     'safety.report_escalated' => (NotificationTargetKind.report, 'reportId'),
     _ when templateKey.startsWith('billing.') => (

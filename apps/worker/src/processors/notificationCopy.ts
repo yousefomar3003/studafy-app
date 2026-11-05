@@ -109,6 +109,11 @@ const templates: Record<"en" | "ar", Record<string, ChannelCopy>> = {
       title: "New announcement from a school",
       body: "Open Studafy to read what the school sent.",
     },
+    "school_portal.group_class_requested": {
+      title: "A school asked to group your class",
+      body:
+        "A school asked to add your class to a class group. Open Studafy to approve or decline.",
+    },
     "school_portal.link_requested": {
       title: "A school asked to link",
       body:
@@ -158,6 +163,11 @@ const templates: Record<"en" | "ar", Record<string, ChannelCopy>> = {
     "school_portal.announcement": {
       title: "إعلان جديد من مدرسة",
       body: "افتح Studafy لقراءة ما أرسلته المدرسة.",
+    },
+    "school_portal.group_class_requested": {
+      title: "طلبت مدرسة إضافة صفك إلى مجموعة",
+      body:
+        "طلبت مدرسة إضافة صفك إلى مجموعة صفوف. افتح Studafy للموافقة أو الرفض.",
     },
     "school_portal.link_requested": {
       title: "طلبت مدرسة الربط معك",

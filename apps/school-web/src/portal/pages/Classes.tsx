@@ -10,9 +10,22 @@ import { Empty, Loader, Table } from "../ui";
 export function Classes({ org }: { org: string }) {
   const copy = useCopy();
   const value = useLoad(() => api.classes(org), org);
+  const groups = { name: "groups", org } as const;
   return (
     <>
-      <h1>{copy.classes.title}</h1>
+      <div className="title-row">
+        <h1>{copy.classes.title}</h1>
+        <a
+          className="btn ghost small"
+          href={hrefFor(groups)}
+          onClick={(e) => {
+            e.preventDefault();
+            navigate(groups);
+          }}
+        >
+          {copy.groups.open}
+        </a>
+      </div>
       <Loader value={value} onRetry={value.reload}>
         {(data) => <ClassesView data={data} org={org} />}
       </Loader>

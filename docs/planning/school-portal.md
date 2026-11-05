@@ -1384,7 +1384,7 @@ need the policy and terms updates and the lawyer before release):**
 branch), then 5, 6, 7, each with its own tests, CI and a line in the
 release gate's legal list.
 
-**Status (2026-11-05):** 1 to 6 built on this branch.
+**Status (2026-11-06):** 1 to 7 built on this branch.
 
 - 1 to 4: the dashboard's overview, the student and teacher pages and
   Reports, each recorded in the activity record (`overview`, `student`,
@@ -1399,8 +1399,19 @@ release gate's legal list.
   kept 12 months. A teacher reports one through the existing "Report this
   school" on their link; the operator removes it
   (`removeAnnouncement`).
+- 7: Classes → Class groups on the portal (up to 50 groups, 30 classes
+  each). The code has the class code's form and is minted by the API from
+  a salt under `CLASS_JOIN_CODE_KEY` (domain `school-group-code:`); the
+  database keeps only its HMAC and the salt. Adding a class notifies its
+  teachers (`school_portal.group_class_requested`), who approve, decline
+  or later take it out under Account → Schools. A student types the code
+  in "Join a class": a live class code always wins; otherwise every
+  approved class still linked is joined through the class-join steps
+  (never an adult, never a teacher of that workspace, never a student the
+  teacher removed). An unlink takes the teacher's classes out of every
+  group for good. Closed groups are deleted after 12 months.
 - Left for the release gate: the policy, terms and school agreement
-  wording for 5 and 6.
+  wording for 5, 6 and 7.
 
 ## 14. Owner decisions and open questions
 

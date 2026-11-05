@@ -173,6 +173,42 @@ export const portalEn = {
       unlinked: "Unlinked",
     },
   },
+  groups: {
+    title: "Class groups",
+    open: "Class groups",
+    text:
+      "One code for several classes. Each class's teacher approves it joining. A student types the code in the Studafy app (Join a class) and joins every approved class.",
+    newTitle: "New group",
+    name: "Group name",
+    namePlaceholder: "For example: Grade 7 – Section A",
+    create: "Create group",
+    empty: "No groups yet.",
+    code: "Code",
+    copy: "Copy",
+    copied: "Copied.",
+    noCode: "Codes can't be shown on this server yet.",
+    newCode: "New code",
+    newCodeTitle: "Make a new code?",
+    newCodeText:
+      "The current code stops working at once. Students already in the classes stay in them.",
+    close: "Close group",
+    closeTitle: "Close this group?",
+    closeText:
+      "Its code stops working. Students already in the classes stay in them.",
+    classesTitle: "Classes in this group",
+    noClasses: "No classes yet. Add a class below.",
+    add: "Add class",
+    chooseClass: "Choose a class",
+    remove: "Remove",
+    added: "Added. The class's teacher approves it in the app.",
+    statuses: {
+      pending: "Waiting for the teacher",
+      approved: "Approved",
+      declined: "Declined",
+    },
+    note:
+      "A class joins the group only after its teacher approves. If a teacher unlinks, their classes leave every group.",
+  },
   classes: {
     title: "Classes",
     empty:
@@ -325,6 +361,11 @@ export const portalEn = {
     FILE_UNAVAILABLE: "This file can't be opened right now.",
     FILE_NOT_CLEAN: "This file is still being checked for safety.",
     FILE_DELIVERY_DISABLED: "Files can't be opened on this site yet.",
+    SCHOOL_GROUP_LIMIT: "A school can have up to 50 groups.",
+    SCHOOL_GROUP_FULL: "A group can have up to 30 classes.",
+    ALREADY_IN_GROUP:
+      "This class is already in the group, or waiting for its teacher.",
+    GROUP_CODES_UNAVAILABLE: "Group codes can't be made on this server yet.",
     generic: "Something went wrong. Try again.",
   } as Record<string, string>,
 };

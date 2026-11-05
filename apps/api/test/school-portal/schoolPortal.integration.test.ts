@@ -22,6 +22,8 @@ import {
   createSchoolPortalRoutes,
   PostgresSchoolPortalRepository,
 } from "../../src/school-portal/routes";
+import { createClassJoinRoutes } from "../../src/class-join/routes";
+import { PostgresClassJoinRepository } from "../../src/class-join/repository";
 import { testAssurance } from "../support/assurance";
 
 const databaseUrl = process.env["DATABASE_URL"];
@@ -35,6 +37,9 @@ const TEACHER = `${P}11`;
 const STUDENT = `${P}12`;
 const ADMIN = `${P}13`;
 const STUDENT_ROW = `${P}21`;
+const KID = `${P}14`;
+// Synthetic: the key class and group codes are minted under in this test.
+const CODE_KEY = "synthetic-class-code-key-not-a-secret";
 
 let sql: Sql;
 let app: Hono<AuthorizationEnv>;
@@ -58,7 +63,7 @@ async function user(id: string, name: string, email: string): Promise<void> {
 async function cleanup(): Promise<void> {
   await removeFixtures(sql, {
     schoolIds: [SCHOOL],
-    userIds: [TEACHER, STUDENT, ADMIN],
+    userIds: [TEACHER, STUDENT, ADMIN, KID],
   });
 }
 
@@ -66,6 +71,9 @@ async function seed(): Promise<void> {
   await user(TEACHER, "Rania Haddad", "portal.teacher@synthetic.studafy.test");
   await user(STUDENT, "Omar Khatib", "portal.student@synthetic.studafy.test");
   await user(ADMIN, "Head of Cedar", "portal.head@synthetic.studafy.test");
+  await user(KID, "Lina Nasser", "portal.kid@synthetic.studafy.test");
+  // A student who has joined no class yet.
+  await sql`update public.profiles set account_kind = 'student' where id = ${KID}::uuid`;
   // A website-only adult: no membership anywhere.
   await sql`update public.profiles set account_kind = 'adult' where id = ${ADMIN}::uuid`;
   await sql`insert into public.schools (id, name, timezone, status)
@@ -142,12 +150,32 @@ function build(enabled: boolean): Hono<AuthorizationEnv> {
     c.set("actor", actor);
     await next();
   });
+  const idempotency = {
+    logger,
+    repository: new PostgresIdempotencyRepository(sql),
+  };
   routes.route(
     "/",
     createSchoolPortalRoutes(
-      { repository: new PostgresSchoolPortalRepository(sql), enabled },
+      {
+        repository: new PostgresSchoolPortalRepository(sql, CODE_KEY),
+        enabled,
+      },
       authorization,
-      { logger, repository: new PostgresIdempotencyRepository(sql) },
+      idempotency,
+    ),
+  );
+  // "Join a class" in the app, where a student types a group's code too.
+  routes.route(
+    "/",
+    createClassJoinRoutes(
+      {
+        repository: new PostgresClassJoinRepository(sql, CODE_KEY),
+        cursorSigningKey: "synthetic-cursor-key-not-a-secret-0000000000",
+        enabledSlices: { classJoin: true },
+      },
+      authorization,
+      idempotency,
     ),
   );
   return routes;
@@ -256,6 +284,86 @@ suite("School Portal over real SQL", () => {
       ADMIN,
     );
     expect(after.status).toBe(404);
+  });
+
+  test("one group code joins a student to every class its teachers approved", async () => {
+    const created = await request("/v1/school-portal/orgs", ADMIN, {
+      name: "Cedar Grove Groups",
+      country: "Jordan",
+      city: "Amman",
+      kind: "private",
+      jobTitle: "Principal",
+      adult: true,
+    });
+    expect(created.status).toBe(201);
+    const org = (await created.json() as { id: string }).id;
+    const [teacher] = await sql<{ public_id: string }[]>`
+      select public_id from public.profiles where id = ${TEACHER}::uuid`;
+    const asked = await request(
+      `/v1/school-portal/orgs/${org}/link-requests`,
+      ADMIN,
+      { studafyId: teacher!.public_id },
+    );
+    const link = (await asked.json() as { linkId: string }).linkId;
+    expect(
+      (await request(`/v1/me/school-links/${link}/decision`, TEACHER, {
+        decision: "accept",
+      })).status,
+    ).toBe(200);
+
+    const made = await request(`/v1/school-portal/orgs/${org}/groups`, ADMIN, {
+      name: "Grade 7 - A",
+    });
+    expect(made.status).toBe(201);
+    const group = await made.json() as { id: string; code: string };
+    expect(group.code).toMatch(/^[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/);
+    expect(
+      (await request(
+        `/v1/school-portal/orgs/${org}/groups/${group.id}/classes`,
+        ADMIN,
+        { classroomId: CLASSROOM },
+      )).status,
+    ).toBe(201);
+
+    // The teacher approves in the app.
+    const asks = await request("/v1/me/school-group-classes", TEACHER);
+    const entry = (await asks.json() as {
+      classes: { id: string; groupName: string }[];
+    }).classes[0]!;
+    expect(entry.groupName).toBe("Grade 7 - A");
+    expect(
+      (await request(
+        `/v1/me/school-group-classes/${entry.id}/decision`,
+        TEACHER,
+        { decision: "approve" },
+      )).status,
+    ).toBe(200);
+
+    // The school is shown the same code each time.
+    const listed = await request(`/v1/school-portal/orgs/${org}/groups`, ADMIN);
+    expect(
+      (await listed.json() as { groups: { code: string }[] }).groups[0]?.code,
+    ).toBe(group.code);
+
+    // Typed as a student types a class code: case, space and dash forgiven.
+    const joined = await request("/v1/class-join-links/redeem", KID, {
+      code: group.code.toLowerCase().replace("-", " "),
+    });
+    expect(joined.status).toBe(200);
+    const body = await joined.json() as {
+      classroomId: string;
+      group: { name: string; classrooms: { classroomId: string }[] };
+    };
+    expect(body.classroomId).toBe(CLASSROOM);
+    expect(body.group.name).toBe("Grade 7 - A");
+    expect(body.group.classrooms.map((c) => c.classroomId)).toEqual([
+      CLASSROOM,
+    ]);
+    const [enrolled] = await sql<{ count: number }[]>`
+      select count(*)::int as count from public.enrollments e
+      join public.students s on s.id = e.student_id
+      where s.user_id = ${KID}::uuid and e.classroom_id = ${CLASSROOM}::uuid and e.active`;
+    expect(enrolled!.count).toBe(1);
   });
 
   test("with the switch off nothing answers, whoever asks", async () => {

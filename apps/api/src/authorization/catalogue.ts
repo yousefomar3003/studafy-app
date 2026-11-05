@@ -786,7 +786,7 @@ export const PERMISSION_CATALOGUE = {
     concealDeniedResource: false,
     tenantRequired: false,
     description:
-      "Read the schools that asked to link with oneself as a teacher.",
+      "Read the schools that asked to link with oneself as a teacher, and their requests to group one's classes.",
   },
   "school_link.manage": {
     resource: "school_link",
@@ -794,7 +794,7 @@ export const PERMISSION_CATALOGUE = {
     concealDeniedResource: true,
     tenantRequired: false,
     description:
-      "Accept, decline, end or report a school's link with oneself as a teacher.",
+      "Accept, decline, end or report a school's link with oneself as a teacher, and answer for one's classes in its groups.",
   },
   // DL-076: reporting an AI answer is the person's own, school or not.
   "output_report.create": {

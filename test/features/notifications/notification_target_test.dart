@@ -62,6 +62,10 @@ void main() {
         {'id': 'sa1'},
         NotificationTargetKind.schoolAnnouncement,
       ),
+      'school_portal.group_class_requested': (
+        {'id': 'sg1'},
+        NotificationTargetKind.schoolGroupClass,
+      ),
       'billing.subscription_renewed': (
         {'featureKey': 'studafy_plus'},
         NotificationTargetKind.plan,

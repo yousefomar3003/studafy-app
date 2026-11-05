@@ -44,9 +44,36 @@ class _Links implements SchoolLinksRepository {
   bool linkedElsewhere = false;
 
   List<SchoolAnnouncement> news = const [];
+  List<SchoolGroupClass> groups = const [];
+  final groupDecisions = <(String, SchoolGroupClassDecision)>[];
 
   @override
   Future<List<SchoolLink>> list() async => items;
+
+  @override
+  Future<List<SchoolGroupClass>> groupClasses() async => groups;
+
+  @override
+  Future<void> decideGroupClass(
+    String entryId,
+    SchoolGroupClassDecision decision,
+  ) async {
+    groupDecisions.add((entryId, decision));
+    groups = [
+      for (final entry in groups)
+        if (entry.id != entryId)
+          entry
+        else if (decision == SchoolGroupClassDecision.approve)
+          SchoolGroupClass(
+            id: entry.id,
+            approved: true,
+            groupName: entry.groupName,
+            school: entry.school,
+            className: entry.className,
+            requestedAt: entry.requestedAt,
+          ),
+    ];
+  }
 
   @override
   Future<List<SchoolAnnouncement>> announcements() async => news;
@@ -304,4 +331,44 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('No announcements from a school yet.'), findsOneWidget);
   });
+
+  testWidgets(
+    'a school asks to group a class: the teacher approves, then can take it out',
+    (tester) async {
+      await _phone(tester);
+      final links = _Links([])
+        ..groups = [
+          SchoolGroupClass(
+            id: 'g1',
+            approved: false,
+            groupName: 'Grade 7 - A',
+            school: 'Cedar Grove',
+            className: 'Grade 7 Science',
+            requestedAt: DateTime(2026, 11, 5),
+          ),
+        ];
+      await tester.pumpWidget(
+        localizedApp(home: SchoolsPage(links: _interactor(links))),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Class groups'), findsOneWidget);
+      expect(find.text('Grade 7 Science'), findsOneWidget);
+      expect(find.textContaining('Grade 7 - A'), findsOneWidget);
+      await tester.tap(find.text('Approve'));
+      await tester.pumpAndSettle();
+      expect(links.groupDecisions, [('g1', SchoolGroupClassDecision.approve)]);
+      expect(find.text('Take out of the group'), findsOneWidget);
+      // The confirmation goes away before the next tap, as it does on a phone.
+      ScaffoldMessenger.of(tester.element(find.byType(SchoolsPage)))
+          .removeCurrentSnackBar();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Take out of the group'));
+      await tester.pumpAndSettle();
+      expect(links.groupDecisions.last, (
+        'g1',
+        SchoolGroupClassDecision.remove,
+      ));
+      expect(find.text('Grade 7 Science'), findsNothing);
+    },
+  );
 }

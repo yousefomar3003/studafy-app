@@ -611,3 +611,75 @@ export const V1SendSchoolPortalAnnouncementResult = z.object({
 export const V1MySchoolAnnouncements = z.object({
   announcements: z.array(V1SchoolAnnouncement).max(500),
 });
+
+// ---------------------------------------------------------------------------
+// One code for many classes (plan 13a.7). The school groups linked classes;
+// each class's teacher approves; a student types the group's code in the
+// app's "Join a class" and joins every approved class.
+// ---------------------------------------------------------------------------
+
+/** The same form as a class code: `ABCD-EFGH`. */
+const GroupCode = z.string().regex(/^[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/);
+
+export const V1SchoolPortalGroupClassStatus = z.enum([
+  "pending",
+  "approved",
+  "declined",
+]);
+
+export const V1SchoolPortalGroup = z.object({
+  id: Id,
+  name: z.string(),
+  status: z.literal("active"),
+  createdAt: Timestamp,
+  /** Null when the server has no code key. */
+  code: GroupCode.nullable(),
+  classes: z.array(z.object({
+    /** The class's place in the group (not the class's id). */
+    id: Id,
+    classroomId: Id,
+    name: z.string(),
+    teachers: z.array(z.object({ id: Id, name: z.string(), role: z.string() }))
+      .max(50),
+    status: V1SchoolPortalGroupClassStatus,
+    requestedAt: Timestamp,
+    decidedAt: Timestamp.nullable(),
+  })).max(60),
+});
+export const V1SchoolPortalGroups = z.object({
+  groups: z.array(V1SchoolPortalGroup).max(50),
+});
+
+export const V1CreateSchoolPortalGroupRequest = z.strictObject({
+  name: z.string().trim().min(1).max(80),
+});
+export const V1SchoolPortalGroupClassRequest = z.strictObject({
+  classroomId: Id,
+});
+export const V1CloseSchoolPortalGroupResult = z.object({
+  id: Id,
+  status: z.literal("closed"),
+});
+
+/** A class of the teacher's that a school asked to add to a group. */
+export const V1MySchoolGroupClass = z.object({
+  id: Id,
+  status: z.enum(["pending", "approved"]),
+  groupName: z.string(),
+  school: z.string(),
+  classroomId: Id,
+  className: z.string(),
+  requestedAt: Timestamp,
+  decidedAt: Timestamp.nullable(),
+});
+export const V1MySchoolGroupClasses = z.object({
+  classes: z.array(V1MySchoolGroupClass).max(500),
+});
+export const V1DecideMySchoolGroupClassRequest = z.strictObject({
+  /** `remove` takes an approved class out of the group. */
+  decision: z.enum(["approve", "decline", "remove"]),
+});
+export const V1DecideMySchoolGroupClassResult = z.object({
+  id: Id,
+  status: z.enum(["approved", "declined", "removed"]),
+});

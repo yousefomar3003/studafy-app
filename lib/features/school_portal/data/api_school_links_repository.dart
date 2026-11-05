@@ -35,6 +35,34 @@ class ApiSchoolLinksRepository implements SchoolLinksRepository {
   });
 
   @override
+  Future<List<SchoolGroupClass>> groupClasses() => _guard(() async {
+    final response = await _client.listMySchoolGroupClasses();
+    return [
+      for (final item in response.classes)
+        if (_date(item.requestedAt) case final at?)
+          SchoolGroupClass(
+            id: item.id,
+            approved: item.status == 'approved',
+            groupName: item.groupName,
+            school: item.school,
+            className: item.className,
+            requestedAt: at,
+          ),
+    ];
+  });
+
+  @override
+  Future<void> decideGroupClass(
+    String entryId,
+    SchoolGroupClassDecision decision,
+  ) => _guard(() async {
+    await _client.decideMySchoolGroupClass(
+      V1DecideMySchoolGroupClassRequestDto(decision: decision.name),
+      entryId: entryId,
+    );
+  });
+
+  @override
   Future<List<SchoolAnnouncement>> announcements() => _guard(() async {
     final response = await _client.listMySchoolAnnouncements();
     return [

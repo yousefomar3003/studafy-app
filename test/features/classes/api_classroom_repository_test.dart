@@ -73,6 +73,17 @@ void main() {
     expect(transport.keys, hasLength(2));
     expect(transport.keys[0], transport.keys[1]);
   });
+
+  test('a school group code reports every class it joined', () async {
+    final repository = ApiClassroomRepository(
+      V1ApiClient(_RedeemTransport()),
+      context: ActiveContextController.instance,
+    );
+    final joined = await repository.joinWithCode('K7QM4XTR');
+    expect(joined.classroomName, 'Grade 7 Science');
+    expect(joined.groupName, 'Grade 7 - A');
+    expect(joined.groupClassNames, ['Grade 7 Science', 'Grade 7 Mathematics']);
+  });
 }
 
 class _AcademicTransport implements V1JsonTransport {
@@ -131,4 +142,38 @@ class _AcademicTransport implements V1JsonTransport {
       'termName': 'Term 1',
     };
   }
+}
+
+/// Answers a redemption as the server does for a school's group code.
+class _RedeemTransport implements V1JsonTransport {
+  @override
+  Future<Map<String, dynamic>> get(String path) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<Map<String, dynamic>> post(
+    String path,
+    Map<String, Object?> body, {
+    String? idempotencyKey,
+    bool requiresIdempotency = false,
+  }) async => {
+    'schoolId': '11111111-1111-4111-8111-111111111111',
+    'classroomId': '22222222-2222-4222-8222-222222222222',
+    'classroomName': 'Grade 7 Science',
+    'group': {
+      'name': 'Grade 7 - A',
+      'classrooms': [
+        {
+          'schoolId': '11111111-1111-4111-8111-111111111111',
+          'classroomId': '22222222-2222-4222-8222-222222222222',
+          'classroomName': 'Grade 7 Science',
+        },
+        {
+          'schoolId': '11111111-1111-4111-8111-111111111111',
+          'classroomId': '44444444-4444-4444-8444-444444444444',
+          'classroomName': 'Grade 7 Mathematics',
+        },
+      ],
+    },
+  };
 }

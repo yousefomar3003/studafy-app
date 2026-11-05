@@ -298,6 +298,22 @@ const DEFINITIONS: Record<
     title: "Teacher not found",
     detail: "No teacher has that Studafy ID. Check it and try again.",
   },
+  SCHOOL_GROUP_LIMIT: {
+    title: "Group limit reached",
+    detail: "A school can have up to 50 groups.",
+  },
+  SCHOOL_GROUP_FULL: {
+    title: "Group full",
+    detail: "A group can have up to 30 classes.",
+  },
+  ALREADY_IN_GROUP: {
+    title: "Already in the group",
+    detail: "This class is already in the group, or waiting for its teacher.",
+  },
+  GROUP_CODES_UNAVAILABLE: {
+    title: "Group codes unavailable",
+    detail: "Group codes can't be made on this server yet.",
+  },
   SCHOOL_ADMIN_LIMIT: {
     title: "Administrator limit reached",
     detail: "A school can have up to three administrators.",

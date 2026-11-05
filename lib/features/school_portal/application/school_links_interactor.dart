@@ -27,6 +27,32 @@ class SchoolLinksInteractor {
     return list;
   });
 
+  /// The teacher's classes a school asked to group (plan 13a.7). Empty until
+  /// first read; a decision re-reads it.
+  final ValueNotifier<List<SchoolGroupClass>> groupClasses = ValueNotifier(
+    const [],
+  );
+
+  Future<Result<List<SchoolGroupClass>>> loadGroupClasses() =>
+      runCatching(() async {
+        final list = await links.groupClasses();
+        groupClasses.value = list;
+        return list;
+      });
+
+  Future<Result<void>> decideGroupClass(
+    SchoolGroupClass entry,
+    SchoolGroupClassDecision decision,
+  ) => runCatching(() async {
+    await links.decideGroupClass(entry.id, decision);
+    telemetry.event('school_group_class_decided', {'decision': decision.name});
+    try {
+      groupClasses.value = await links.groupClasses();
+    } on Object {
+      return;
+    }
+  });
+
   /// Announcements from schools that reach the reader, newest first.
   Future<Result<List<SchoolAnnouncement>>> announcements() =>
       runCatching(() => links.announcements());

@@ -2448,5 +2448,17 @@
   "schoolAnnouncementsLoadError": "تعذّر تحميل الإعلانات.",
   "schoolAnnouncementsAccountRow": "إعلانات المدارس",
   "notificationCopySchoolPortalAnnouncementTitle": "إعلان جديد من مدرسة",
-  "notificationCopySchoolPortalAnnouncementDetail": "افتحه لقراءة ما أرسلته المدرسة."
+  "notificationCopySchoolPortalAnnouncementDetail": "افتحه لقراءة ما أرسلته المدرسة.",
+  "schoolGroupsSection": "مجموعات الصفوف",
+  "schoolGroupAsk": "تطلب ⁨{school}⁩ إضافة هذا الصف إلى مجموعتها ⁨{group}⁩. سينضم إلى هذا الصف كل طالب يكتب رمز المجموعة.",
+  "schoolGroupIn": "ضمن مجموعة ⁨{group}⁩ في ⁨{school}⁩. ينضم إلى هذا الصف كل طالب يكتب رمزها.",
+  "schoolGroupApprove": "وافق",
+  "schoolGroupDecline": "ارفض",
+  "schoolGroupRemove": "أخرجه من المجموعة",
+  "schoolGroupApproved": "تمت الموافقة. يمكن للطلاب الانضمام برمز المجموعة.",
+  "schoolGroupDeclined": "تم الرفض.",
+  "schoolGroupRemoved": "أُخرج الصف من المجموعة. يبقى الطلاب المنضمّون فيه.",
+  "joinClassGroupDone": "{count, plural, zero{لم تنضم إلى أي صف في ⁨{groupName}⁩} one{انضممت إلى صف واحد في ⁨{groupName}⁩} two{انضممت إلى صفين في ⁨{groupName}⁩} few{انضممت إلى {count} صفوف في ⁨{groupName}⁩} many{انضممت إلى {count} صفًا في ⁨{groupName}⁩} other{انضممت إلى {count} صف في ⁨{groupName}⁩}}",
+  "notificationCopySchoolPortalGroupClassRequestedTitle": "طلبت مدرسة إضافة صفك إلى مجموعة",
+  "notificationCopySchoolPortalGroupClassRequestedDetail": "طلبت مدرسة إضافة صفك إلى مجموعة صفوف. افتح المدارس للموافقة أو الرفض."
 }

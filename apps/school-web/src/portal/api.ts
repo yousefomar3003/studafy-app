@@ -35,6 +35,8 @@ export type Announcements = Of<typeof C.V1SchoolPortalAnnouncements>;
 export type AnnouncementRequest = Of<
   typeof C.V1SendSchoolPortalAnnouncementRequest
 >;
+export type Groups = Of<typeof C.V1SchoolPortalGroups>;
+export type Group = Groups["groups"][number];
 export type CreateOrgRequest = Of<typeof C.V1CreateSchoolPortalOrgRequest>;
 export type PortalFile = Lessons["materials"][number]["files"][number];
 
@@ -107,6 +109,23 @@ export const api = {
       "POST",
       `${org(orgId)}/announcements`,
       body,
+    ),
+  groups: (orgId: string) => request<Groups>("GET", `${org(orgId)}/groups`),
+  createGroup: (orgId: string, name: string) =>
+    request<Group>("POST", `${org(orgId)}/groups`, { name }),
+  renewGroupCode: (orgId: string, groupId: string) =>
+    request<Group>("POST", `${org(orgId)}/groups/${id(groupId)}/code`, {}),
+  closeGroup: (orgId: string, groupId: string) =>
+    request("POST", `${org(orgId)}/groups/${id(groupId)}/close`, {}),
+  addGroupClass: (orgId: string, groupId: string, classroomId: string) =>
+    request<Group>("POST", `${org(orgId)}/groups/${id(groupId)}/classes`, {
+      classroomId,
+    }),
+  removeGroupClass: (orgId: string, groupId: string, classroomId: string) =>
+    request<Group>(
+      "POST",
+      `${org(orgId)}/groups/${id(groupId)}/classes/remove`,
+      { classroomId },
     ),
   recordExport: (
     orgId: string,

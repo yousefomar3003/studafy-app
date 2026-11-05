@@ -24,6 +24,12 @@ import { outcomeProblem, type OutcomeTable } from "../platform/outcomes";
 import { requireStudentLookupChallenge } from "../turnstile/middleware";
 import type { TurnstileOptions } from "../turnstile/verification";
 import { type DeliveryConfig, mintDeliveryLink } from "../files/routes";
+import {
+  deriveGroupCode,
+  formatClassCode,
+  generateDerivationSalt,
+  hashClassCode,
+} from "../class-join/code";
 
 type QueryOperation =
   | "orgs"
@@ -46,7 +52,9 @@ type QueryOperation =
   | "teacher"
   | "reports"
   | "announcements"
-  | "myAnnouncements";
+  | "myAnnouncements"
+  | "groups"
+  | "myGroupClasses";
 type CommandOperation =
   | "createOrg"
   | "updateOrg"
@@ -60,7 +68,13 @@ type CommandOperation =
   | "endLink"
   | "reportOrg"
   | "recordExport"
-  | "sendAnnouncement";
+  | "sendAnnouncement"
+  | "createGroup"
+  | "renewGroupCode"
+  | "closeGroup"
+  | "addGroupClass"
+  | "removeGroupClass"
+  | "decideGroupClass";
 
 /**
  * Studafy School Portal (api062, docs/planning/school-portal.md). Every call
@@ -99,10 +113,51 @@ export interface SchoolPortalRepository {
   ): Promise<CatalogueCommandResult>;
 }
 
+/** Groups mint their codes with the class codes' key (plan 13a.7). */
+const NEW_CODE_OPERATIONS = new Set<CommandOperation>([
+  "createGroup",
+  "renewGroupCode",
+]);
+
 export class PostgresSchoolPortalRepository implements SchoolPortalRepository {
-  constructor(readonly sql: Sql) {}
+  /**
+   * [codeKey] is CLASS_JOIN_CODE_KEY. Without it a group cannot be made and
+   * its code is not shown.
+   */
+  constructor(readonly sql: Sql, readonly codeKey?: string) {}
+
+  /** A group with its salt turned back into the code, never passed on. */
+  private async withCode(
+    group: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    const { derivationSalt, ...rest } = group;
+    const code = typeof derivationSalt === "string" && this.codeKey
+      ? formatClassCode(await deriveGroupCode(this.codeKey, derivationSalt))
+      : null;
+    return { ...rest, code };
+  }
 
   async query(
+    context: RequestDbContext,
+    operation: QueryOperation,
+    resourceId: string | null,
+    orgId: string | null,
+  ): Promise<Record<string, unknown>> {
+    const result = await this.read(context, operation, resourceId, orgId);
+    if (operation !== "groups" || !Array.isArray(result["groups"])) {
+      return result;
+    }
+    return {
+      ...result,
+      groups: await Promise.all(
+        (result["groups"] as Record<string, unknown>[]).map((group) =>
+          this.withCode(group)
+        ),
+      ),
+    };
+  }
+
+  private async read(
     context: RequestDbContext,
     operation: QueryOperation,
     resourceId: string | null,
@@ -120,6 +175,46 @@ export class PostgresSchoolPortalRepository implements SchoolPortalRepository {
   }
 
   async command(
+    context: RequestDbContext,
+    operation: CommandOperation,
+    resourceId: string | null,
+    body: Record<string, unknown>,
+    reservation: { id: string; generation: number },
+  ): Promise<CatalogueCommandResult & { reason?: string }> {
+    let input = body;
+    if (NEW_CODE_OPERATIONS.has(operation)) {
+      if (!this.codeKey) {
+        return {
+          outcome: "conflict",
+          reason: "codes_unavailable",
+        } as unknown as CatalogueCommandResult;
+      }
+      // Minted here and sent only as its HMAC and salt, as class codes are.
+      const salt = generateDerivationSalt();
+      const code = await deriveGroupCode(this.codeKey, salt);
+      input = {
+        ...body,
+        codeHash: await hashClassCode(code, this.codeKey),
+        derivationSalt: salt,
+      };
+    }
+    const result = await this.write(
+      context,
+      operation,
+      resourceId,
+      input,
+      reservation,
+    );
+    const response = result.response as Record<string, unknown> | undefined;
+    if (
+      result.outcome !== "ok" || !response || !("derivationSalt" in response)
+    ) {
+      return result;
+    }
+    return { ...result, response: await this.withCode(response) };
+  }
+
+  private async write(
     context: RequestDbContext,
     operation: CommandOperation,
     resourceId: string | null,
@@ -183,6 +278,10 @@ const PORTAL_REFUSALS: OutcomeTable = {
   not_pending: ["INVALID_STATE", 409],
   not_linked: ["INVALID_STATE", 409],
   file_not_clean: ["FILE_NOT_CLEAN", 409],
+  group_limit: ["SCHOOL_GROUP_LIMIT", 409],
+  group_full: ["SCHOOL_GROUP_FULL", 409],
+  already_in_group: ["ALREADY_IN_GROUP", 409],
+  codes_unavailable: ["GROUP_CODES_UNAVAILABLE", 409],
   preview_unavailable: ["NOT_FOUND", 404],
 };
 
@@ -212,6 +311,8 @@ export function createSchoolPortalRoutes(
   routes.use("/v1/me/school-links", switchedOn);
   routes.use("/v1/me/school-links/*", switchedOn);
   routes.use("/v1/me/school-announcements", switchedOn);
+  routes.use("/v1/me/school-group-classes", switchedOn);
+  routes.use("/v1/me/school-group-classes/*", switchedOn);
   if (deps.turnstile) {
     const challenge = requireStudentLookupChallenge(deps.turnstile);
     routes.post("/v1/school-portal/orgs", challenge);
@@ -569,6 +670,58 @@ export function createSchoolPortalRoutes(
     "/v1/me/school-announcements",
     "myAnnouncements",
     "school_announcement.read",
+  );
+
+  // One code for many classes (plan 13a.7).
+  const GROUP = `${ORG}/groups/:groupId`;
+  get("listSchoolPortalGroups", `${ORG}/groups`, "groups", read_, "orgId");
+  post(
+    "createSchoolPortalGroup",
+    `${ORG}/groups`,
+    "createGroup",
+    manage,
+    "orgId",
+  );
+  post(
+    "renewSchoolPortalGroupCode",
+    `${GROUP}/code`,
+    "renewGroupCode",
+    manage,
+    "groupId",
+  );
+  post(
+    "closeSchoolPortalGroup",
+    `${GROUP}/close`,
+    "closeGroup",
+    manage,
+    "groupId",
+  );
+  post(
+    "addSchoolPortalGroupClass",
+    `${GROUP}/classes`,
+    "addGroupClass",
+    manage,
+    "groupId",
+  );
+  post(
+    "removeSchoolPortalGroupClass",
+    `${GROUP}/classes/remove`,
+    "removeGroupClass",
+    manage,
+    "groupId",
+  );
+  get(
+    "listMySchoolGroupClasses",
+    "/v1/me/school-group-classes",
+    "myGroupClasses",
+    "school_link.read",
+  );
+  post(
+    "decideMySchoolGroupClass",
+    "/v1/me/school-group-classes/:entryId/decision",
+    "decideGroupClass",
+    "school_link.manage",
+    "entryId",
   );
 
   return routes;

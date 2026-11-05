@@ -113,12 +113,50 @@ class SchoolAnnouncement {
   final DateTime createdAt;
 }
 
+/// What a teacher says about a class of theirs in a school's class group.
+enum SchoolGroupClassDecision { approve, decline, remove }
+
+/// A class of the teacher's that a linked school asked to put in one of its
+/// class groups (plan 13a.7). Students who type the group's code join every
+/// approved class of it; only the class's teacher approves.
+@immutable
+class SchoolGroupClass {
+  const SchoolGroupClass({
+    required this.id,
+    required this.approved,
+    required this.groupName,
+    required this.school,
+    required this.className,
+    required this.requestedAt,
+  });
+
+  final String id;
+
+  /// False while the request waits for the teacher.
+  final bool approved;
+
+  /// User content: shown through `UserContentText`.
+  final String groupName;
+  final String school;
+  final String className;
+  final DateTime requestedAt;
+}
+
 /// A teacher's school links, newest request first; and, for anyone, the
 /// school announcements that reach them.
 abstract interface class SchoolLinksRepository {
   Future<List<SchoolLink>> list();
 
   Future<List<SchoolAnnouncement>> announcements();
+
+  /// The teacher's classes a linked school asked to group, waiting or
+  /// approved.
+  Future<List<SchoolGroupClass>> groupClasses();
+
+  Future<void> decideGroupClass(
+    String entryId,
+    SchoolGroupClassDecision decision,
+  );
 
   /// Accepts or declines a waiting request. Accepting while linked with
   /// another school fails with `LINKED_ELSEWHERE` unless [replaceCurrent]:

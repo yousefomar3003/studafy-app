@@ -8718,4 +8718,56 @@ class AppL10nEn extends AppL10n {
   @override
   String get notificationCopySchoolPortalAnnouncementDetail =>
       'Open it to read what the school sent.';
+
+  @override
+  String get schoolGroupsSection => 'Class groups';
+
+  @override
+  String schoolGroupAsk(String school, String group) {
+    return '⁨$school⁩ asks to add this class to its group ⁨$group⁩. Students who type the group\'s code will join this class.';
+  }
+
+  @override
+  String schoolGroupIn(String school, String group) {
+    return 'In ⁨$school⁩\'s group ⁨$group⁩. Students who type its code join this class.';
+  }
+
+  @override
+  String get schoolGroupApprove => 'Approve';
+
+  @override
+  String get schoolGroupDecline => 'Decline';
+
+  @override
+  String get schoolGroupRemove => 'Take out of the group';
+
+  @override
+  String get schoolGroupApproved =>
+      'Approved. Students can join with the group\'s code.';
+
+  @override
+  String get schoolGroupDeclined => 'Declined.';
+
+  @override
+  String get schoolGroupRemoved =>
+      'Taken out of the group. Students already in the class stay.';
+
+  @override
+  String joinClassGroupDone(int count, String groupName) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'You joined $count classes in ⁨$groupName⁩',
+      one: 'You joined 1 class in ⁨$groupName⁩',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get notificationCopySchoolPortalGroupClassRequestedTitle =>
+      'A school asked to group your class';
+
+  @override
+  String get notificationCopySchoolPortalGroupClassRequestedDetail =>
+      'A school asked to add your class to a class group. Open Schools to approve or decline.';
 }

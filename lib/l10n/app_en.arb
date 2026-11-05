@@ -4281,5 +4281,20 @@
   "schoolAnnouncementsLoadError": "Announcements couldn't be loaded.",
   "schoolAnnouncementsAccountRow": "Announcements from schools",
   "notificationCopySchoolPortalAnnouncementTitle": "New announcement from a school",
-  "notificationCopySchoolPortalAnnouncementDetail": "Open it to read what the school sent."
+  "notificationCopySchoolPortalAnnouncementDetail": "Open it to read what the school sent.",
+  "schoolGroupsSection": "Class groups",
+  "schoolGroupAsk": "⁨{school}⁩ asks to add this class to its group ⁨{group}⁩. Students who type the group's code will join this class.",
+  "@schoolGroupAsk": {"description": "School Portal (teacher side). Placeholders are user content, wrapped in isolates.", "placeholders": {"school": {"type": "String"}, "group": {"type": "String"}}},
+  "schoolGroupIn": "In ⁨{school}⁩'s group ⁨{group}⁩. Students who type its code join this class.",
+  "@schoolGroupIn": {"description": "School Portal (teacher side). Placeholders are user content, wrapped in isolates.", "placeholders": {"school": {"type": "String"}, "group": {"type": "String"}}},
+  "schoolGroupApprove": "Approve",
+  "schoolGroupDecline": "Decline",
+  "schoolGroupRemove": "Take out of the group",
+  "schoolGroupApproved": "Approved. Students can join with the group's code.",
+  "schoolGroupDeclined": "Declined.",
+  "schoolGroupRemoved": "Taken out of the group. Students already in the class stay.",
+  "joinClassGroupDone": "{count, plural, one{You joined 1 class in ⁨{groupName}⁩} other{You joined {count} classes in ⁨{groupName}⁩}}",
+  "@joinClassGroupDone": {"description": "After a school's group code joined several classes. groupName is user content.", "placeholders": {"count": {"type": "int"}, "groupName": {"type": "String"}}},
+  "notificationCopySchoolPortalGroupClassRequestedTitle": "A school asked to group your class",
+  "notificationCopySchoolPortalGroupClassRequestedDetail": "A school asked to add your class to a class group. Open Schools to approve or decline."
 }

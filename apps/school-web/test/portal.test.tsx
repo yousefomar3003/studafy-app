@@ -31,6 +31,7 @@ import { AnswersView, HandInsView } from "../src/portal/pages/Work";
 import { StudentView, TeacherView } from "../src/portal/pages/People";
 import { ReportsView } from "../src/portal/pages/Reports";
 import { SentList } from "../src/portal/pages/Announcements";
+import { GroupsView } from "../src/portal/pages/Groups";
 import { csvCell, fileName, toCsv } from "../src/portal/export";
 import {
   attendanceRows,
@@ -67,6 +68,7 @@ describe("addresses", () => {
     { name: "settings", org: ORG },
     { name: "reports", org: ORG },
     { name: "announcements", org: ORG },
+    { name: "groups", org: ORG },
     { name: "student", org: ORG, student: STUDENT },
     { name: "teacher", org: ORG, teacher: STUDENT },
     ...CLASS_TABS.map((tab) =>
@@ -753,5 +755,68 @@ describe("export", () => {
       ],
     }, portalEn);
     expect(attendance[1]).toEqual(["Omar K.", "Absent", 0, 1, 0, 0]);
+  });
+});
+
+describe("class groups", () => {
+  const group = {
+    id: ITEM,
+    name: "Grade 7 – A",
+    status: "active" as const,
+    createdAt: "2026-11-02T08:00:00Z",
+    code: "K7QM-4XTR",
+    classes: [
+      {
+        id: STUDENT,
+        classroomId: CLASS,
+        name: "Grade 7 Science",
+        teachers: [{ id: STUDENT, name: "Rania Haddad", role: "lead_teacher" }],
+        status: "pending" as const,
+        requestedAt: "2026-11-02T08:05:00Z",
+        decidedAt: null,
+      },
+    ],
+  };
+
+  test("a group shows its code and each class waiting for its teacher", () => {
+    const html = render(
+      <GroupsView
+        data={{ groups: [group] }}
+        org={ORG}
+        classes={[{ id: CLASS, name: "Grade 7 Science" }]}
+        onChange={() => {}}
+      />,
+    );
+    expect(html).toContain("K7QM-4XTR");
+    expect(html).toContain(portalEn.groups.statuses.pending);
+    expect(html).toContain("Rania Haddad");
+    // The class is already in the group, so it isn't offered again.
+    expect(html).not.toContain(portalEn.groups.add);
+  });
+
+  test("without a code key the code is never guessed at", () => {
+    const html = render(
+      <GroupsView
+        data={{ groups: [{ ...group, code: null }] }}
+        org={ORG}
+        classes={[]}
+        onChange={() => {}}
+      />,
+      "ar",
+    );
+    expect(html).toContain(portalAr.groups.noCode);
+  });
+
+  test("no groups yet says so", () => {
+    expect(
+      render(
+        <GroupsView
+          data={{ groups: [] }}
+          org={ORG}
+          classes={[]}
+          onChange={() => {}}
+        />,
+      ),
+    ).toContain(portalEn.groups.empty);
   });
 });

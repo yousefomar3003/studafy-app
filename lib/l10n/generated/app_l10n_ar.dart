@@ -8721,4 +8721,60 @@ class AppL10nAr extends AppL10n {
   @override
   String get notificationCopySchoolPortalAnnouncementDetail =>
       'افتحه لقراءة ما أرسلته المدرسة.';
+
+  @override
+  String get schoolGroupsSection => 'مجموعات الصفوف';
+
+  @override
+  String schoolGroupAsk(String school, String group) {
+    return 'تطلب ⁨$school⁩ إضافة هذا الصف إلى مجموعتها ⁨$group⁩. سينضم إلى هذا الصف كل طالب يكتب رمز المجموعة.';
+  }
+
+  @override
+  String schoolGroupIn(String school, String group) {
+    return 'ضمن مجموعة ⁨$group⁩ في ⁨$school⁩. ينضم إلى هذا الصف كل طالب يكتب رمزها.';
+  }
+
+  @override
+  String get schoolGroupApprove => 'وافق';
+
+  @override
+  String get schoolGroupDecline => 'ارفض';
+
+  @override
+  String get schoolGroupRemove => 'أخرجه من المجموعة';
+
+  @override
+  String get schoolGroupApproved =>
+      'تمت الموافقة. يمكن للطلاب الانضمام برمز المجموعة.';
+
+  @override
+  String get schoolGroupDeclined => 'تم الرفض.';
+
+  @override
+  String get schoolGroupRemoved =>
+      'أُخرج الصف من المجموعة. يبقى الطلاب المنضمّون فيه.';
+
+  @override
+  String joinClassGroupDone(int count, String groupName) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'انضممت إلى $count صف في ⁨$groupName⁩',
+      many: 'انضممت إلى $count صفًا في ⁨$groupName⁩',
+      few: 'انضممت إلى $count صفوف في ⁨$groupName⁩',
+      two: 'انضممت إلى صفين في ⁨$groupName⁩',
+      one: 'انضممت إلى صف واحد في ⁨$groupName⁩',
+      zero: 'لم تنضم إلى أي صف في ⁨$groupName⁩',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get notificationCopySchoolPortalGroupClassRequestedTitle =>
+      'طلبت مدرسة إضافة صفك إلى مجموعة';
+
+  @override
+  String get notificationCopySchoolPortalGroupClassRequestedDetail =>
+      'طلبت مدرسة إضافة صفك إلى مجموعة صفوف. افتح المدارس للموافقة أو الرفض.';
 }

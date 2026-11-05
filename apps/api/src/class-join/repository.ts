@@ -150,6 +150,8 @@ export class PostgresClassJoinRepository implements CatalogueRepository {
           schoolId: link["schoolId"],
           classroomId: link["classroomId"],
           classroomName: link["classroomName"],
+          // A school's group code joined several classes at once.
+          ...(link["group"] ? { group: link["group"] } : {}),
         },
       };
     }

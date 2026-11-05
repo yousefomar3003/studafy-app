@@ -24,6 +24,7 @@ import { AnswersPage, HandInsPage } from "./pages/Work";
 import { Student, Teacher } from "./pages/People";
 import { Reports } from "./pages/Reports";
 import { Announcements } from "./pages/Announcements";
+import { Groups } from "./pages/Groups";
 
 /** The School Portal: sign-in, then the school pages the person runs. */
 export function Portal() {
@@ -142,6 +143,7 @@ function SignedIn({ route, me, email, onLanguage }: {
             )}
             {route.name === "reports" && <Reports org={org.id} />}
             {route.name === "announcements" && <Announcements org={org.id} />}
+            {route.name === "groups" && <Groups org={org.id} />}
             {route.name === "student" && (
               <Student org={org.id} student={route.student} />
             )}
