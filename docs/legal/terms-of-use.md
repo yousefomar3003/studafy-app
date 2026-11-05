@@ -1,7 +1,7 @@
 # Studafy Terms of Use
 
-**Last updated:** 3 November 2026\
-**Version:** 1.8
+**Last updated:** 6 November 2026\
+**Version:** 1.9
 
 <!--
 BEFORE PUBLISHING ON THE OWN DOMAIN - READ THIS (never rendered: the legal
@@ -92,6 +92,19 @@ from the start". §2, §6, §8 and the list of changes; nothing
 else. Published by the owner's decision without legal review, like 1.3 to
 1.7.
 
+Version 1.9 (6 November 2026), with privacy policy 2.1, consent version
+2026-11-06 (migration 202611060010_terms_and_privacy_school_portal.sql):
+the Studafy School Portal (docs/planning/school-portal.md). §1, §3, §4,
+§5, §6, §15 (new: schools and their administrators), §16 (was §15) and the
+list of changes. BRANCH ONLY (feat/school-admin-web): published at the
+portal's release gate, after counsel has read it.
+
+TODO(legal): §15 is the administrators' side of the agreement. The plan
+(school-portal.md 9.1) also asks for a school agreement (data processing
+or data-sharing agreement) accepted when a school's page is created:
+confirm whether §15 is enough or that agreement is required, and what it
+must say about downloaded files, announcements and confidentiality.
+
 The Arabic translation is docs/legal/ar/terms-of-use.md. Change both
 together.
 -->
@@ -101,6 +114,15 @@ company registered in Ireland under number 822430, about your use of
 Studafy. How we handle personal data is set out in the
 [Privacy Policy](privacy), which forms part of these terms. By signing in you
 accept both.
+
+### What changed in version 1.9
+
+- **The Studafy School Portal.** A school can ask a teacher to link with it
+  on the Studafy School Portal, a website. Only if the teacher accepts can
+  the school read, never change, that teacher's classes (§1, §4, §5, §6).
+- A school can send announcements to its linked classes and make class
+  groups that students join with one code (§5, §15).
+- The duties of a school's administrators (§15).
 
 ### What changed in version 1.8
 
@@ -129,9 +151,11 @@ see and hand in their work and keep their own notes. A student can also use
 Studafy on their own, without a class. Parents follow their child's
 progress. Everyone can message the people in their classes.
 
-This version of Studafy has three roles: **teacher**, **student** and
-**parent or guardian**. **There is no school administrator.** A class's work,
-marks and attendance are managed by that class's own teachers.
+The app has three roles: **teacher**, **student** and **parent or
+guardian**. **There is no school administrator inside the app.** A class's
+work, marks and attendance are managed by that class's own teachers.
+Separately, a school can use the **Studafy School Portal**, a website, to
+read the classes of teachers who agree to link with it (§4, §15).
 
 ## 2. Accounts
 
@@ -167,8 +191,7 @@ You agree not to:
 
 Anyone can report a message, a conversation or a person, or block someone,
 from inside the app. **Studafy reviews reports**: there is no school
-administrator in this version of the app, so reports come to a named person
-at Studafy, who can be reached at hello@studafy.com. We may remove content,
+administrator inside the app, so reports come to a named person at Studafy, who can be reached at hello@studafy.com. We may remove content,
 warn someone, and suspend or close accounts that break these rules,
 particularly where a child's safety is at risk. The person who made a
 report is told when it has been resolved.
@@ -206,6 +229,20 @@ reporter must be told the outcome (questions-for-counsel 5.1). -->
   school; the class no longer sees them.
 - Share only material you have the right to share, and nothing about a
   student with anyone who has no need to know it.
+- **Linking with a school.** A school may ask you, by your Studafy ID, to
+  link with it on the Studafy School Portal. If you accept, the school's
+  administrators can read, but not change, all your classes: students' and
+  linked parents' names and emails, lessons and files, work and answers,
+  every mark (drafts and suggested marks included), attendance and the
+  wellbeing notes you have not restricted to safeguarding (Privacy Policy
+  §7.4). **Studafy does not check that a school is real.** Accept only a
+  school you know and are entitled to share your classes with, and report
+  one that is not. You can link with one school at a time and unlink at any
+  time.
+- **Class groups.** A linked school may ask to put one of your classes in a
+  group that students join with one code. The class joins only if you
+  approve, and you can take it out again. Students who join through a group
+  join your class like any other student, and you can remove them.
 
 ## 5. For students
 
@@ -222,6 +259,10 @@ reporter must be told the outcome (questions-for-counsel 5.1). -->
   time. Once your teacher has published a mark for a piece of work, you cannot
   replace it unless your teacher lets you.
 - If you think a mark or an attendance record is wrong, ask your teacher.
+- If your teacher links with a school on the Studafy School Portal, that
+  school can read your class's records, but cannot change them or message
+  you. It can send announcements to your class. A school may give you one
+  code that joins several classes at once; it works like a class code.
 - Your teacher may ask AI to suggest a mark for your written work; your
   teacher decides the mark. Names Studafy knows are replaced before your
   work is sent, and only your teachers see the suggestion. There is no
@@ -240,6 +281,10 @@ reporter must be told the outcome (questions-for-counsel 5.1). -->
   their own; the teacher will see that a parent handed it in.
 - **You cannot change your child's marks or attendance**, and you are not
   given your child's private messages.
+- If your child's teacher links with a school on the Studafy School Portal,
+  the school can read your child's records in that teacher's classes, and
+  your name and email as a linked parent, and can send announcements to
+  the class's parents.
 - **Family+** is an optional paid plan that you hold yourself. One plan
   covers up to 4 of your linked children and a larger plan up to 8, in the
   order you linked them. It summarises what you can already see about each
@@ -358,7 +403,44 @@ and you may bring a claim in the courts of that country.
 <!-- TODO(legal): confirm governing law and jurisdiction with counsel,
 including for users in Jordan. -->
 
-## 15. Contact
+## 15. Schools and the School Portal
+
+The Studafy School Portal (school.studafy.com) lets a school read the
+classes of teachers who link with it. These terms and the Privacy Policy
+apply to it. This section is for a school's administrators.
+
+- **Who may use it.** An adult (18 or over) who is authorised by the school
+  to act for it. By creating a school's page, or accepting an invitation to
+  run one, you confirm both. A school's page has up to three
+  administrators.
+- **Be who you say you are.** Give the school's real name and details. Do
+  not create a page for a school you do not represent, or pretend to be
+  someone you are not.
+- **Ask fairly.** Ask only teachers who teach for your school to link, and
+  never pressure a teacher to accept. A teacher can decline, unlink at any
+  time and report your school.
+- **Use what you see only for the school.** Use it only for the school's
+  education and safeguarding purposes, keep it confidential, and share it
+  only with people at the school who need it. Do not try to see classes or
+  students you are not shown, or to get around the portal's limits.
+- **Downloads are your school's responsibility.** A file you download or
+  print leaves Studafy. Keep it secure, share it only as the school's
+  duties allow, and delete it when it is no longer needed.
+- **Announcements.** Send only school matters, to whole classes. Nothing
+  that singles out a student, nothing unlawful or inappropriate for
+  children, and no advertising.
+- **Class groups.** Put together only classes that belong together. Each
+  teacher decides whether their class joins.
+- **The school is responsible** for its own use of what it reads, as a
+  controller under data-protection law, including answering requests from
+  students and families about the data it holds.
+- **What we may do.** Everything an administrator opens or downloads is
+  recorded. We may remove an announcement, and suspend or close a school's
+  page that breaks these terms or misuses the portal; a suspended page sees
+  nothing. When the last administrator leaves, or a page is closed, every
+  teacher is unlinked.
+
+## 16. Contact
 
 Studafy Limited\
 4/5 The Square, Cahir, Co. Tipperary, Ireland\
