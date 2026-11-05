@@ -29,6 +29,7 @@ import { SignIn } from "../src/portal/pages/SignIn";
 import { TeachersView } from "../src/portal/pages/Teachers";
 import { AnswersView, HandInsView } from "../src/portal/pages/Work";
 import { StudentView, TeacherView } from "../src/portal/pages/People";
+import { ReportsView } from "../src/portal/pages/Reports";
 import {
   CLASS_TABS,
   hrefFor,
@@ -57,6 +58,7 @@ describe("addresses", () => {
     { name: "teachers", org: ORG },
     { name: "classes", org: ORG },
     { name: "settings", org: ORG },
+    { name: "reports", org: ORG },
     { name: "student", org: ORG, student: STUDENT },
     { name: "teacher", org: ORG, teacher: STUDENT },
     ...CLASS_TABS.map((tab) =>
@@ -328,6 +330,43 @@ describe("screens", () => {
     ) {
       expect(html).toContain(text);
     }
+  });
+
+  test("reports: weekly bars with values on hover, classes compared, marks by band", () => {
+    const weeks = Array.from({ length: 12 }, (_, i) => ({
+      weekStart: new Date(Date.UTC(2026, 7, 17 + i * 7)).toISOString().slice(
+        0,
+        10,
+      ),
+      attendanceRate: i === 0 ? null : 0.9,
+    }));
+    const html = render(
+      <ReportsView
+        org={ORG}
+        data={{
+          weeks,
+          classes: [{
+            classroomId: CLASS,
+            name: "Grade 7 Science",
+            students: 24,
+            attendanceRate: 0.84,
+            averageMark: 0.72,
+            handInRate: 0.78,
+            bands: { below50: 2, from50: 4, from70: 8, from85: 4 },
+            weeks,
+          }],
+        }}
+      />,
+    );
+    // Every week has a hover title; a week with no lessons says so.
+    expect(html.match(/<title>/g)?.length).toBeGreaterThanOrEqual(12);
+    expect(html).toContain(portalEn.reports.noData);
+    expect(html).toContain("78%");
+    // The legend names each band, and a table view exists.
+    expect(html).toContain(portalEn.reports.bands.from85);
+    expect(html).toContain(portalEn.reports.asTable);
+    expect(render(<ReportsView org={ORG} data={{ weeks, classes: [] }} />))
+      .toContain(portalEn.classes.empty);
   });
 
   test("teachers: empty, and Unlink only for a linked teacher", () => {

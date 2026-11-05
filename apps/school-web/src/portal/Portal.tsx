@@ -22,6 +22,7 @@ import { Teachers } from "./pages/Teachers";
 import { Welcome } from "./pages/Welcome";
 import { AnswersPage, HandInsPage } from "./pages/Work";
 import { Student, Teacher } from "./pages/People";
+import { Reports } from "./pages/Reports";
 
 /** The School Portal: sign-in, then the school pages the person runs. */
 export function Portal() {
@@ -95,7 +96,8 @@ function SignedIn({ route, me, email, onLanguage }: {
         }
         const org = live.find((o) => o.id === route.org);
         if (!org) return <Redirect to={{ name: "home" }} />;
-        const section = route.name === "teachers" || route.name === "settings"
+        const section = route.name === "teachers" ||
+            route.name === "settings" || route.name === "reports"
           ? route.name
           : route.name === "teacher"
           ? "teachers"
@@ -136,6 +138,7 @@ function SignedIn({ route, me, email, onLanguage }: {
             {route.name === "settings" && (
               <Settings org={org} me={me} onChange={orgs.reload} />
             )}
+            {route.name === "reports" && <Reports org={org.id} />}
             {route.name === "student" && (
               <Student org={org.id} student={route.student} />
             )}

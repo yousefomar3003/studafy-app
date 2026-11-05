@@ -26,6 +26,7 @@ export type Route =
   | { name: "dashboard"; org: string }
   | { name: "teachers"; org: string }
   | { name: "classes"; org: string }
+  | { name: "reports"; org: string }
   | { name: "class"; org: string; classroom: string; tab: ClassTab }
   | { name: "handIns"; org: string; classroom: string; assignment: string }
   | { name: "answers"; org: string; classroom: string; test: string }
@@ -66,6 +67,7 @@ export function parseRoute(pathname: string): Route {
   }
   if (section === "settings" && !a) return { name: "settings", org };
   if (section === "classes" && !a) return { name: "classes", org };
+  if (section === "reports" && !a) return { name: "reports", org };
   if (section === "classes" && a && ID.test(a)) {
     if (!b) return { name: "class", org, classroom: a, tab: "students" };
     if (b === "assignments" && c && ID.test(c)) {
@@ -98,6 +100,8 @@ export function hrefFor(route: Route, base: string = basePath()): string {
         return `${o}/teachers`;
       case "classes":
         return `${o}/classes`;
+      case "reports":
+        return `${o}/reports`;
       case "settings":
         return `${o}/settings`;
       case "student":

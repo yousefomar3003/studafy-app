@@ -11,7 +11,7 @@ begin;
 \unset auth031_fixture_only
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(89);
+select plan(91);
 select set_config('studafy.request_id', 'school-portal-test', true);
 
 \set admin1 'f0000000-0000-4000-8000-000000000001'
@@ -329,6 +329,12 @@ select ok((select (c->>'missing')::int >= 2 from jsonb_array_elements(pg_temp.q(
   'and the class counts its missing work');
 select is(pg_temp.q(:'admin4', 'overview', current_setting('test.org')::uuid)->>'outcome',
   'not_found', 'another school''s administrator sees no overview');
+
+select is(jsonb_array_length(pg_temp.q(:'admin1', 'reports', current_setting('test.org')::uuid)->'weeks'),
+  12, 'reports cover the last twelve weeks');
+select ok((select (c->>'handInRate')::numeric < 1 from jsonb_array_elements(pg_temp.q(:'admin1', 'reports',
+      current_setting('test.org')::uuid)->'classes') c where c->>'classroomId' = :'classroom_id'),
+  'and count overdue work that was not handed in');
 
 -- 6c. A student's page and a teacher's page.
 select is(pg_temp.q(:'admin1', 'student', :'student_id', current_setting('test.org')::uuid)

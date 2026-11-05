@@ -527,3 +527,29 @@ export const V1SchoolPortalTeacher = z.object({
     handIns: z.number().int().nonnegative(),
   }),
 });
+
+const Week = z.object({
+  /** The Monday the week starts on (YYYY-MM-DD, UTC). */
+  weekStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  attendanceRate: z.number().nullable(),
+});
+
+/** Reports across classes (plan 13a.4). Rates and marks are 0–1. */
+export const V1SchoolPortalReports = z.object({
+  weeks: z.array(Week).length(12),
+  classes: z.array(z.object({
+    classroomId: Id,
+    name: z.string(),
+    students: z.number().int().nonnegative(),
+    attendanceRate: z.number().nullable(),
+    averageMark: z.number().nullable(),
+    handInRate: z.number().nullable(),
+    bands: z.object({
+      below50: z.number().int().nonnegative(),
+      from50: z.number().int().nonnegative(),
+      from70: z.number().int().nonnegative(),
+      from85: z.number().int().nonnegative(),
+    }),
+    weeks: z.array(Week).length(12),
+  })).max(5000),
+});

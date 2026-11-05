@@ -43,7 +43,8 @@ type QueryOperation =
   | "wellbeing"
   | "overview"
   | "student"
-  | "teacher";
+  | "teacher"
+  | "reports";
 type CommandOperation =
   | "createOrg"
   | "updateOrg"
@@ -530,6 +531,7 @@ export function createSchoolPortalRoutes(
     read_,
     "teacherId",
   );
+  get("listSchoolPortalReports", `${ORG}/reports`, "reports", read_, "orgId");
 
   return routes;
 }

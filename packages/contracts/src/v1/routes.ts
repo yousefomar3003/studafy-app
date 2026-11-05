@@ -2640,6 +2640,14 @@ export const V1_ROUTE_CATALOGUE = [
     "V1SchoolPortalTeacher",
     portalParams("orgId", "teacherId"),
   ),
+  catalogueGet(
+    "listSchoolPortalReports",
+    "/v1/school-portal/orgs/{orgId}/reports",
+    "school_portal.read",
+    SchoolPortal.V1SchoolPortalReports,
+    "V1SchoolPortalReports",
+    portalParams("orgId"),
+  ),
 ] as const satisfies readonly V1RouteContract[];
 
 function params(key: string) {

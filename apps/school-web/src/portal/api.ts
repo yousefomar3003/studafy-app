@@ -30,6 +30,7 @@ export type Wellbeing = Of<typeof C.V1SchoolPortalWellbeing>;
 export type Overview = Of<typeof C.V1SchoolPortalOverview>;
 export type StudentPage = Of<typeof C.V1SchoolPortalStudent>;
 export type TeacherPage = Of<typeof C.V1SchoolPortalTeacher>;
+export type Reports = Of<typeof C.V1SchoolPortalReports>;
 export type CreateOrgRequest = Of<typeof C.V1CreateSchoolPortalOrgRequest>;
 export type PortalFile = Lessons["materials"][number]["files"][number];
 
@@ -94,6 +95,7 @@ export const api = {
     request<Dashboard>("GET", `${org(orgId)}/dashboard`),
   overview: (orgId: string) =>
     request<Overview>("GET", `${org(orgId)}/overview`),
+  reports: (orgId: string) => request<Reports>("GET", `${org(orgId)}/reports`),
   student: (orgId: string, studentId: string) =>
     request<StudentPage>("GET", `${org(orgId)}/students/${id(studentId)}`),
   teacher: (orgId: string, teacherId: string) =>

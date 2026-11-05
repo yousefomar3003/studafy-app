@@ -3455,6 +3455,14 @@ class V1ApiClient {
       }, {}),
     ),
   );
+
+  Future<V1SchoolPortalReportsDto> listSchoolPortalReports({
+    required String orgId,
+  }) async => V1SchoolPortalReportsDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/school-portal/orgs/{orgId}/reports', {'orgId': orgId}, {}),
+    ),
+  );
 }
 
 String _v1Path(
@@ -13922,6 +13930,22 @@ class V1SchoolPortalPersonDto {
   final String? email;
 
   Map<String, Object?> toJson() => {'id': id, 'name': name, 'email': email};
+}
+
+class V1SchoolPortalReportsDto {
+  const V1SchoolPortalReportsDto({required this.weeks, required this.classes});
+
+  factory V1SchoolPortalReportsDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalReportsDto(
+        weeks: (json['weeks'] as List<dynamic>).cast<Map<String, dynamic>>(),
+        classes: (json['classes'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+      );
+
+  final List<Map<String, dynamic>> weeks;
+  final List<Map<String, dynamic>> classes;
+
+  Map<String, Object?> toJson() => {'weeks': weeks, 'classes': classes};
 }
 
 class V1SchoolPortalRosterDto {

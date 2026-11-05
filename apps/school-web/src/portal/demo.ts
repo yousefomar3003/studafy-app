@@ -123,6 +123,57 @@ export function demoAnswer(method: string, path: string): unknown {
       }],
     };
   }
+  if (path.endsWith("/reports")) {
+    const weeks = (rates: (number | null)[]) =>
+      rates.map((attendanceRate, i) => ({
+        weekStart: new Date(Date.UTC(2026, 7, 17 + i * 7)).toISOString().slice(
+          0,
+          10,
+        ),
+        attendanceRate,
+      }));
+    return {
+      weeks: weeks([
+        0.95,
+        0.94,
+        0.93,
+        0.96,
+        0.9,
+        0.92,
+        0.88,
+        0.91,
+        0.86,
+        0.89,
+        0.85,
+        0.87,
+      ]),
+      classes: CLASSES.map((c, i) => ({
+        classroomId: c.id,
+        name: c.name,
+        students: STUDENTS.length,
+        attendanceRate: i ? 0.93 : 0.84,
+        averageMark: i ? 0.64 : 0.72,
+        handInRate: i ? 0.95 : 0.78,
+        bands: i
+          ? { below50: 4, from50: 7, from70: 5, from85: 2 }
+          : { below50: 2, from50: 4, from70: 8, from85: 4 },
+        weeks: weeks([
+          null,
+          0.9,
+          0.92,
+          0.95,
+          0.9,
+          0.91,
+          0.87,
+          0.9,
+          0.84,
+          0.88,
+          0.82,
+          0.85,
+        ]),
+      })),
+    };
+  }
   if (path.endsWith("/overview")) {
     return {
       classes: CLASSES.map((c, i) => ({

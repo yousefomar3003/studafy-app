@@ -488,6 +488,72 @@ returns jsonb language sql stable security definer set search_path = '' as $$
             where t.assignment_id = a.id)))) end;
 $$;
 
+-- Reports across classes (plan 13a.4): attendance by week for the last 12
+-- weeks (school-wide and per class), and per class the attendance rate over
+-- those weeks, the average mark, the hand-in rate (published work past due:
+-- handed in or excused, of all owed) and how marks spread across four bands.
+create or replace function private.school_portal_reports(p_org uuid)
+returns jsonb language sql stable security definer set search_path = '' as $$
+  with vc as (select id from private.school_portal_visible_classes(p_org) v(id)),
+  wk as (
+    select generate_series(date_trunc('week', now()) - interval '11 weeks',
+      date_trunc('week', now()), interval '1 week') as week_start),
+  att as (
+    select ls.classroom_id, date_trunc('week', ls.starts_at) as week_start,
+      count(*) as sessions,
+      count(*) filter (where ar.state in ('present', 'late')) as attended
+    from public.lesson_sessions ls
+    join public.attendance_records ar on ar.session_id = ls.id
+    where ls.classroom_id in (select id from vc)
+      and ls.starts_at >= date_trunc('week', now()) - interval '11 weeks'
+    group by 1, 2),
+  marks as (
+    select t.classroom_id, g.score / nullif(t.maximum_score, 0) as pct
+    from public.grade_results g
+    join public.assessments t on t.id = g.assessment_id and t.deleted_at is null
+    where t.classroom_id in (select id from vc) and g.mark = 'scored'
+      and g.score is not null),
+  owed as (
+    select a.classroom_id, count(*) as owed,
+      count(*) filter (where exists (select 1 from public.submissions sb
+        where sb.assignment_id = a.id and sb.student_id = e.student_id
+          and (sb.status = 'submitted' or sb.excused))) as handed
+    from public.assignments a
+    join public.enrollments e on e.classroom_id = a.classroom_id and e.status = 'active'
+    where a.classroom_id in (select id from vc) and a.deleted_at is null
+      and a.state::text = 'published' and a.due_at < now()
+    group by 1)
+  select jsonb_build_object('outcome', 'ok',
+    'weeks', (select jsonb_agg(jsonb_build_object(
+        'weekStart', to_char(wk.week_start, 'YYYY-MM-DD'),
+        'attendanceRate', (select round(sum(att.attended)::numeric
+          / nullif(sum(att.sessions), 0), 3) from att where att.week_start = wk.week_start))
+        order by wk.week_start) from wk),
+    'classes', coalesce((select jsonb_agg(jsonb_build_object(
+        'classroomId', c.id, 'name', c.name,
+        'students', (select count(*) from public.enrollments e
+          where e.classroom_id = c.id and e.status = 'active'),
+        'attendanceRate', (select round(sum(att.attended)::numeric
+          / nullif(sum(att.sessions), 0), 3) from att where att.classroom_id = c.id),
+        'averageMark', (select round(avg(m.pct), 3) from marks m where m.classroom_id = c.id),
+        'handInRate', (select round(o.handed::numeric / nullif(o.owed, 0), 3)
+          from owed o where o.classroom_id = c.id),
+        'bands', (select jsonb_build_object(
+            'below50', count(*) filter (where m.pct < 0.5),
+            'from50', count(*) filter (where m.pct >= 0.5 and m.pct < 0.7),
+            'from70', count(*) filter (where m.pct >= 0.7 and m.pct < 0.85),
+            'from85', count(*) filter (where m.pct >= 0.85))
+          from marks m where m.classroom_id = c.id),
+        'weeks', (select jsonb_agg(jsonb_build_object(
+            'weekStart', to_char(wk.week_start, 'YYYY-MM-DD'),
+            'attendanceRate', (select round(att.attended::numeric
+              / nullif(att.sessions, 0), 3) from att
+              where att.classroom_id = c.id and att.week_start = wk.week_start))
+            order by wk.week_start) from wk))
+        order by c.name)
+      from public.classrooms c where c.id in (select id from vc)), '[]'::jsonb));
+$$;
+
 create or replace function private.api062_query(
   p_operation text, p_resource_id uuid, p_input jsonb)
 returns jsonb language plpgsql volatile security definer set search_path = '' as $$
@@ -549,7 +615,7 @@ begin
   end if;
 
   -- Everything else is an administrator reading their org.
-  v_org := case when p_operation in ('dashboard', 'teachers', 'classes', 'overview')
+  v_org := case when p_operation in ('dashboard', 'teachers', 'classes', 'overview', 'reports')
     then p_resource_id else nullif(p_input->>'orgId', '')::uuid end;
   if v_org is null or not private.school_portal_admin_ok(v_org) then
     return jsonb_build_object('outcome', 'not_found');
@@ -587,6 +653,10 @@ begin
             else 0 end)
           order by l.requested_at desc)
         from private.school_portal_teacher_links l where l.org_id = v_org), '[]'::jsonb));
+
+    when 'reports' then
+      perform private.school_portal_log(v_org, 'reports');
+      return private.school_portal_reports(v_org);
 
     when 'overview' then
       -- The school at a glance (plan 13a.1): per class, attendance over the
@@ -1595,6 +1665,7 @@ begin
     'private.school_portal_student_stats(uuid)',
     'private.school_portal_attention_reasons(bigint, bigint, numeric, bigint)',
     'private.school_portal_overview(uuid)',
+    'private.school_portal_reports(uuid)',
     'private.school_portal_student_page(uuid, uuid)',
     'private.school_portal_teacher_page(uuid, uuid)',
     'private.school_portal_reserved(uuid, bigint)',
