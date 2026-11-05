@@ -117,6 +117,10 @@ path, with its own Content-Security-Policy (the API on `*.studafy.com`,
 Supabase on `*.supabase.co`, Cloudflare Turnstile), `noindex` and
 `no-store`. `studafy.com/portal/...` redirects to `school.studafy.com`.
 Locally: `bun run dev`, then `http://localhost:5173/portal/`.
+To click through every screen with invented data and no sign-in:
+`VITE_PORTAL_DEMO=true bun run dev` (`src/portal/demo.ts`). Demo mode
+exists only on the dev server: in any build `import.meta.env.DEV` is false,
+so the demo and its data are left out of the bundle.
 
 | Variable | What it does |
 | --- | --- |

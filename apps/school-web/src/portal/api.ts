@@ -2,6 +2,7 @@ import type * as C from "@studafy/contracts";
 import type { z } from "zod";
 import { accessToken } from "./auth";
 import { portalConfig } from "./config";
+import { DEMO, demoAnswer } from "./demo";
 
 /** A refusal from the API: its status and its stable code. */
 export class ApiError extends Error {
@@ -34,6 +35,7 @@ async function request<T>(
   path: string,
   body?: unknown,
 ): Promise<T> {
+  if (DEMO) return demoAnswer(method, path) as T;
   const token = await accessToken();
   if (!token) throw new ApiError(401, "UNAUTHENTICATED");
   const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
@@ -139,6 +141,7 @@ export async function openFile(orgId: string, file: PortalFile): Promise<void> {
     `${org(orgId)}/files/${id(file.fileId)}/download-intent`,
     {},
   );
+  if (DEMO) return;
   const token = await accessToken();
   const response = await fetch(intent.downloadUrl, {
     headers: { Authorization: `Bearer ${token ?? ""}` },

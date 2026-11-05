@@ -5,6 +5,7 @@ import {
 } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 import { portalConfig, type Provider } from "./config";
+import { DEMO, demoSession } from "./demo";
 
 const LAST_ACTIVE = "studafy.portal.lastActive";
 
@@ -48,6 +49,7 @@ export async function signIn(provider: Provider, base: string): Promise<void> {
 
 /** Ends the session and forgets everything this site kept in the browser. */
 export async function signOut(): Promise<void> {
+  if (DEMO) return;
   try {
     await supabase()?.auth.signOut();
   } finally {
@@ -85,8 +87,11 @@ export function isHiddenEmail(email: string | undefined | null): boolean {
 
 /** The session, or null when signed out; undefined while still unknown. */
 export function useSession(): Session | null | undefined {
-  const [session, setSession] = useState<Session | null | undefined>(undefined);
+  const [session, setSession] = useState<Session | null | undefined>(
+    DEMO ? (demoSession as unknown as Session) : undefined,
+  );
   useEffect(() => {
+    if (DEMO) return;
     const auth = supabase()?.auth;
     if (!auth) {
       setSession(null);
