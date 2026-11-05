@@ -56,6 +56,15 @@ const ALLOWED: Record<string, string[]> = {
     "@studafy/observability",
     "@studafy/test-support",
   ],
+  // The public website and, later, the School Portal (docs/planning/school-portal.md).
+  "@studafy/school-web": [
+    "react",
+    "react-dom",
+    "@fontsource-variable/inter",
+    "@fontsource/ibm-plex-sans-arabic",
+    "vite",
+    "@vitejs/plugin-react",
+  ],
   "@studafy/worker": [
     "bullmq",
     "@studafy/config",

@@ -2,9 +2,11 @@ name: CI (no deployment)
 
 on:
   push:
-    branches: [main]
+    # feat/school-admin-web: the long-lived website and School Portal branch
+    # (docs/planning/school-portal.md), checked like main until it merges.
+    branches: [main, feat/school-admin-web]
   pull_request:
-    branches: [main]
+    branches: [main, feat/school-admin-web]
   workflow_dispatch:
 
 concurrency:
@@ -768,6 +770,9 @@ jobs:
 
       - name: Build API and worker bundles
         run: bun run --filter='@studafy/api' build && bun run --filter='@studafy/worker' build
+
+      - name: Build the public website (prerendered pages)
+        run: bun run --filter='@studafy/school-web' build
 
       - name: Smoke API container (degraded readiness and graceful shutdown)
         run: |
