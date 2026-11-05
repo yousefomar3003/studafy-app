@@ -56,7 +56,8 @@ type CommandOperation =
   | "cancelLink"
   | "decideLink"
   | "endLink"
-  | "reportOrg";
+  | "reportOrg"
+  | "recordExport";
 
 /**
  * Studafy School Portal (api062, docs/planning/school-portal.md). Every call
@@ -306,7 +307,10 @@ export function createSchoolPortalRoutes(
     operationId: Parameters<typeof v1Route>[0],
     path: string,
     operation: CommandOperation,
-    permission: "school_portal.manage" | "school_link.manage",
+    permission:
+      | "school_portal.manage"
+      | "school_portal.read"
+      | "school_link.manage",
     id?: string,
   ) {
     const route = v1Route(operationId);
@@ -532,6 +536,13 @@ export function createSchoolPortalRoutes(
     "teacherId",
   );
   get("listSchoolPortalReports", `${ORG}/reports`, "reports", read_, "orgId");
+  post(
+    "recordSchoolPortalExport",
+    `${ORG}/exports`,
+    "recordExport",
+    "school_portal.read",
+    "orgId",
+  );
 
   return routes;
 }

@@ -136,6 +136,10 @@ create table private.school_portal_views (
   student_id uuid,
   file_id uuid,
   item_id uuid,
+  -- For an export (plan 13a.5): what was exported, and as what.
+  export_kind text check (export_kind is null or export_kind in
+    ('students', 'marks', 'attendance', 'reports', 'class')),
+  export_format text check (export_format is null or export_format in ('csv', 'pdf')),
   view text not null check (view in ('dashboard', 'teachers', 'classes', 'roster',
     'lessons', 'file', 'assignments', 'hand_ins', 'tests', 'test_answers', 'marks',
     'attendance', 'wellbeing', 'overview', 'student', 'teacher', 'reports', 'export')),
@@ -1195,6 +1199,26 @@ begin
       set status = 'unlinked', ended_at = now(), ended_by = me where id = v_link.id;
       response := jsonb_build_object('linkId', v_link.id, 'status', 'unlinked');
 
+    when 'recordExport' then
+      -- Every export is recorded before the website builds the file.
+      if not private.school_portal_admin_ok(p_resource_id) then
+        return jsonb_build_object('outcome', 'not_found');
+      end if;
+      if body->>'kind' not in ('students', 'marks', 'attendance', 'reports', 'class')
+         or body->>'format' not in ('csv', 'pdf') then
+        return jsonb_build_object('outcome', 'invalid');
+      end if;
+      if body->>'kind' <> 'reports' and not private.school_portal_class_visible(
+          p_resource_id, nullif(body->>'classroomId', '')::uuid) then
+        return jsonb_build_object('outcome', 'not_found');
+      end if;
+      insert into private.school_portal_views(admin_id, org_id, classroom_id, view,
+        export_kind, export_format)
+      values (me, p_resource_id, nullif(body->>'classroomId', '')::uuid, 'export',
+        body->>'kind', body->>'format');
+      v_status := 201;
+      response := jsonb_build_object('recorded', true);
+
     when 'reportOrg' then
       select * into v_link from private.school_portal_teacher_links
       where id = p_resource_id and teacher_id = me;
@@ -1638,7 +1662,8 @@ returns jsonb language sql stable security definer set search_path = '' as $$
           where a.user_id = p_user), '[]'::jsonb),
         'activity', coalesce((select jsonb_agg(jsonb_build_object(
             'view', v.view, 'classroomId', v.classroom_id, 'studentId', v.student_id,
-            'fileId', v.file_id, 'itemId', v.item_id, 'at', v.at) order by v.at)
+            'fileId', v.file_id, 'itemId', v.item_id, 'exportKind', v.export_kind,
+            'exportFormat', v.export_format, 'at', v.at) order by v.at)
           from (select * from private.school_portal_views where admin_id = p_user
                 order by at desc limit 5000) v), '[]'::jsonb))
     )

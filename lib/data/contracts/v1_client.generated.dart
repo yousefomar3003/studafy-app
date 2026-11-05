@@ -3463,6 +3463,19 @@ class V1ApiClient {
       _v1Path('/v1/school-portal/orgs/{orgId}/reports', {'orgId': orgId}, {}),
     ),
   );
+
+  Future<V1RecordSchoolPortalExportResultDto> recordSchoolPortalExport(
+    V1RecordSchoolPortalExportRequestDto request, {
+    required String orgId,
+    String? idempotencyKey,
+  }) async => V1RecordSchoolPortalExportResultDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/school-portal/orgs/{orgId}/exports', {'orgId': orgId}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
 }
 
 String _v1Path(
@@ -12207,6 +12220,44 @@ class V1RecordAttendanceResponseDto {
     'version': version,
     'recorded': recorded,
   };
+}
+
+class V1RecordSchoolPortalExportRequestDto {
+  const V1RecordSchoolPortalExportRequestDto({
+    required this.kind,
+    required this.format,
+    this.classroomId,
+  });
+
+  factory V1RecordSchoolPortalExportRequestDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1RecordSchoolPortalExportRequestDto(
+    kind: json['kind'] as String,
+    format: json['format'] as String,
+    classroomId: json['classroomId'] as String?,
+  );
+
+  final String kind;
+  final String format;
+  final String? classroomId;
+
+  Map<String, Object?> toJson() => {
+    'kind': kind,
+    'format': format,
+    'classroomId': ?classroomId,
+  };
+}
+
+class V1RecordSchoolPortalExportResultDto {
+  const V1RecordSchoolPortalExportResultDto({required this.recorded});
+
+  factory V1RecordSchoolPortalExportResultDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1RecordSchoolPortalExportResultDto(recorded: json['recorded'] as bool);
+
+  final bool recorded;
+
+  Map<String, Object?> toJson() => {'recorded': recorded};
 }
 
 class V1RedeemClassJoinLinkRequestDto {

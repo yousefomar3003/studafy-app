@@ -553,3 +553,17 @@ export const V1SchoolPortalReports = z.object({
     weeks: z.array(Week).length(12),
   })).max(5000),
 });
+
+/**
+ * An export about to be made by the website (plan 13a.5): recorded in the
+ * activity record first; the file is built only after this succeeds.
+ */
+export const V1RecordSchoolPortalExportRequest = z.strictObject({
+  kind: z.enum(["students", "marks", "attendance", "reports", "class"]),
+  format: z.enum(["csv", "pdf"]),
+  /** Required for every kind except "reports". */
+  classroomId: Id.optional(),
+});
+export const V1RecordSchoolPortalExportResult = z.object({
+  recorded: z.literal(true),
+});

@@ -2648,6 +2648,17 @@ export const V1_ROUTE_CATALOGUE = [
     "V1SchoolPortalReports",
     portalParams("orgId"),
   ),
+  cataloguePost(
+    "recordSchoolPortalExport",
+    "/v1/school-portal/orgs/{orgId}/exports",
+    "school_portal.read",
+    SchoolPortal.V1RecordSchoolPortalExportRequest,
+    "V1RecordSchoolPortalExportRequest",
+    SchoolPortal.V1RecordSchoolPortalExportResult,
+    "V1RecordSchoolPortalExportResult",
+    201,
+    portalParams("orgId"),
+  ),
 ] as const satisfies readonly V1RouteContract[];
 
 function params(key: string) {

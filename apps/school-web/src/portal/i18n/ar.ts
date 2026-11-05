@@ -23,6 +23,12 @@ export const portalAr: PortalCopy = {
     reports: "التقارير",
     settings: "الإعدادات",
   },
+  exports: {
+    csv: "تنزيل لملف Excel",
+    pdf: "طباعة أو حفظ بصيغة PDF",
+    failed: "تعذّر إعداد الملف. حاول مرة أخرى.",
+    recorded: "تُسجَّل عمليات التصدير في سجل نشاط مدرستك.",
+  },
   reports: {
     title: "التقارير",
     weeklyTitle: "الحضور حسب الأسبوع",

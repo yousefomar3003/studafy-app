@@ -30,6 +30,12 @@ import { TeachersView } from "../src/portal/pages/Teachers";
 import { AnswersView, HandInsView } from "../src/portal/pages/Work";
 import { StudentView, TeacherView } from "../src/portal/pages/People";
 import { ReportsView } from "../src/portal/pages/Reports";
+import { csvCell, fileName, toCsv } from "../src/portal/export";
+import {
+  attendanceRows,
+  marksRows,
+  rosterRows,
+} from "../src/portal/pages/ClassPage";
 import {
   CLASS_TABS,
   hrefFor,
@@ -637,4 +643,82 @@ test("no portal screen ever writes user content as HTML", () => {
     expect(source, file).not.toContain("dangerouslySetInnerHTML");
     expect(source, file).not.toMatch(/\.innerHTML\s*=/);
   }
+});
+
+describe("export", () => {
+  test("a cell a spreadsheet would run as a formula is made harmless", () => {
+    for (
+      const formula of ['=HYPERLINK("x")', "+1", "-2+3", "@SUM(A1)", "\tx"]
+    ) {
+      expect(csvCell(formula).replace(/^"/, "").startsWith("'")).toBe(true);
+    }
+    expect(csvCell(-5)).toBe("-5");
+    expect(csvCell("Omar, K.")).toBe('"Omar, K."');
+    expect(csvCell('say "hi"')).toBe('"say ""hi"""');
+    expect(csvCell(null)).toBe("");
+  });
+
+  test("files open in Excel with Arabic intact, and names are safe", () => {
+    expect(toCsv([["عمر", 1]]).startsWith("\uFEFF")).toBe(true);
+    expect(toCsv([["a", "b"], [1, 2]])).toBe("\uFEFFa,b\r\n1,2\r\n");
+    expect(fileName("Grade 7/Science", "Marks?")).toBe(
+      "Grade 7Science - Marks.csv",
+    );
+  });
+
+  test("rows say what the screen shows, in words", () => {
+    const roster = rosterRows({
+      students: [{
+        studentId: STUDENT,
+        name: "Omar K.",
+        studafyId: "SJ-1",
+        email: "o@x.test",
+        joinedOn: null,
+        parents: [{ name: "Lina", email: "l@x.test", relationship: "parent" }],
+      }],
+    }, portalEn);
+    expect(roster[1]).toEqual([
+      "Omar K.",
+      "o@x.test",
+      "SJ-1",
+      "Lina <l@x.test>",
+    ]);
+    const marks = marksRows({
+      items: [{
+        id: ITEM,
+        title: "Quiz 1",
+        maximumScore: 10,
+        category: "quiz",
+      }],
+      marks: [{
+        assessmentId: ITEM,
+        studentId: STUDENT,
+        score: 7,
+        mark: "scored",
+        state: "draft",
+        feedback: null,
+        publishedAt: null,
+      }],
+      suggestions: [],
+      students: [{ studentId: STUDENT, name: "Omar K." }],
+    }, portalEn);
+    expect(marks).toEqual([["Student", "Quiz 1 (/10)"], [
+      "Omar K.",
+      "7 (Not published)",
+    ]]);
+    const attendance = attendanceRows({
+      records: [
+        {
+          sessionId: ITEM,
+          date: "2026-09-10",
+          startsAt: "2026-09-10T08:00:00Z",
+          studentId: STUDENT,
+          name: "Omar K.",
+          state: "absent",
+          reason: null,
+        },
+      ],
+    }, portalEn);
+    expect(attendance[1]).toEqual(["Omar K.", "Absent", 0, 1, 0, 0]);
+  });
 });

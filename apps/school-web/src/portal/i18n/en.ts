@@ -18,6 +18,12 @@ export const portalEn = {
     reports: "Reports",
     settings: "Settings",
   },
+  exports: {
+    csv: "Download for Excel",
+    pdf: "Print or save as PDF",
+    failed: "The export couldn't be made. Try again.",
+    recorded: "Exports are recorded in your school's activity record.",
+  },
   reports: {
     title: "Reports",
     weeklyTitle: "Attendance by week",

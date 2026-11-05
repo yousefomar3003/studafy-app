@@ -28,6 +28,9 @@ import {
   navigate,
   type Route,
 } from "../router";
+import { ExportBar } from "../ExportBar";
+import { type Cell, fileName } from "../export";
+import type { PortalCopy } from "../i18n";
 import { Empty, Loader, Pill, Table } from "../ui";
 
 /** One class, read-only, in tabs (plan 5.6). */
@@ -80,16 +83,23 @@ export function ClassPage({ org, classroom, tab }: {
           );
         })}
       </nav>
-      <ClassTabContent org={org} classroom={classroom} tab={tab} />
+      <ClassTabContent
+        org={org}
+        classroom={classroom}
+        tab={tab}
+        className={info?.name ?? ""}
+      />
     </>
   );
 }
 
-function ClassTabContent({ org, classroom, tab }: {
+function ClassTabContent({ org, classroom, tab, className }: {
   org: string;
   classroom: string;
   tab: ClassTab;
+  className: string;
 }) {
+  const copy = useCopy();
   const key = `${org}:${classroom}:${tab}`;
   const value = useLoad<unknown>(() => {
     switch (tab) {
@@ -114,7 +124,18 @@ function ClassTabContent({ org, classroom, tab }: {
       {(data) => {
         switch (tab) {
           case "students":
-            return <StudentsTab data={data as Roster} org={org} />;
+            return (
+              <>
+                <ExportBar
+                  org={org}
+                  kind="students"
+                  classroomId={classroom}
+                  name={fileName(className, copy.classPage.tabs.students)}
+                  rows={() => rosterRows(data as Roster, copy)}
+                />
+                <StudentsTab data={data as Roster} org={org} />
+              </>
+            );
           case "lessons":
             return <LessonsTab data={data as Lessons} org={org} />;
           case "assignments":
@@ -130,9 +151,31 @@ function ClassTabContent({ org, classroom, tab }: {
               <TestsTab data={data as Tests} org={org} classroom={classroom} />
             );
           case "marks":
-            return <MarksTab data={data as Marks} />;
+            return (
+              <>
+                <ExportBar
+                  org={org}
+                  kind="marks"
+                  classroomId={classroom}
+                  name={fileName(className, copy.classPage.tabs.marks)}
+                  rows={() => marksRows(data as Marks, copy)}
+                />
+                <MarksTab data={data as Marks} />
+              </>
+            );
           case "attendance":
-            return <AttendanceTab data={data as Attendance} />;
+            return (
+              <>
+                <ExportBar
+                  org={org}
+                  kind="attendance"
+                  classroomId={classroom}
+                  name={fileName(className, copy.classPage.tabs.attendance)}
+                  rows={() => attendanceRows(data as Attendance, copy)}
+                />
+                <AttendanceTab data={data as Attendance} />
+              </>
+            );
           case "wellbeing":
             return <WellbeingTab data={data as Wellbeing} />;
         }
@@ -573,4 +616,81 @@ export function WellbeingTab({ data }: { data: Wellbeing }) {
 export function useBack(org: string, classroom: string, tab: ClassTab) {
   const route: Route = { name: "class", org, classroom, tab };
   return { href: hrefFor(route), go: () => navigate(route) };
+}
+
+/** Spreadsheet rows for a class's roster. */
+export function rosterRows(data: Roster, copy: PortalCopy): Cell[][] {
+  return [
+    [
+      copy.students.name,
+      copy.students.email,
+      copy.students.studafyId,
+      copy.students.parents,
+    ],
+    ...data.students.map((s) => [
+      s.name,
+      s.email,
+      s.studafyId,
+      s.parents.map((p) => p.email ? `${p.name} <${p.email}>` : p.name).join(
+        "; ",
+      ),
+    ]),
+  ];
+}
+
+/** Spreadsheet rows for a class's marks: what the grid shows, as words. */
+export function marksRows(data: Marks, copy: PortalCopy): Cell[][] {
+  const mark = new Map(
+    data.marks.map((m) => [`${m.studentId}:${m.assessmentId}`, m]),
+  );
+  return [
+    [
+      copy.marks.student,
+      ...data.items.map((i) => `${i.title} (/${i.maximumScore})`),
+    ],
+    ...data.students.map((s) => [
+      s.name,
+      ...data.items.map((item) => {
+        const m = mark.get(`${s.studentId}:${item.id}`);
+        if (!m) return "";
+        const value = m.mark === "absent"
+          ? copy.marks.absent
+          : m.mark === "not_graded"
+          ? copy.marks.notGraded
+          : String(m.score ?? "");
+        return m.state === "published"
+          ? value
+          : `${value} (${copy.marks.notPublished})`;
+      }),
+    ]),
+  ];
+}
+
+/** Spreadsheet rows for attendance: one column per day, then the totals. */
+export function attendanceRows(data: Attendance, copy: PortalCopy): Cell[][] {
+  const days = [...new Set(data.records.map((r) => r.date))].sort();
+  const names = new Map<string, string>();
+  const cell = new Map<string, string>();
+  for (const r of data.records) {
+    names.set(r.studentId, r.name);
+    cell.set(`${r.studentId}:${r.date}`, r.state);
+  }
+  const states = ["present", "absent", "late", "excused"] as const;
+  return [
+    [
+      copy.attendance.student,
+      ...days,
+      ...states.map((s) => copy.attendance.states[s]),
+    ],
+    ...[...names].sort((a, b) => a[1].localeCompare(b[1])).map(([id, name]) => {
+      const row = days.map((d) => cell.get(`${id}:${d}`) ?? "");
+      return [
+        name,
+        ...row.map((s) =>
+          s ? copy.attendance.states[s as (typeof states)[number]] : ""
+        ),
+        ...states.map((s) => row.filter((x) => x === s).length),
+      ];
+    }),
+  ];
 }

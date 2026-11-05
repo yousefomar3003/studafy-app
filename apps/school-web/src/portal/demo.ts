@@ -100,6 +100,7 @@ const org = {
 /** The invented answer to one API call. */
 export function demoAnswer(method: string, path: string): unknown {
   if (method === "POST") {
+    if (path.endsWith("/exports")) return { recorded: true };
     if (path.endsWith("/download-intent")) {
       return { downloadUrl: "demo:", displayName: FILE.name };
     }

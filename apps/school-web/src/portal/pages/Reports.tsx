@@ -5,6 +5,8 @@ import { useLoad } from "../load";
 import { hrefFor, navigate } from "../router";
 import { Empty, Loader, Table } from "../ui";
 import { Meter } from "./Dashboard";
+import { ExportBar } from "../ExportBar";
+import { fileName } from "../export";
 
 /** Reports across classes (plan 13a.4). */
 export function Reports({ org }: { org: string }) {
@@ -14,7 +16,45 @@ export function Reports({ org }: { org: string }) {
     <>
       <h1>{copy.reports.title}</h1>
       <Loader value={value} onRetry={value.reload}>
-        {(data) => <ReportsView data={data} org={org} />}
+        {(data) => (
+          <>
+            <ExportBar
+              org={org}
+              kind="reports"
+              name={fileName(copy.reports.title)}
+              rows={() => [
+                [
+                  copy.classes.title,
+                  copy.classes.students,
+                  copy.reports.rate,
+                  copy.overview.average,
+                  copy.reports.handIn,
+                  ...(["below50", "from50", "from70", "from85"] as const).map((
+                    b,
+                  ) => copy.reports.bands[b]),
+                ],
+                ...data.classes.map((c) => [
+                  c.name,
+                  c.students,
+                  c.attendanceRate === null
+                    ? ""
+                    : Math.round(c.attendanceRate * 100) + "%",
+                  c.averageMark === null
+                    ? ""
+                    : Math.round(c.averageMark * 100) + "%",
+                  c.handInRate === null
+                    ? ""
+                    : Math.round(c.handInRate * 100) + "%",
+                  c.bands.below50,
+                  c.bands.from50,
+                  c.bands.from70,
+                  c.bands.from85,
+                ]),
+              ]}
+            />
+            <ReportsView data={data} org={org} />
+          </>
+        )}
       </Loader>
     </>
   );

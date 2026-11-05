@@ -96,6 +96,10 @@ export const api = {
   overview: (orgId: string) =>
     request<Overview>("GET", `${org(orgId)}/overview`),
   reports: (orgId: string) => request<Reports>("GET", `${org(orgId)}/reports`),
+  recordExport: (
+    orgId: string,
+    body: { kind: string; format: "csv" | "pdf"; classroomId?: string },
+  ) => request<{ recorded: true }>("POST", `${org(orgId)}/exports`, body),
   student: (orgId: string, studentId: string) =>
     request<StudentPage>("GET", `${org(orgId)}/students/${id(studentId)}`),
   teacher: (orgId: string, teacherId: string) =>

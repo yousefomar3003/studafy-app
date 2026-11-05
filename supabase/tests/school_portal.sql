@@ -11,7 +11,7 @@ begin;
 \unset auth031_fixture_only
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(91);
+select plan(94);
 select set_config('studafy.request_id', 'school-portal-test', true);
 
 \set admin1 'f0000000-0000-4000-8000-000000000001'
@@ -335,6 +335,16 @@ select is(jsonb_array_length(pg_temp.q(:'admin1', 'reports', current_setting('te
 select ok((select (c->>'handInRate')::numeric < 1 from jsonb_array_elements(pg_temp.q(:'admin1', 'reports',
       current_setting('test.org')::uuid)->'classes') c where c->>'classroomId' = :'classroom_id'),
   'and count overdue work that was not handed in');
+
+select is(pg_temp.cmd(:'admin1', 'recordExport', current_setting('test.org')::uuid,
+  jsonb_build_object('kind', 'marks', 'format', 'csv', 'classroomId', :'classroom_id'))->>'status',
+  '201', 'an export is recorded before the file is made');
+select is((select count(*)::int from private.school_portal_views where admin_id = :'admin1'
+  and view = 'export' and export_kind = 'marks' and export_format = 'csv'), 1,
+  'with what was exported and as what');
+select is(pg_temp.cmd(:'admin1', 'recordExport', current_setting('test.org')::uuid,
+  jsonb_build_object('kind', 'marks', 'format', 'csv', 'classroomId', gen_random_uuid()))->>'outcome',
+  'not_found', 'a class the school cannot see cannot be exported');
 
 -- 6c. A student's page and a teacher's page.
 select is(pg_temp.q(:'admin1', 'student', :'student_id', current_setting('test.org')::uuid)
