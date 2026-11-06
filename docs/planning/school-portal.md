@@ -1102,8 +1102,16 @@ a real sign-in or staging (there is no staging yet).
   the term in the class header; pending invitations can be **edited**
   (sending again to the same address replaces the invite, even with every
   seat taken) or **cancelled** (`revokeInvite`).
-- **Not done yet:** the end-to-end test against staging (needs staging).
-  Turnstile and the providers need their keys (deployment guide).
+- Browser tests (2026-11-06, CI job "Website in a browser"): Playwright
+  over the built public pages (served as Vercel serves them) and the
+  portal in demo mode, on a desktop and a phone, with an axe scan (WCAG
+  2.1 AA) of every page. They found and fixed: the steel text colour under
+  4.5:1 on its pale backgrounds (now `#426b91`), wide tables a keyboard
+  could not scroll, and a reload that blanked the whole portal (so
+  "Invitation sent" and "Saved" vanished at once).
+- **Not done yet:** the end-to-end test against staging with real sign-in
+  (needs staging), and Lighthouse scores. Turnstile and the providers need
+  their keys (deployment guide).
 
 ### Step 6: Operator tools
 
@@ -1261,9 +1269,9 @@ are true:
    Play, so the store badges link to real pages.
 2. ✅ Every claim matches the current store listing
    (`docs/store/listing-copy.md`), and the screenshots are up to date.
-3. ✅ The website CI job passes (build and tests; accessibility and
-   Lighthouse checks are still to add); the header scan on the preview URL
-   passes.
+3. ✅ The website CI jobs pass (build and tests; browser and
+   accessibility tests; a Lighthouse check is still to add); the header
+   scan on the preview URL passes.
 4. ✅ The waitlist sign-ups are exported.
 5. ✅ The owner says go.
 

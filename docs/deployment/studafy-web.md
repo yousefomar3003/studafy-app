@@ -18,7 +18,15 @@ bun run dev                       # http://localhost:5173 (no prerender)
 bun run build                     # vite build, then prerender to dist/
 bun test apps/school-web          # from the repo root
 bunx tsc --noEmit -p .            # in apps/school-web
+bun run e2e                       # in apps/school-web: browser + accessibility
 ```
+
+`bun run e2e` (Playwright, `playwright.config.ts`) builds the site and
+serves `dist/` as Vercel would (`e2e/serve.ts`), starts the dev server in
+portal demo mode, and checks every public page and portal screen in
+Chromium on a desktop and a phone, each with an axe scan (WCAG 2.1 AA).
+The first time, install the browser: `./node_modules/.bin/playwright
+install chromium`. CI runs it in the "Website in a browser" job.
 
 `bun run build` writes static files only: `dist/index.html`,
 `dist/features/index.html`, `dist/ar/...`, `404.html`, `ar/404.html`,

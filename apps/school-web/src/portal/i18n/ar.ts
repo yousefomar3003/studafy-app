@@ -7,6 +7,7 @@ import type { PortalCopy } from "./en";
 export const portalAr: PortalCopy = {
   lang: "ar",
   otherLanguage: "English",
+  table: "جدول، يمكن تمريره أفقيًا",
   product: "بوابة المدرسة من ستودافاي",
   loading: "جارٍ التحميل…",
   retry: "حاول مرة أخرى",

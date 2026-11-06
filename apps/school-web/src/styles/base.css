@@ -6,7 +6,8 @@
   --navy: #161551;
   --ink: #0e0d3a;
   --indigo: #34319a;
-  --steel: #49769f;
+  /* 4.7:1 or more on white, --wash and the teal tint over a band (WCAG AA, small text). */
+  --steel: #426b91;
   --teal: #4e8ea2;
   --mist: #6ea2b3;
   --sky: #7bbde8;

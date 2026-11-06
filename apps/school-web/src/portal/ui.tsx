@@ -68,7 +68,11 @@ export function Empty({ children }: { children: ReactNode }) {
   return <p className="state empty">{children}</p>;
 }
 
-/** A table that scrolls sideways on a phone instead of squeezing. */
+/**
+ * A table that scrolls sideways on a phone instead of squeezing. The
+ * scrolling box takes keyboard focus, so its hidden columns can be reached
+ * without a pointer.
+ */
 export function Table(
   { head, children, caption }: {
     head: ReactNode[];
@@ -76,8 +80,14 @@ export function Table(
     caption?: string;
   },
 ) {
+  const copy = useCopy();
   return (
-    <div className="table-wrap">
+    <div
+      className="table-wrap"
+      tabIndex={0}
+      role="region"
+      aria-label={caption ?? copy.table}
+    >
       <table>
         {caption ? <caption>{caption}</caption> : null}
         <thead>

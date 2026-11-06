@@ -10,6 +10,7 @@ export const portalEn = {
   save: "Save",
   signOut: "Sign out",
   back: "Back",
+  table: "Table, scrolls sideways",
   updated: "Updated",
   nav: {
     dashboard: "Dashboard",
