@@ -308,11 +308,12 @@ export function flowFor(
   if (method === "post" && path === "/v1/school-portal/orgs") {
     return { flow: "registration", weight: 1 };
   }
-  // The School Portal's dashboard and overview are summaries, not
-  // collections.
+  // The School Portal's dashboard and overviews (the school's and one
+  // class's) are summaries, not collections.
   if (
     method === "get" &&
-    /^\/v1\/school-portal\/orgs\/[^/]+\/(dashboard|overview)$/.test(path)
+    (/^\/v1\/school-portal\/orgs\/[^/]+\/(dashboard|overview)$/.test(path) ||
+      /^\/v1\/school-portal\/orgs\/[^/]+\/classes\/[^/]+\/overview$/.test(path))
   ) {
     return { flow: "authenticatedApi", weight: 1 };
   }
