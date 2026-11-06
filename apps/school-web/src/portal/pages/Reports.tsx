@@ -105,7 +105,7 @@ export function ReportsView({ data, org }: { data: Data; org: string }) {
               name: "class",
               org,
               classroom: c.classroomId,
-              tab: "students",
+              tab: "overview",
             } as const;
             return (
               <tr key={c.classroomId}>

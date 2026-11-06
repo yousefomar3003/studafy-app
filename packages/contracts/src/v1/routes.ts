@@ -2767,6 +2767,25 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     portalParams("entryId"),
   ),
+  catalogueGet(
+    "getSchoolPortalClassOverview",
+    "/v1/school-portal/orgs/{orgId}/classes/{classroomId}/overview",
+    "school_portal.read",
+    SchoolPortal.V1SchoolPortalClassOverview,
+    "V1SchoolPortalClassOverview",
+    portalParams("orgId", "classroomId"),
+  ),
+  cataloguePost(
+    "revokeSchoolPortalInvite",
+    "/v1/school-portal/orgs/{orgId}/invites/revoke",
+    "school_portal.manage",
+    SchoolPortal.V1RevokeSchoolPortalInviteRequest,
+    "V1RevokeSchoolPortalInviteRequest",
+    SchoolPortal.V1SchoolPortalOrgRef,
+    "V1SchoolPortalOrgRef",
+    200,
+    portalParams("orgId"),
+  ),
 ] as const satisfies readonly V1RouteContract[];
 
 function params(key: string) {

@@ -21,6 +21,8 @@ export function Settings({ org, me, onChange }: {
   const [contactEmail, setContactEmail] = useState(org.contactEmail ?? "");
   const [email, setEmail] = useState("");
   const [jobTitle, setJobTitle] = useState("");
+  // The invite being corrected: sending again to its address replaces it.
+  const [editing, setEditing] = useState<string | null>(null);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(
     null,
   );
@@ -71,6 +73,38 @@ export function Settings({ org, me, onChange }: {
     ) {
       setEmail("");
       setJobTitle("");
+      setEditing(null);
+    }
+  }
+
+  function edit(invite: Org["invites"][number]) {
+    setEditing(invite.id);
+    setEmail(invite.email);
+    setJobTitle(invite.jobTitle);
+    setMessage(null);
+  }
+
+  function stopEditing() {
+    setEditing(null);
+    setEmail("");
+    setJobTitle("");
+  }
+
+  async function revoke(inviteId: string) {
+    const yes = await ask({
+      title: copy.settings.revokeTitle,
+      text: copy.settings.revokeText,
+      confirm: copy.settings.revoke,
+      danger: true,
+    });
+    if (!yes) return;
+    if (
+      await run(
+        () => api.revokeInvite(org.id, inviteId),
+        copy.settings.revoked,
+      ) && editing === inviteId
+    ) {
+      stopEditing();
     }
   }
 
@@ -209,12 +243,32 @@ export function Settings({ org, me, onChange }: {
                   {invite.jobTitle} · {copy.settings.pending}
                 </span>
               </div>
+              <div className="actions">
+                <button
+                  type="button"
+                  className="btn ghost small"
+                  disabled={busy}
+                  onClick={() => edit(invite)}
+                >
+                  {copy.settings.editInvite}
+                </button>
+                <button
+                  type="button"
+                  className="btn ghost small"
+                  disabled={busy}
+                  onClick={() => revoke(invite.id)}
+                >
+                  {copy.settings.revoke}
+                </button>
+              </div>
             </li>
           ))}
         </ul>
-        {seats < 3 && (
+        {(seats < 3 || editing) && (
           <form className="form" onSubmit={invite}>
-            <h3>{copy.settings.invite}</h3>
+            <h3>
+              {editing ? copy.settings.editInviteTitle : copy.settings.invite}
+            </h3>
             <div className="row end">
               <label>
                 {copy.settings.inviteEmail}
@@ -224,6 +278,7 @@ export function Settings({ org, me, onChange }: {
                   maxLength={254}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  readOnly={editing !== null}
                   dir="ltr"
                 />
               </label>
@@ -239,8 +294,19 @@ export function Settings({ org, me, onChange }: {
                 />
               </label>
               <button type="submit" className="btn" disabled={busy}>
-                {copy.settings.inviteSend}
+                {editing
+                  ? copy.settings.inviteResend
+                  : copy.settings.inviteSend}
               </button>
+              {editing && (
+                <button
+                  type="button"
+                  className="btn ghost"
+                  onClick={stopEditing}
+                >
+                  {copy.cancel}
+                </button>
+              )}
             </div>
           </form>
         )}

@@ -500,6 +500,13 @@ select:focus {
   min-width: 0;
 }
 
+.list li > .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
 .list.compact li {
   padding: 8px 12px;
 }

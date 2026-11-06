@@ -1094,10 +1094,16 @@ a real sign-in or staging (there is no staging yet).
 - Tests: `apps/school-web/test/portal.test.tsx` (routes both ways, EN/AR
   parity and glossary, number and date formats, each view's empty and full
   states, loading and refusal, user content never as HTML).
-- **Not done yet:** the Playwright end-to-end test (needs staging), the
-  class Overview tab, the term and last-activity columns and the term
-  filter on Classes, and editing an invite. Turnstile and the providers
-  need their keys (deployment guide).
+- Added 2026-11-06: the class **Overview** tab, opened first (work due
+  and tests coming up, the class's average mark, attendance this calendar
+  month in the school's time zone; recorded as `overview` with the class);
+  **term** and **last activity** on Classes, with a term filter once there
+  are two terms (by name: terms belong to each teacher's workspace), and
+  the term in the class header; pending invitations can be **edited**
+  (sending again to the same address replaces the invite, even with every
+  seat taken) or **cancelled** (`revokeInvite`).
+- **Not done yet:** the end-to-end test against staging (needs staging).
+  Turnstile and the providers need their keys (deployment guide).
 
 ### Step 6: Operator tools
 

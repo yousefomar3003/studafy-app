@@ -54,7 +54,8 @@ type QueryOperation =
   | "announcements"
   | "myAnnouncements"
   | "groups"
-  | "myGroupClasses";
+  | "myGroupClasses"
+  | "classOverview";
 type CommandOperation =
   | "createOrg"
   | "updateOrg"
@@ -74,7 +75,8 @@ type CommandOperation =
   | "closeGroup"
   | "addGroupClass"
   | "removeGroupClass"
-  | "decideGroupClass";
+  | "decideGroupClass"
+  | "revokeInvite";
 
 /**
  * Studafy School Portal (api062, docs/planning/school-portal.md). Every call
@@ -722,6 +724,20 @@ export function createSchoolPortalRoutes(
     "decideGroupClass",
     "school_link.manage",
     "entryId",
+  );
+  get(
+    "getSchoolPortalClassOverview",
+    `${ORG}/classes/:classroomId/overview`,
+    "classOverview",
+    read_,
+    "classroomId",
+  );
+  post(
+    "revokeSchoolPortalInvite",
+    `${ORG}/invites/revoke`,
+    "revokeInvite",
+    manage,
+    "orgId",
   );
 
   return routes;

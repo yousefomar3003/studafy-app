@@ -4,6 +4,7 @@ import {
   ApiError,
   type Assignments,
   type Attendance,
+  type ClassOverview,
   type Lessons,
   type Marks,
   openFile,
@@ -17,8 +18,10 @@ import {
   formatDateTime,
   formatDay,
   formatNumber,
+  formatPercent,
   ofTotal,
 } from "../format";
+import { Meter, Stat } from "./Dashboard";
 import { errorText, useCopy } from "../i18n";
 import { useLoad } from "../load";
 import {
@@ -60,7 +63,8 @@ export function ClassPage({ org, classroom, tab }: {
       <h1 dir="auto">{info?.name ?? copy.loading}</h1>
       {info && (
         <p className="muted" dir="auto">
-          {info.teachers.map((t) => t.name).join(", ")} ·{" "}
+          {info.teachers.map((t) => t.name).join(", ")}
+          {info.term ? ` · ${info.term.name}` : ""} ·{" "}
           {formatNumber(info.students, copy.lang)} {copy.classes.students}
         </p>
       )}
@@ -103,6 +107,8 @@ function ClassTabContent({ org, classroom, tab, className }: {
   const key = `${org}:${classroom}:${tab}`;
   const value = useLoad<unknown>(() => {
     switch (tab) {
+      case "overview":
+        return api.classOverview(org, classroom);
       case "students":
         return api.roster(org, classroom);
       case "lessons":
@@ -123,6 +129,14 @@ function ClassTabContent({ org, classroom, tab, className }: {
     <Loader value={value} onRetry={value.reload}>
       {(data) => {
         switch (tab) {
+          case "overview":
+            return (
+              <ClassOverviewTab
+                data={data as ClassOverview}
+                org={org}
+                classroom={classroom}
+              />
+            );
           case "students":
             return (
               <>
@@ -181,6 +195,114 @@ function ClassTabContent({ org, classroom, tab, className }: {
         }
       }}
     </Loader>
+  );
+}
+
+/** What is coming up, the average mark, and attendance this month (5.6). */
+export function ClassOverviewTab({ data, org, classroom }: {
+  data: ClassOverview;
+  org: string;
+  classroom: string;
+}) {
+  const copy = useCopy();
+  const lang = copy.lang;
+  const o = copy.classPage.overview;
+  const link = (route: Route) => ({
+    href: hrefFor(route),
+    onClick: (e: { preventDefault: () => void }) => {
+      e.preventDefault();
+      navigate(route);
+    },
+  });
+  return (
+    <>
+      <div className="stats">
+        <Stat
+          label={o.attendance}
+          value={formatPercent(data.attendance.rate, lang)}
+        />
+        <Stat
+          label={o.average}
+          value={formatPercent(data.averageMark, lang)}
+        />
+        <Stat
+          label={o.comingUp}
+          value={formatNumber(
+            data.upcomingAssignments.length + data.upcomingTests.length,
+            lang,
+          )}
+        />
+      </div>
+      <p className="muted">
+        {o.since.replace("{date}", formatDay(data.monthStart, lang))}{" "}
+        {data.attendance.records > 0 && o.attended.replace(
+          "{count}",
+          ofTotal(data.attendance.attended, data.attendance.records, lang),
+        )} {data.markedStudents > 0 &&
+          o.marked.replace(
+            "{count}",
+            formatNumber(data.markedStudents, lang),
+          )}
+      </p>
+      <Meter value={data.attendance.rate} lang={lang} />
+      <section className="card">
+        <h2>{o.work}</h2>
+        {data.upcomingAssignments.length === 0
+          ? <Empty>{o.noWork}</Empty>
+          : (
+            <Table
+              head={[
+                copy.assignments.title,
+                copy.assignments.due,
+                copy.assignments.handedIn,
+              ]}
+            >
+              {data.upcomingAssignments.map((a) => (
+                <tr key={a.id}>
+                  <td>
+                    <a
+                      dir="auto"
+                      {...link({
+                        name: "handIns",
+                        org,
+                        classroom,
+                        assignment: a.id,
+                      })}
+                    >
+                      {a.title}
+                    </a>
+                  </td>
+                  <td>{formatDateTime(a.dueAt, lang)}</td>
+                  <td>{ofTotal(a.handedIn, a.students, lang)}</td>
+                </tr>
+              ))}
+            </Table>
+          )}
+      </section>
+      <section className="card">
+        <h2>{o.tests}</h2>
+        {data.upcomingTests.length === 0
+          ? <Empty>{o.noTests}</Empty>
+          : (
+            <Table head={[copy.assignments.title, o.when, o.maximum]}>
+              {data.upcomingTests.map((t) => (
+                <tr key={t.id}>
+                  <td>
+                    <a
+                      dir="auto"
+                      {...link({ name: "answers", org, classroom, test: t.id })}
+                    >
+                      {t.title}
+                    </a>
+                  </td>
+                  <td>{formatDateTime(t.at, lang)}</td>
+                  <td>{formatNumber(t.maximumScore, lang)}</td>
+                </tr>
+              ))}
+            </Table>
+          )}
+      </section>
+    </>
   );
 }
 

@@ -326,7 +326,28 @@ returns jsonb language sql stable security definer set search_path = '' as $$
       where cs.classroom_id = c.id and cs.status = 'active'
         and cs.role in ('lead_teacher', 'co_teacher')), '[]'::jsonb),
     'students', (select count(*) from public.enrollments e
-      where e.classroom_id = c.id and e.status = 'active'))
+      where e.classroom_id = c.id and e.status = 'active'),
+    'term', (select jsonb_build_object('name', t.name, 'startsOn', t.starts_on,
+        'endsOn', t.ends_on) from public.terms t where t.id = c.term_id),
+    -- The newest thing that happened in the class the school can see: a
+    -- lesson held, material, work or an announcement published, a hand-in,
+    -- a mark published. greatest() skips the ones that never happened.
+    'lastActivityAt', greatest(
+      (select max(ls.starts_at) from public.lesson_sessions ls
+        where ls.classroom_id = c.id and ls.starts_at <= now()),
+      (select max(rp.published_at) from public.resource_publications rp
+        where rp.classroom_id = c.id and rp.state::text = 'published'),
+      (select max(a.published_at) from public.assignments a
+        where a.classroom_id = c.id and a.deleted_at is null),
+      (select max(sb.submitted_at) from public.submissions sb
+        join public.assignments a on a.id = sb.assignment_id
+        where a.classroom_id = c.id and a.deleted_at is null),
+      (select max(an.published_at) from public.announcements an
+        where an.classroom_id = c.id and an.deleted_at is null
+          and an.state::text = 'published'),
+      (select max(g.published_at) from public.grade_results g
+        join public.assessments t on t.id = g.assessment_id
+        where t.classroom_id = c.id and t.deleted_at is null)))
   from public.classrooms c join public.schools s on s.id = c.school_id
   where c.id = p_classroom;
 $$;
@@ -775,7 +796,8 @@ begin
     if v_result is null then return jsonb_build_object('outcome', 'not_found'); end if;
     perform private.school_portal_log(v_org, 'teacher', null, null, null, p_resource_id);
     return v_result;
-  elsif p_operation in ('roster', 'lessons', 'assignments', 'tests', 'marks', 'attendance', 'wellbeing') then
+  elsif p_operation in ('classOverview', 'roster', 'lessons', 'assignments', 'tests', 'marks',
+      'attendance', 'wellbeing') then
     v_classroom := p_resource_id;
   else
     return jsonb_build_object('outcome', 'invalid');
@@ -785,6 +807,62 @@ begin
   end if;
 
   case p_operation
+    when 'classOverview' then
+      -- Plan 5.6: what is coming up, the class's average mark, and
+      -- attendance this calendar month in the school's time zone.
+      perform private.school_portal_log(v_org, 'overview', v_classroom);
+      return (
+        with tz as (
+          select sch.timezone as name,
+            (date_trunc('month', now() at time zone sch.timezone)
+              at time zone sch.timezone) as month_start
+          from public.classrooms c join public.schools sch on sch.id = c.school_id
+          where c.id = v_classroom),
+        enr as (
+          select e.student_id from public.enrollments e
+          join public.students st on st.id = e.student_id and st.deleted_at is null
+          where e.classroom_id = v_classroom and e.status = 'active'),
+        month as (
+          select count(*) as records,
+            count(*) filter (where ar.state in ('present', 'late')) as attended
+          from public.lesson_sessions ls
+          join public.attendance_records ar on ar.session_id = ls.id
+          where ls.classroom_id = v_classroom
+            and ls.starts_at >= (select month_start from tz) and ls.starts_at <= now()
+            and ar.student_id in (select student_id from enr)),
+        mk as (
+          select g.student_id, avg(g.score / nullif(t.maximum_score, 0)) as average
+          from public.grade_results g
+          join public.assessments t on t.id = g.assessment_id and t.deleted_at is null
+          where t.classroom_id = v_classroom and g.mark = 'scored' and g.score is not null
+            and g.student_id in (select student_id from enr)
+          group by 1)
+        select jsonb_build_object('outcome', 'ok',
+          'monthStart', ((select month_start from tz) at time zone (select name from tz))::date,
+          'attendance', (select jsonb_build_object('records', records, 'attended', attended,
+              'rate', round(attended::numeric / nullif(records, 0), 3)) from month),
+          'averageMark', (select round(avg(average), 3) from mk),
+          'markedStudents', (select count(*) from mk),
+          'upcomingAssignments', coalesce((select jsonb_agg(jsonb_build_object(
+              'id', a.id, 'title', a.title, 'dueAt', a.due_at,
+              'handedIn', (select count(*) from public.submissions sb
+                where sb.assignment_id = a.id and sb.status = 'submitted'
+                  and sb.student_id in (select student_id from enr)),
+              'students', (select count(*) from enr)) order by a.due_at)
+            from (select * from public.assignments
+              where classroom_id = v_classroom and deleted_at is null
+                and state::text = 'published' and due_at >= now()
+              order by due_at limit 10) a), '[]'::jsonb),
+          'upcomingTests', coalesce((select jsonb_agg(jsonb_build_object(
+              'id', t.id, 'title', t.title, 'delivery', t.delivery,
+              'at', t.starts, 'maximumScore', t.maximum_score) order by t.starts)
+            from (select x.*, coalesce(x.scheduled_at, x.opens_at) as starts
+              from public.assessments x
+              where x.classroom_id = v_classroom and x.deleted_at is null
+                and x.state::text = 'published'
+                and coalesce(x.scheduled_at, x.opens_at) >= now()
+              order by starts limit 10) t), '[]'::jsonb)));
+
     when 'roster' then
       v_result := coalesce((
         select jsonb_agg(jsonb_build_object(
@@ -1101,7 +1179,9 @@ begin
         union all
         select 1 from private.school_portal_admin_invites i
         where i.org_id = p_resource_id and i.accepted_at is null and i.revoked_at is null
-          and i.expires_at > now()) x;
+          and i.expires_at > now()
+          -- Sending again to the same address replaces that invite (below).
+          and i.email <> lower(btrim(body->>'email'))) x;
       if v_live >= 3 then
         return jsonb_build_object('outcome', 'conflict', 'reason', 'admin_limit');
       end if;
@@ -1110,7 +1190,8 @@ begin
             and lower(u.email) = lower(btrim(body->>'email'))) then
         return jsonb_build_object('outcome', 'conflict', 'reason', 'already_admin');
       end if;
-      -- An earlier invite to the same address that ran out makes way.
+      -- An earlier invite to the same address makes way: sending again is
+      -- how an administrator corrects a job title.
       update private.school_portal_admin_invites set revoked_at = now()
       where org_id = p_resource_id and email = lower(btrim(body->>'email'))
         and accepted_at is null and revoked_at is null;
@@ -1119,6 +1200,18 @@ begin
       returning id into v_id;
       v_status := 201;
       response := jsonb_build_object('id', v_id);
+
+    when 'revokeInvite' then
+      if not private.school_portal_admin_ok(p_resource_id) then
+        return jsonb_build_object('outcome', 'not_found');
+      end if;
+      update private.school_portal_admin_invites set revoked_at = now()
+      where id = nullif(body->>'inviteId', '')::uuid and org_id = p_resource_id
+        and accepted_at is null and revoked_at is null;
+      if not found then
+        return jsonb_build_object('outcome', 'not_found');
+      end if;
+      response := jsonb_build_object('orgId', p_resource_id);
 
     when 'acceptInvite' then
       if body->>'agreementVersion' is distinct from private.school_portal_agreement_version() then

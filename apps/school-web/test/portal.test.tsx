@@ -16,6 +16,7 @@ import { portalEn } from "../src/portal/i18n/en";
 import { ClassesView } from "../src/portal/pages/Classes";
 import {
   AttendanceTab,
+  ClassOverviewTab,
   MarksTab,
   StudentsTab,
   WellbeingTab,
@@ -48,6 +49,7 @@ import { Loader } from "../src/portal/ui";
 import { AGREEMENT_VERSION } from "../src/portal/api";
 import { CreateSchool } from "../src/portal/pages/CreateSchool";
 import { Welcome } from "../src/portal/pages/Welcome";
+import { Settings } from "../src/portal/pages/Settings";
 import { SCHOOL_AGREEMENT_VERSION } from "@studafy/contracts";
 
 const ORG = "5c900000-0000-4000-8000-000000000001";
@@ -127,7 +129,8 @@ describe("words and numbers", () => {
 
   test("Arabic follows the app's glossary", () => {
     const text = JSON.stringify(portalAr);
-    expect(text).not.toMatch(/فصل|فصول|ستدفاي/);
+    // فصل is never a class; the glossary keeps it for a school term only.
+    expect(text).not.toMatch(/فصل(?! الدراسي)|فصول(?! الدراسية)|ستدفاي/);
   });
 
   test("numbers use Latin digits in both languages", () => {
@@ -481,7 +484,125 @@ describe("screens", () => {
       />,
     );
     expect(html).toContain("Grade 7 Science");
-    expect(html).toContain(`/o/${ORG}/classes/${CLASS}/students`);
+    expect(html).toContain(`/o/${ORG}/classes/${CLASS}/overview`);
+    expect(html).not.toContain(portalEn.classes.allTerms);
+  });
+
+  test("classes show their term and last activity, with a term filter once there are two", () => {
+    const one = {
+      name: "Grade 7 Science",
+      grade: "7",
+      section: "A",
+      status: "active",
+      timezone: "Asia/Amman",
+      teachers: [{ id: "t", name: "Rania Haddad", role: "lead_teacher" }],
+      students: 24,
+    };
+    const html = render(
+      <ClassesView
+        data={{
+          classes: [
+            {
+              ...one,
+              id: CLASS,
+              term: {
+                name: "Term 1",
+                startsOn: "2026-09-01",
+                endsOn: "2027-01-20",
+              },
+              lastActivityAt: "2026-11-05T10:20:00Z",
+            },
+            {
+              ...one,
+              id: STUDENT,
+              name: "Grade 7 Science (summer)",
+              term: {
+                name: "Summer",
+                startsOn: "2026-06-01",
+                endsOn: "2026-08-20",
+              },
+              lastActivityAt: null,
+            },
+          ],
+        }}
+        org={ORG}
+      />,
+    );
+    expect(html).toContain('<td dir="auto">Term 1</td>');
+    expect(html).toContain("5 Nov 2026");
+    expect(html).toContain(portalEn.classes.allTerms);
+    expect(html).toContain('<option value="Summer">Summer</option>');
+  });
+
+  test("a class opens on its overview: what is coming up, marks and attendance", () => {
+    expect(parseRoute(`/o/${ORG}/classes/${CLASS}`)).toEqual({
+      name: "class",
+      org: ORG,
+      classroom: CLASS,
+      tab: "overview",
+    });
+    const empty = render(
+      <ClassOverviewTab
+        org={ORG}
+        classroom={CLASS}
+        data={{
+          monthStart: "2026-11-01",
+          attendance: { records: 0, attended: 0, rate: null },
+          averageMark: null,
+          markedStudents: 0,
+          upcomingAssignments: [],
+          upcomingTests: [],
+        }}
+      />,
+    );
+    expect(empty).toContain(portalEn.classPage.overview.noWork);
+    expect(empty).toContain(portalEn.classPage.overview.noTests);
+    const html = render(
+      <ClassOverviewTab
+        org={ORG}
+        classroom={CLASS}
+        data={{
+          monthStart: "2026-11-01",
+          attendance: { records: 40, attended: 37, rate: 0.925 },
+          averageMark: 0.71,
+          markedStudents: 20,
+          upcomingAssignments: [{
+            id: ITEM,
+            title: "Essay on rivers",
+            dueAt: "2026-11-09T18:00:00Z",
+            handedIn: 3,
+            students: 24,
+          }],
+          upcomingTests: [{
+            id: STUDENT,
+            title: "Rivers quiz",
+            delivery: "online",
+            at: "2026-11-12T08:00:00Z",
+            maximumScore: 10,
+          }],
+        }}
+      />,
+    );
+    expect(html).toContain("93%");
+    expect(html).toContain("71%");
+    expect(html).toContain("3 / 24");
+    expect(html).toContain(`/o/${ORG}/classes/${CLASS}/assignments/${ITEM}`);
+    expect(html).toContain(`/o/${ORG}/classes/${CLASS}/tests/${STUDENT}`);
+    expect(render(
+      <ClassOverviewTab
+        org={ORG}
+        classroom={CLASS}
+        data={{
+          monthStart: "2026-11-01",
+          attendance: { records: 40, attended: 37, rate: 0.925 },
+          averageMark: null,
+          markedStudents: 0,
+          upcomingAssignments: [],
+          upcomingTests: [],
+        }}
+      />,
+      "ar",
+    )).toContain("37 / 40");
   });
 
   test("students show emails, Studafy IDs and linked parents", () => {
@@ -865,5 +986,50 @@ describe("the School Agreement", () => {
     expect(html).toContain("/school-agreement");
     expect(html).toContain("Accept invitation");
     expect(html).toMatch(/disabled=""[^>]*>Accept invitation/);
+  });
+});
+
+describe("administrators' invitations", () => {
+  const admin = (n: number) => ({
+    id: `5c900000-0000-4000-8000-00000000010${n}`,
+    name: `Admin ${n}`,
+    email: `admin${n}@school.test`,
+    jobTitle: "Principal",
+    addedAt: "2026-11-01T09:00:00Z",
+  });
+  const org = (admins: number) => ({
+    id: ORG,
+    name: "Cedar Grove",
+    country: "Jordan",
+    city: "Amman",
+    kind: "private" as const,
+    contactEmail: null,
+    status: "active" as const,
+    createdAt: "2026-11-01T09:00:00Z",
+    admins: Array.from({ length: admins }, (_, i) => admin(i + 1)),
+    invites: [{
+      id: ITEM,
+      email: "deputy@school.test",
+      jobTitle: "Deputy head",
+      expiresAt: "2026-11-12T09:00:00Z",
+    }],
+  });
+
+  test("a pending invitation can be edited or cancelled", () => {
+    const html = render(
+      <Settings org={org(1) as never} me={admin(1).id} onChange={() => {}} />,
+    );
+    expect(html).toContain("deputy@school.test");
+    expect(html).toContain(`>${portalEn.settings.editInvite}</button>`);
+    expect(html).toContain(`>${portalEn.settings.revoke}</button>`);
+    expect(html).toContain(portalEn.settings.inviteSend);
+  });
+
+  test("with every seat taken there is no new invitation, but the pending one can still be fixed", () => {
+    const html = render(
+      <Settings org={org(2) as never} me={admin(1).id} onChange={() => {}} />,
+    );
+    expect(html).not.toContain(portalEn.settings.inviteSend);
+    expect(html).toContain(`>${portalEn.settings.editInvite}</button>`);
   });
 });

@@ -32342,6 +32342,244 @@
           }
         ]
       }
+    },
+    "/v1/school-portal/orgs/{orgId}/classes/{classroomId}/overview": {
+      "get": {
+        "operationId": "getSchoolPortalClassOverview",
+        "summary": "getSchoolPortalClassOverview",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-studafy-permission": "school_portal.read",
+        "x-studafy-idempotency-mode": "none",
+        "responses": {
+          "200": {
+            "description": "getSchoolPortalClassOverview",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1SchoolPortalClassOverview"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Problem details",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "orgId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "classroomId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/school-portal/orgs/{orgId}/invites/revoke": {
+      "post": {
+        "operationId": "revokeSchoolPortalInvite",
+        "summary": "revokeSchoolPortalInvite",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-studafy-permission": "school_portal.manage",
+        "x-studafy-idempotency-mode": "required",
+        "responses": {
+          "200": {
+            "description": "revokeSchoolPortalInvite",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/V1SchoolPortalOrgRef"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Problem details",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestId"
+              },
+              "Cache-Control": {
+                "$ref": "#/components/headers/CacheControl"
+              },
+              "Content-Security-Policy": {
+                "$ref": "#/components/headers/ContentSecurityPolicy"
+              },
+              "Permissions-Policy": {
+                "$ref": "#/components/headers/PermissionsPolicy"
+              },
+              "Referrer-Policy": {
+                "$ref": "#/components/headers/ReferrerPolicy"
+              },
+              "X-Content-Type-Options": {
+                "$ref": "#/components/headers/XContentTypeOptions"
+              },
+              "X-Frame-Options": {
+                "$ref": "#/components/headers/XFrameOptions"
+              },
+              "Strict-Transport-Security": {
+                "$ref": "#/components/headers/StrictTransportSecurity"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/V1RevokeSchoolPortalInviteRequest"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "orgId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$"
+            }
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -45557,6 +45795,20 @@
         ],
         "additionalProperties": false
       },
+      "V1RevokeSchoolPortalInviteRequest": {
+        "type": "object",
+        "properties": {
+          "inviteId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          }
+        },
+        "required": [
+          "inviteId"
+        ],
+        "additionalProperties": false
+      },
       "V1RevokeSupportAccessRequest": {
         "type": "object",
         "properties": {
@@ -46427,6 +46679,45 @@
             "type": "integer",
             "minimum": 0,
             "maximum": 9007199254740991
+          },
+          "term": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "startsOn": {
+                    "type": "string"
+                  },
+                  "endsOn": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "name",
+                  "startsOn",
+                  "endsOn"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lastActivityAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -46438,6 +46729,151 @@
           "timezone",
           "teachers",
           "students"
+        ],
+        "additionalProperties": false
+      },
+      "V1SchoolPortalClassOverview": {
+        "type": "object",
+        "properties": {
+          "monthStart": {
+            "type": "string"
+          },
+          "attendance": {
+            "type": "object",
+            "properties": {
+              "records": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "attended": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "rate": {
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "records",
+              "attended",
+              "rate"
+            ],
+            "additionalProperties": false
+          },
+          "averageMark": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "markedStudents": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "upcomingAssignments": {
+            "maxItems": 10,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "dueAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                },
+                "handedIn": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "students": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "dueAt",
+                "handedIn",
+                "students"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "upcomingTests": {
+            "maxItems": 10,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "delivery": {
+                  "type": "string"
+                },
+                "at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                },
+                "maximumScore": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "delivery",
+                "at",
+                "maximumScore"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "monthStart",
+          "attendance",
+          "averageMark",
+          "markedStudents",
+          "upcomingAssignments",
+          "upcomingTests"
         ],
         "additionalProperties": false
       },

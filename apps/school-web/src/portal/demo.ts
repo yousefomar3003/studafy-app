@@ -94,7 +94,12 @@ const org = {
     jobTitle: "Principal",
     addedAt: "2026-11-01T09:00:00Z",
   }],
-  invites: [],
+  invites: [{
+    id: "d0000000-0000-4000-8000-000000000003",
+    email: "deputy@cedar.example",
+    jobTitle: "Deputy head",
+    expiresAt: "2026-11-12T09:00:00Z",
+  }],
 };
 
 const GROUP = {
@@ -225,6 +230,28 @@ export function demoAnswer(method: string, path: string): unknown {
           0.85,
         ]),
       })),
+    };
+  }
+  if (/\/classes\/[0-9a-f-]{36}\/overview$/.test(path)) {
+    return {
+      monthStart: "2026-11-01",
+      attendance: { records: 48, attended: 44, rate: 0.917 },
+      averageMark: 0.74,
+      markedStudents: STUDENTS.length,
+      upcomingAssignments: [{
+        id: ASSIGNMENT,
+        title: "Essay on rivers",
+        dueAt: "2026-11-09T18:00:00Z",
+        handedIn: 4,
+        students: STUDENTS.length,
+      }],
+      upcomingTests: [{
+        id: TEST,
+        title: "Rivers quiz",
+        delivery: "online",
+        at: "2026-11-12T08:00:00Z",
+        maximumScore: 10,
+      }],
     };
   }
   if (path.endsWith("/overview")) {
@@ -365,10 +392,14 @@ export function demoAnswer(method: string, path: string): unknown {
   }
   if (path.endsWith("/classes")) {
     return {
-      classes: CLASSES.map((c) => ({
+      classes: CLASSES.map((c, i) => ({
         ...c,
         status: "active",
         timezone: "Asia/Amman",
+        term: { name: "Term 1", startsOn: "2026-09-01", endsOn: "2027-01-20" },
+        lastActivityAt: i === 0
+          ? "2026-11-05T10:20:00Z"
+          : "2026-11-03T08:05:00Z",
         teachers: [{
           id: TEACHER.id,
           name: TEACHER.name,

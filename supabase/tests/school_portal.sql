@@ -11,7 +11,7 @@ begin;
 \unset auth031_fixture_only
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(134);
+select plan(143);
 select set_config('studafy.request_id', 'school-portal-test', true);
 
 \set admin1 'f0000000-0000-4000-8000-000000000001'
@@ -179,6 +179,22 @@ select is((select agreement_version from private.school_portal_admins
   'and their acceptance of the School Agreement is recorded too');
 select is(jsonb_array_length(pg_temp.q(:'admin2', 'orgs', null)->'orgs'->0->'admins'), 2,
   'and both administrators are listed');
+select is(pg_temp.cmd(:'admin1', 'inviteAdmin', current_setting('test.org')::uuid,
+  '{"email":"it@cedar.synthetic.studafy.test","jobTitle":"Head of IT"}')->>'status',
+  '201', 'sending again to the same address corrects an invite, even with every seat taken');
+select is((select string_agg(job_title, ',') from private.school_portal_admin_invites
+  where email = 'it@cedar.synthetic.studafy.test' and revoked_at is null), 'Head of IT',
+  'and replaces the earlier one');
+select is(pg_temp.cmd(:'admin4', 'revokeInvite', current_setting('test.org')::uuid,
+  jsonb_build_object('inviteId', (select id from private.school_portal_admin_invites
+    where email = 'it@cedar.synthetic.studafy.test' and revoked_at is null)))->>'outcome',
+  'not_found', 'another school''s administrator cannot cancel an invite');
+select is(pg_temp.cmd(:'admin1', 'revokeInvite', current_setting('test.org')::uuid,
+  jsonb_build_object('inviteId', (select id from private.school_portal_admin_invites
+    where email = 'it@cedar.synthetic.studafy.test' and revoked_at is null)))->>'outcome',
+  'ok', 'an administrator cancels an invite');
+select is(jsonb_array_length(pg_temp.q(:'admin1', 'orgs', null)->'orgs'->0->'invites'), 0,
+  'and it is no longer listed');
 
 -- 3. Finding a teacher by Studafy ID: teachers only, counted.
 select is(pg_temp.cmd(:'admin1', 'requestLink', current_setting('test.org')::uuid,
@@ -342,6 +358,22 @@ select is(pg_temp.q(:'admin1', 'roster', :'classroom_id', current_setting('test.
   'not_found', 'another school sees none of it');
 select is(pg_temp.q(:'teacher_user', 'roster', :'classroom_id', current_setting('test.org')::uuid)->>'outcome',
   'not_found', 'nor does anyone who is not the school''s administrator');
+
+select is((select (c->'term'->>'name') || ' ' || (c->>'lastActivityAt' is not null)::text
+    from jsonb_array_elements(pg_temp.q(:'admin1', 'classes',
+      current_setting('test.org')::uuid)->'classes') c where c->>'id' = :'classroom_id'),
+  (select name from public.terms where id = :'term_id') || ' true',
+  'each class has its term and when something last happened in it');
+select set_config('test.before', pg_temp.views(:'admin1')::text, true);
+select is((pg_temp.q(:'admin1', 'classOverview', :'classroom_id',
+    current_setting('test.org')::uuid)->'upcomingAssignments'->0)->>'handedIn', '1',
+  'a class''s overview lists work coming up, with how many handed it in');
+select is((select count(*)::int from private.school_portal_views where admin_id = :'admin1'
+    and view = 'overview' and classroom_id = :'classroom_id'), 1,
+  'and is recorded as that class''s overview');
+select is(pg_temp.q(:'admin4', 'classOverview', :'classroom_id',
+    current_setting('test.org2')::uuid)->>'outcome', 'not_found',
+  'another school sees no class overview');
 
 -- 6b. The overview: per class, and students who need attention.
 insert into public.assignments (school_id, classroom_id, title, due_at, state, created_by, published_at)

@@ -3616,6 +3616,33 @@ class V1ApiClient {
       requiresIdempotency: true,
     ),
   );
+
+  Future<V1SchoolPortalClassOverviewDto> getSchoolPortalClassOverview({
+    required String orgId,
+    required String classroomId,
+  }) async => V1SchoolPortalClassOverviewDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/school-portal/orgs/{orgId}/classes/{classroomId}/overview', {
+        'orgId': orgId,
+        'classroomId': classroomId,
+      }, {}),
+    ),
+  );
+
+  Future<V1SchoolPortalOrgRefDto> revokeSchoolPortalInvite(
+    V1RevokeSchoolPortalInviteRequestDto request, {
+    required String orgId,
+    String? idempotencyKey,
+  }) async => V1SchoolPortalOrgRefDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/school-portal/orgs/{orgId}/invites/revoke', {
+        'orgId': orgId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
 }
 
 String _v1Path(
@@ -13432,6 +13459,20 @@ class V1RevokeModerationAccessRequestDto {
   };
 }
 
+class V1RevokeSchoolPortalInviteRequestDto {
+  const V1RevokeSchoolPortalInviteRequestDto({required this.inviteId});
+
+  factory V1RevokeSchoolPortalInviteRequestDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1RevokeSchoolPortalInviteRequestDto(
+    inviteId: json['inviteId'] as String,
+  );
+
+  final String inviteId;
+
+  Map<String, Object?> toJson() => {'inviteId': inviteId};
+}
+
 class V1RevokeSupportAccessRequestDto {
   const V1RevokeSupportAccessRequestDto({
     required this.expectedVersion,
@@ -13923,6 +13964,8 @@ class V1SchoolPortalClassDto {
     required this.timezone,
     required this.teachers,
     required this.students,
+    this.term,
+    this.lastActivityAt,
   });
 
   factory V1SchoolPortalClassDto.fromJson(Map<String, dynamic> json) =>
@@ -13936,6 +13979,8 @@ class V1SchoolPortalClassDto {
         teachers: (json['teachers'] as List<dynamic>)
             .cast<Map<String, dynamic>>(),
         students: json['students'] as int,
+        term: json['term'] as Map<String, dynamic>?,
+        lastActivityAt: json['lastActivityAt'] as String?,
       );
 
   final String id;
@@ -13946,6 +13991,8 @@ class V1SchoolPortalClassDto {
   final String timezone;
   final List<Map<String, dynamic>> teachers;
   final int students;
+  final Map<String, dynamic>? term;
+  final String? lastActivityAt;
 
   Map<String, Object?> toJson() => {
     'id': id,
@@ -13956,6 +14003,47 @@ class V1SchoolPortalClassDto {
     'timezone': timezone,
     'teachers': teachers,
     'students': students,
+    'term': ?term,
+    'lastActivityAt': ?lastActivityAt,
+  };
+}
+
+class V1SchoolPortalClassOverviewDto {
+  const V1SchoolPortalClassOverviewDto({
+    required this.monthStart,
+    required this.attendance,
+    required this.averageMark,
+    required this.markedStudents,
+    required this.upcomingAssignments,
+    required this.upcomingTests,
+  });
+
+  factory V1SchoolPortalClassOverviewDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalClassOverviewDto(
+        monthStart: json['monthStart'] as String,
+        attendance: json['attendance'] as Map<String, dynamic>,
+        averageMark: json['averageMark'] as num?,
+        markedStudents: json['markedStudents'] as int,
+        upcomingAssignments: (json['upcomingAssignments'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+        upcomingTests: (json['upcomingTests'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+      );
+
+  final String monthStart;
+  final Map<String, dynamic> attendance;
+  final num? averageMark;
+  final int markedStudents;
+  final List<Map<String, dynamic>> upcomingAssignments;
+  final List<Map<String, dynamic>> upcomingTests;
+
+  Map<String, Object?> toJson() => {
+    'monthStart': monthStart,
+    'attendance': attendance,
+    'averageMark': averageMark,
+    'markedStudents': markedStudents,
+    'upcomingAssignments': upcomingAssignments,
+    'upcomingTests': upcomingTests,
   };
 }
 

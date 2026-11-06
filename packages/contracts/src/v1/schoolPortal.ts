@@ -146,6 +146,10 @@ export const V1SchoolPortalOrgRef = z.object({
 export const V1RemoveSchoolPortalAdminRequest = z.strictObject({
   userId: Id,
 });
+/** Cancelling an invite nobody has accepted; it frees the seat at once. */
+export const V1RevokeSchoolPortalInviteRequest = z.strictObject({
+  inviteId: Id,
+});
 
 // ---------------------------------------------------------------------------
 // Links with teachers.
@@ -208,6 +212,13 @@ export const V1SchoolPortalClass = z.object({
   teachers: z.array(z.object({ id: Id, name: z.string(), role: z.string() }))
     .max(50),
   students: z.number().int().nonnegative(),
+  term: z.object({
+    name: z.string(),
+    startsOn: z.string(),
+    endsOn: z.string(),
+  }).nullable().optional(),
+  /** A lesson held, something published, a hand-in or a mark; null if none. */
+  lastActivityAt: Timestamp.nullable().optional(),
 });
 export const V1SchoolPortalClasses = z.object({
   classes: z.array(V1SchoolPortalClass).max(5000),
@@ -692,4 +703,32 @@ export const V1DecideMySchoolGroupClassRequest = z.strictObject({
 export const V1DecideMySchoolGroupClassResult = z.object({
   id: Id,
   status: z.enum(["approved", "declined", "removed"]),
+});
+
+/** One class's Overview tab (plan 5.6). */
+export const V1SchoolPortalClassOverview = z.object({
+  /** The first day of this month, in the school's time zone. */
+  monthStart: z.string(),
+  attendance: z.object({
+    records: z.number().int().nonnegative(),
+    attended: z.number().int().nonnegative(),
+    rate: z.number().min(0).max(1).nullable(),
+  }),
+  /** The mean of each student's average (score / maximum); null if none. */
+  averageMark: z.number().min(0).nullable(),
+  markedStudents: z.number().int().nonnegative(),
+  upcomingAssignments: z.array(z.object({
+    id: Id,
+    title: z.string(),
+    dueAt: Timestamp,
+    handedIn: z.number().int().nonnegative(),
+    students: z.number().int().nonnegative(),
+  })).max(10),
+  upcomingTests: z.array(z.object({
+    id: Id,
+    title: z.string(),
+    delivery: z.string(),
+    at: Timestamp,
+    maximumScore: z.number().nullable(),
+  })).max(10),
 });

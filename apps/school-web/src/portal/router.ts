@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 export type ClassTab =
+  | "overview"
   | "students"
   | "lessons"
   | "assignments"
@@ -10,6 +11,7 @@ export type ClassTab =
   | "wellbeing";
 
 export const CLASS_TABS: readonly ClassTab[] = [
+  "overview",
   "students",
   "lessons",
   "assignments",
@@ -73,7 +75,7 @@ export function parseRoute(pathname: string): Route {
   if (section === "announcements" && !a) return { name: "announcements", org };
   if (section === "groups" && !a) return { name: "groups", org };
   if (section === "classes" && a && ID.test(a)) {
-    if (!b) return { name: "class", org, classroom: a, tab: "students" };
+    if (!b) return { name: "class", org, classroom: a, tab: "overview" };
     if (b === "assignments" && c && ID.test(c)) {
       return { name: "handIns", org, classroom: a, assignment: c };
     }

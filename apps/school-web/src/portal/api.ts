@@ -28,6 +28,7 @@ export type Marks = Of<typeof C.V1SchoolPortalMarks>;
 export type Attendance = Of<typeof C.V1SchoolPortalAttendance>;
 export type Wellbeing = Of<typeof C.V1SchoolPortalWellbeing>;
 export type Overview = Of<typeof C.V1SchoolPortalOverview>;
+export type ClassOverview = Of<typeof C.V1SchoolPortalClassOverview>;
 export type StudentPage = Of<typeof C.V1SchoolPortalStudent>;
 export type TeacherPage = Of<typeof C.V1SchoolPortalTeacher>;
 export type Reports = Of<typeof C.V1SchoolPortalReports>;
@@ -98,6 +99,8 @@ export const api = {
     request("POST", `${org(orgId)}/admins`, { email, jobTitle }),
   removeAdmin: (orgId: string, userId: string) =>
     request("POST", `${org(orgId)}/admins/remove`, { userId }),
+  revokeInvite: (orgId: string, inviteId: string) =>
+    request("POST", `${org(orgId)}/invites/revoke`, { inviteId }),
   acceptInvite: (inviteId: string) =>
     request<{ orgId: string }>(
       "POST",
@@ -154,6 +157,11 @@ export const api = {
   unlinkTeacher: (orgId: string, linkId: string) =>
     request("POST", `${org(orgId)}/teachers/${id(linkId)}/unlink`, {}),
   classes: (orgId: string) => request<Classes>("GET", `${org(orgId)}/classes`),
+  classOverview: (orgId: string, classId: string) =>
+    request<ClassOverview>(
+      "GET",
+      `${org(orgId)}/classes/${id(classId)}/overview`,
+    ),
   roster: (orgId: string, classId: string) =>
     request<Roster>("GET", `${org(orgId)}/classes/${id(classId)}/roster`),
   lessons: (orgId: string, classId: string) =>

@@ -232,6 +232,38 @@ describe("reads", () => {
     }]);
   });
 
+  test("a class's overview names the class and the school, and keeps to the contract", async () => {
+    const seen = calls();
+    const response = await app({
+      calls: seen,
+      query: {
+        classOverview: {
+          outcome: "ok",
+          monthStart: "2026-11-01",
+          attendance: { records: 40, attended: 37, rate: 0.925 },
+          averageMark: 0.71,
+          markedStudents: 20,
+          upcomingAssignments: [{
+            id: LINK,
+            title: "Essay",
+            dueAt: "2026-11-09T09:00:00+00:00",
+            handedIn: 3,
+            students: 24,
+          }],
+          upcomingTests: [],
+        },
+      },
+    }).request(`/v1/school-portal/orgs/${ORG}/classes/${CLASS}/overview`);
+    expect(response.status).toBe(200);
+    const body = await response.json() as { attendance: { rate: number } };
+    expect(body.attendance.rate).toBe(0.925);
+    expect(seen.queries).toEqual([{
+      operation: "classOverview",
+      resourceId: CLASS,
+      orgId: ORG,
+    }]);
+  });
+
   test("a class the school may not see is a plain 404", async () => {
     const response = await app({
       calls: calls(),
@@ -304,6 +336,24 @@ describe("commands", () => {
     );
     expect(invite.status).toBe(400);
     expect(seen.commands).toEqual([]);
+  });
+
+  test("cancelling an invite names the school and the invite", async () => {
+    const seen = calls();
+    const response = await post(
+      app({
+        calls: seen,
+        command: { revokeInvite: { outcome: "ok", response: { orgId: ORG } } },
+      }),
+      `/v1/school-portal/orgs/${ORG}/invites/revoke`,
+      { inviteId: LINK },
+    );
+    expect(response.status).toBe(200);
+    expect(seen.commands).toEqual([{
+      operation: "revokeInvite",
+      resourceId: ORG,
+      body: { inviteId: LINK },
+    }]);
   });
 
   test("a teacher is asked by a ten-digit Studafy ID only", async () => {

@@ -73,7 +73,7 @@ export function OverviewView({ data, org }: { data: Overview; org: string }) {
                         name: "class",
                         org,
                         classroom: c.classroomId,
-                        tab: "students",
+                        tab: "overview",
                       })}
                     >
                       {c.name}
@@ -115,7 +115,7 @@ export function OverviewView({ data, org }: { data: Overview; org: string }) {
                         name: "class",
                         org,
                         classroom: a.classroomId,
-                        tab: "students",
+                        tab: "overview",
                       })}
                     >
                       {a.className}
@@ -232,7 +232,7 @@ export function DashboardView({ data, org, onChange }: {
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+export function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="stat">
       <span className="stat-value">{value}</span>
