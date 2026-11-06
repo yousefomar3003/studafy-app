@@ -1,5 +1,5 @@
 // Builds the public legal site (launch plan 4.3): the privacy policy, the
-// terms and the account deletion page, in English and Arabic, from the
+// terms, the account deletion page and the school agreement, in English and Arabic, from the
 // Markdown in docs/legal, plus the app-link association files
 // (app-links.ts). Every link is path-absolute or relative, so a host is only
 // a route in wrangler.toml.
@@ -17,7 +17,11 @@ import { appleAppSiteAssociation, assetLinks } from "./app-links.ts";
 import { escapeHtml, render } from "./markdown.ts";
 
 export type Locale = "en" | "ar";
-export type PageKey = "privacy" | "terms" | "delete-account";
+export type PageKey =
+  | "privacy"
+  | "terms"
+  | "delete-account"
+  | "school-agreement";
 
 interface PageSource {
   key: PageKey;
@@ -51,6 +55,14 @@ export const PAGES: PageSource[] = [
       ar: "كيفية حذف حسابك في Studafy، وما الذي يُحذف وما الذي يبقى.",
     },
   },
+  {
+    key: "school-agreement",
+    file: "school-agreement.md",
+    description: {
+      en: "How a school may use what it reads on the Studafy School Portal.",
+      ar: "كيف يجوز للمدرسة استخدام ما تطّلع عليه في بوابة المدرسة من ستودافاي.",
+    },
+  },
 ];
 
 const LABELS: Record<Locale, Record<PageKey | "switch" | "skip", string>> = {
@@ -58,6 +70,7 @@ const LABELS: Record<Locale, Record<PageKey | "switch" | "skip", string>> = {
     privacy: "Privacy Policy",
     terms: "Terms of Use",
     "delete-account": "Delete your account",
+    "school-agreement": "School Agreement",
     switch: "العربية",
     skip: "Skip to content",
   },
@@ -65,6 +78,7 @@ const LABELS: Record<Locale, Record<PageKey | "switch" | "skip", string>> = {
     privacy: "سياسة الخصوصية",
     terms: "شروط الاستخدام",
     "delete-account": "حذف حسابك",
+    "school-agreement": "اتفاقية المدارس",
     switch: "English",
     skip: "انتقل إلى المحتوى",
   },
@@ -139,8 +153,8 @@ function notFoundHtml(): string {
 <body>
 <main id="content">
 <h1>Page not found</h1>
-<p><a href="/privacy">Privacy Policy</a> · <a href="/terms">Terms of Use</a> · <a href="/delete-account">Delete your account</a></p>
-<p lang="ar" dir="rtl"><a href="/ar/privacy">سياسة الخصوصية</a> · <a href="/ar/terms">شروط الاستخدام</a> · <a href="/ar/delete-account">حذف حسابك</a></p>
+<p><a href="/privacy">Privacy Policy</a> · <a href="/terms">Terms of Use</a> · <a href="/delete-account">Delete your account</a> · <a href="/school-agreement">School Agreement</a></p>
+<p lang="ar" dir="rtl"><a href="/ar/privacy">سياسة الخصوصية</a> · <a href="/ar/terms">شروط الاستخدام</a> · <a href="/ar/delete-account">حذف حسابك</a> · <a href="/ar/school-agreement">اتفاقية المدارس</a></p>
 </main>
 </body>
 </html>

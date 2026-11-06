@@ -11,7 +11,7 @@ begin;
 \unset auth031_fixture_only
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(130);
+select plan(134);
 select set_config('studafy.request_id', 'school-portal-test', true);
 
 \set admin1 'f0000000-0000-4000-8000-000000000001'
@@ -121,25 +121,32 @@ $$;
 
 -- 1. Creating a school's page.
 select is(pg_temp.cmd(:'admin1', 'createOrg', null, '{"name":"Cedar Grove School",
-  "country":"Jordan","city":"Amman","kind":"private","jobTitle":"Principal"}')->>'outcome',
+  "country":"Jordan","city":"Amman","kind":"private","jobTitle":"Principal","agreementVersion":"2026-11-06"}')->>'outcome',
   'forbidden', 'an account nobody has classified must confirm being an adult first');
 select is(pg_temp.cmd(:'admin1', 'createOrg', null, '{"name":"Cedar Grove School",
-  "country":"Jordan","city":"Amman","kind":"private","jobTitle":"Principal","adult":true}')->>'status',
+  "country":"Jordan","city":"Amman","kind":"private","jobTitle":"Principal","adult":true,"agreementVersion":"2026-11-06"}')->>'status',
   '201', 'an adult with no school membership creates a school''s page');
 select is((select account_kind from public.profiles where id = :'admin1'), 'adult',
   'and the account is recorded as an adult, once');
+select is((select agreement_version || ' ' || (agreement_accepted_at is not null)::text
+  from private.school_portal_admins where user_id = :'admin1'), '2026-11-06 true',
+  'with the School Agreement version they accepted, and when');
 select set_config('test.org', (select id::text from private.school_portal_orgs
   where name = 'Cedar Grove School'), true);
 select is(pg_temp.cmd(:'admin4', 'createOrg', null, '{"name":"Oak Hill School",
-  "country":"Jordan","city":"Irbid","kind":"public","jobTitle":"Principal"}')->>'outcome',
+  "country":"Jordan","city":"Irbid","kind":"public","jobTitle":"Principal","agreementVersion":"2026-11-06"}')->>'outcome',
   'ok', 'and so does another school');
 select set_config('test.org2', (select id::text from private.school_portal_orgs
   where name = 'Oak Hill School'), true);
 select is(pg_temp.cmd(:'student_user', 'createOrg', null, '{"name":"Kid School",
-  "country":"Jordan","city":"Amman","kind":"other","jobTitle":"Boss","adult":true}')->>'outcome',
+  "country":"Jordan","city":"Amman","kind":"other","jobTitle":"Boss","adult":true,"agreementVersion":"2026-11-06"}')->>'outcome',
   'forbidden', 'a student cannot create one, even saying they are an adult');
+select is(pg_temp.cmd(:'admin4', 'createOrg', null, '{"name":"Elm School",
+  "country":"Jordan","city":"Irbid","kind":"public","jobTitle":"Principal",
+  "agreementVersion":"2026-01-01"}')->>'outcome',
+  'invalid', 'a school is not created without the current School Agreement');
 select is(pg_temp.cmd(:'admin1', 'createOrg', null, '{"name":"x","country":"Jordan",
-  "city":"Amman","kind":"private","jobTitle":"Principal"}')->>'outcome',
+  "city":"Amman","kind":"private","jobTitle":"Principal","agreementVersion":"2026-11-06"}')->>'outcome',
   'invalid', 'a too-short name is refused');
 select is(jsonb_array_length(pg_temp.q(:'admin1', 'orgs', null)->'orgs'), 1,
   'an administrator sees only their own school');
@@ -159,11 +166,17 @@ select is(pg_temp.cmd(:'admin1', 'inviteAdmin', current_setting('test.org')::uui
   '{"email":"stranger@synthetic.studafy.test","jobTitle":"Fourth"}')->>'reason',
   'admin_limit', 'a fourth is refused');
 select is(pg_temp.cmd(:'stranger', 'acceptInvite', (select id from private.school_portal_admin_invites
-  where email = 'deputy@cedar.synthetic.studafy.test'), '{}')->>'outcome',
+  where email = 'deputy@cedar.synthetic.studafy.test'), '{"agreementVersion":"2026-11-06"}')->>'outcome',
   'not_found', 'an invite is accepted only by the address it was sent to');
 select is(pg_temp.cmd(:'admin2', 'acceptInvite', (select id from private.school_portal_admin_invites
   where email = 'deputy@cedar.synthetic.studafy.test'), '{}')->>'outcome',
+  'invalid', 'an invite is not accepted without the School Agreement');
+select is(pg_temp.cmd(:'admin2', 'acceptInvite', (select id from private.school_portal_admin_invites
+  where email = 'deputy@cedar.synthetic.studafy.test'), '{"agreementVersion":"2026-11-06"}')->>'outcome',
   'ok', 'the invited person accepts');
+select is((select agreement_version from private.school_portal_admins
+  where user_id = :'admin2' and removed_at is null), '2026-11-06',
+  'and their acceptance of the School Agreement is recorded too');
 select is(jsonb_array_length(pg_temp.q(:'admin2', 'orgs', null)->'orgs'->0->'admins'), 2,
   'and both administrators are listed');
 

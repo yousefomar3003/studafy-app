@@ -83,12 +83,21 @@ const OrgFields = {
   contactEmail: Email.nullable().optional(),
 };
 
+/**
+ * The School Agreement's current version (docs/legal/school-agreement.md);
+ * private.school_portal_agreement_version() says the same.
+ */
+export const SCHOOL_AGREEMENT_VERSION = "2026-11-06";
+/** Each administrator accepts the current agreement, and it is recorded. */
+const AgreementVersion = z.literal(SCHOOL_AGREEMENT_VERSION);
+
 export const V1CreateSchoolPortalOrgRequest = z.strictObject({
   ...OrgFields,
   /** The creator's own role at the school, shown to teachers they ask. */
   jobTitle: z.string().trim().min(2).max(80),
   /** "I am an adult": recorded once for an account nothing has decided. */
   adult: z.literal(true),
+  agreementVersion: AgreementVersion,
   captchaToken: CaptchaToken,
 });
 export const V1UpdateSchoolPortalOrgRequest = z.strictObject({
@@ -128,6 +137,7 @@ export const V1SchoolPortalEmptyRequest = z.strictObject({});
 /** Accepting an administrator invite, as an adult (as creating a school). */
 export const V1AcceptSchoolPortalInviteRequest = z.strictObject({
   adult: z.literal(true),
+  agreementVersion: AgreementVersion,
 });
 export const V1SchoolPortalOrgRef = z.object({
   orgId: Id,

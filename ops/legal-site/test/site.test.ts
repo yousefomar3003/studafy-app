@@ -60,9 +60,11 @@ describe("the built site", () => {
     expect(written.sort()).toEqual([
       "/ar/delete-account",
       "/ar/privacy",
+      "/ar/school-agreement",
       "/ar/terms",
       "/delete-account",
       "/privacy",
+      "/school-agreement",
       "/terms",
     ]);
   });
@@ -120,6 +122,14 @@ describe("the built site", () => {
     expect(en).toContain("hello@studafy.com");
     expect(en).toContain("14 days");
     expect(visible(page("/ar/delete-account"))).toContain("14 يومًا");
+  });
+
+  test("the school agreement is published, without its notes for counsel", () => {
+    const en = visible(page("/school-agreement"));
+    expect(en).toMatch(/Version:\s+1\.0/);
+    expect(en).toContain("controller in its own right");
+    expect(en).not.toContain("TODO");
+    expect(visible(page("/ar/school-agreement"))).toContain("متحكّمًا مستقلًا");
   });
 
   test("headers and redirects are published with the pages", () => {

@@ -45,6 +45,10 @@ import {
   type Route,
 } from "../src/portal/router";
 import { Loader } from "../src/portal/ui";
+import { AGREEMENT_VERSION } from "../src/portal/api";
+import { CreateSchool } from "../src/portal/pages/CreateSchool";
+import { Welcome } from "../src/portal/pages/Welcome";
+import { SCHOOL_AGREEMENT_VERSION } from "@studafy/contracts";
 
 const ORG = "5c900000-0000-4000-8000-000000000001";
 const CLASS = "5c900000-0000-4000-8000-000000000002";
@@ -818,5 +822,48 @@ describe("class groups", () => {
         />,
       ),
     ).toContain(portalEn.groups.empty);
+  });
+});
+
+describe("the School Agreement", () => {
+  test("the portal sends the version the API expects", () => {
+    expect(AGREEMENT_VERSION).toBe(SCHOOL_AGREEMENT_VERSION);
+  });
+
+  test("creating a school asks for it, linked, before Create can be pressed", () => {
+    const html = render(
+      <CreateSchool email="head@school.test" onCreated={() => {}} />,
+    );
+    expect(html).toContain(
+      'href="https://legal.studafy.com/school-agreement" target="_blank"',
+    );
+    expect(html).toContain("Studafy School Agreement");
+    expect(html).toMatch(/<button type="submit" class="btn" disabled=""/);
+    expect(
+      render(<CreateSchool email={null} onCreated={() => {}} />, "ar"),
+    ).toContain('href="https://legal.studafy.com/ar/school-agreement"');
+  });
+
+  test("so does accepting an invitation", () => {
+    const html = render(
+      <Welcome
+        invites={[{
+          id: ITEM,
+          jobTitle: "Deputy head",
+          expiresAt: "2026-11-13T00:00:00.000Z",
+          org: {
+            id: ORG,
+            name: "Cedar Grove",
+            city: "Amman",
+            country: "Jordan",
+          },
+          invitedBy: null,
+        }]}
+        onJoined={() => {}}
+      />,
+    );
+    expect(html).toContain("/school-agreement");
+    expect(html).toContain("Accept invitation");
+    expect(html).toMatch(/disabled=""[^>]*>Accept invitation/);
   });
 });

@@ -3,6 +3,7 @@ import { signIn } from "../auth";
 import { portalConfig, type Provider } from "../config";
 import { useCopy } from "../i18n";
 import { basePath } from "../router";
+import { legalUrl } from "../ui";
 
 /** Three ways in, as each company asks its button to look (plan 5.1). */
 export function SignIn({ error }: { error?: "cancelled" | "failed" }) {
@@ -12,9 +13,6 @@ export function SignIn({ error }: { error?: "cancelled" | "failed" }) {
   const configured = Boolean(
     portalConfig.supabaseUrl && portalConfig.supabaseKey,
   );
-  const legal = copy.lang === "ar"
-    ? "https://legal.studafy.com/ar"
-    : "https://legal.studafy.com";
 
   async function start(provider: Provider) {
     setFailed(null);
@@ -80,9 +78,10 @@ export function SignIn({ error }: { error?: "cancelled" | "failed" }) {
         )}
         <p className="hint">{copy.signIn.sameWay}</p>
         <p className="fine">
-          {copy.signIn.agree} <a href={`${legal}/terms`}>{copy.signIn.terms}</a>
+          {copy.signIn.agree}{" "}
+          <a href={legalUrl(copy.lang, "terms")}>{copy.signIn.terms}</a>
           {" · "}
-          <a href={`${legal}/privacy`}>{copy.signIn.privacy}</a>
+          <a href={legalUrl(copy.lang, "privacy")}>{copy.signIn.privacy}</a>
         </p>
       </div>
     </main>

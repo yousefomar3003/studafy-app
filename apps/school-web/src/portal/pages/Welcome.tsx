@@ -2,6 +2,7 @@ import { useState } from "react";
 import { api, ApiError, type MyInvites } from "../api";
 import { errorText, useCopy } from "../i18n";
 import { navigate } from "../router";
+import { AgreementCheck } from "../ui";
 
 /** Signed in with no school yet: invitations to accept, or create one. */
 export function Welcome({ invites, onJoined }: {
@@ -10,6 +11,7 @@ export function Welcome({ invites, onJoined }: {
 }) {
   const copy = useCopy();
   const [adult, setAdult] = useState(false);
+  const [agreed, setAgreed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,6 +44,7 @@ export function Welcome({ invites, onJoined }: {
             />
             {copy.welcome.adultConfirm}
           </label>
+          <AgreementCheck checked={agreed} onChange={setAgreed} />
           <ul className="list">
             {invites.map((invite) => (
               <li key={invite.id}>
@@ -59,7 +62,7 @@ export function Welcome({ invites, onJoined }: {
                 <button
                   type="button"
                   className="btn"
-                  disabled={!adult || busy}
+                  disabled={!adult || !agreed || busy}
                   onClick={() => accept(invite.id)}
                 >
                   {copy.welcome.accept}

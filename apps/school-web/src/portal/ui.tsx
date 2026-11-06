@@ -3,6 +3,42 @@ import { portalConfig } from "./config";
 import { errorText, useCopy } from "./i18n";
 import type { Loaded } from "./load";
 
+/** A page of the legal site, in the portal's language. */
+export function legalUrl(
+  lang: "en" | "ar",
+  page: "terms" | "privacy" | "school-agreement",
+): string {
+  return `https://legal.studafy.com${lang === "ar" ? "/ar" : ""}/${page}`;
+}
+
+/** "I accept the Studafy School Agreement", with the agreement a tap away. */
+export function AgreementCheck({ checked, onChange }: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  const copy = useCopy();
+  return (
+    <label className="check">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+      <span>
+        {copy.agreement.before}
+        <a
+          href={legalUrl(copy.lang, "school-agreement")}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {copy.agreement.link}
+        </a>
+        {copy.agreement.after}
+      </span>
+    </label>
+  );
+}
+
 /** Loading, a refusal with Try again, or the content. */
 export function Loader<T>(
   { value, children, onRetry }: {

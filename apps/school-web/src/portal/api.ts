@@ -79,6 +79,13 @@ async function request<T>(
 const org = (id: string) => `/v1/school-portal/orgs/${encodeURIComponent(id)}`;
 const id = encodeURIComponent;
 
+/**
+ * The School Agreement version an administrator accepts. The request type
+ * pins it to SCHOOL_AGREEMENT_VERSION in the contracts, so a new version
+ * fails the typecheck until this follows.
+ */
+export const AGREEMENT_VERSION = "2026-11-06";
+
 export const api = {
   orgs: () => request<Orgs>("GET", "/v1/school-portal/orgs"),
   myInvites: () => request<MyInvites>("GET", "/v1/school-portal/invites"),
@@ -95,7 +102,7 @@ export const api = {
     request<{ orgId: string }>(
       "POST",
       `/v1/school-portal/invites/${id(inviteId)}/accept`,
-      { adult: true },
+      { adult: true, agreementVersion: AGREEMENT_VERSION },
     ),
   dashboard: (orgId: string) =>
     request<Dashboard>("GET", `${org(orgId)}/dashboard`),

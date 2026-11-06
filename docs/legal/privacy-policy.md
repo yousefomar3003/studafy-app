@@ -826,7 +826,7 @@ reads the classes of teachers who link with it (§7.4). For it we hold:
 | What | Why |
 |---|---|
 | **A school's page:** its name, country, city, type (public, private, international or other) and a contact email teachers see | To show teachers who is asking |
-| **Administrators** (up to three per school): name and email from the sign-in provider (Google, Microsoft or Apple), job title, their confirmation that they are an adult and authorised by the school, and when they were added or removed. Invitations to become one: the email address invited and the job title, valid for 7 days | To let the right people run the school's page, and to show teachers who they are |
+| **Administrators** (up to three per school): name and email from the sign-in provider (Google, Microsoft or Apple), job title, their confirmation that they are an adult and authorised by the school, which version of the [School Agreement](school-agreement) they accepted and when, and when they were added or removed. Invitations to become one: the email address invited and the job title, valid for 7 days | To let the right people run the school's page, and to show teachers who they are |
 | **Requests and links:** which teacher was asked, by whom, when, and whether the teacher accepted, declined or unlinked. A request nobody answers expires after 14 days | To make sharing depend on the teacher's decision |
 | **Studafy ID searches** an administrator makes, and whether a teacher was found | To limit guessing (10 searches an hour) |
 | **The activity record:** every page and file an administrator opens, and every download, with the class or student it concerned and when | To keep schools accountable for what they read |

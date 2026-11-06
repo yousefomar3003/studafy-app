@@ -60,6 +60,10 @@ create table private.school_portal_admins (
   org_id uuid not null references private.school_portal_orgs(id) on delete cascade,
   user_id uuid not null references public.profiles(id) on delete cascade,
   job_title text not null check (char_length(btrim(job_title)) between 2 and 80),
+  -- The School Agreement (docs/legal/school-agreement.md) this administrator
+  -- accepted, as its version date, and when.
+  agreement_version text not null check (agreement_version ~ '^\d{4}-\d{2}-\d{2}$'),
+  agreement_accepted_at timestamptz not null default now(),
   added_by uuid references public.profiles(id) on delete set null,
   added_at timestamptz not null default now(),
   removed_at timestamptz,
@@ -1014,6 +1018,13 @@ returns void language sql security definer set search_path = '' as $$
     and account_kind is null and private.account_kind(auth.uid()) is null;
 $$;
 
+-- The School Agreement's current version: SCHOOL_AGREEMENT_VERSION in
+-- packages/contracts/src/v1/schoolPortal.ts says the same.
+create or replace function private.school_portal_agreement_version()
+returns text language sql immutable set search_path = '' as $$
+  select '2026-11-06'::text;
+$$;
+
 create or replace function private.api062_command(
   p_operation text, p_resource_id uuid, p_input jsonb,
   p_idempotency_id uuid, p_idempotency_generation bigint)
@@ -1042,6 +1053,9 @@ begin
 
   case p_operation
     when 'createOrg' then
+      if body->>'agreementVersion' is distinct from private.school_portal_agreement_version() then
+        return jsonb_build_object('outcome', 'invalid');
+      end if;
       perform private.school_portal_confirm_adult(body);
       if private.account_kind(me) is distinct from 'adult' then
         return jsonb_build_object('outcome', 'forbidden');
@@ -1054,8 +1068,10 @@ begin
       values (btrim(body->>'name'), btrim(body->>'country'), btrim(body->>'city'),
         body->>'kind', lower(nullif(btrim(body->>'contactEmail'), '')), me)
       returning * into v_org;
-      insert into private.school_portal_admins(org_id, user_id, job_title, added_by)
-      values (v_org.id, me, btrim(body->>'jobTitle'), me);
+      insert into private.school_portal_admins(org_id, user_id, job_title,
+        agreement_version, added_by)
+      values (v_org.id, me, btrim(body->>'jobTitle'),
+        private.school_portal_agreement_version(), me);
       v_status := 201;
       response := jsonb_build_object('id', v_org.id, 'status', v_org.status);
 
@@ -1105,6 +1121,9 @@ begin
       response := jsonb_build_object('id', v_id);
 
     when 'acceptInvite' then
+      if body->>'agreementVersion' is distinct from private.school_portal_agreement_version() then
+        return jsonb_build_object('outcome', 'invalid');
+      end if;
       perform private.school_portal_confirm_adult(body);
       select * into v_invite from private.school_portal_admin_invites i
       where i.id = p_resource_id and i.accepted_at is null and i.revoked_at is null
@@ -1124,8 +1143,10 @@ begin
       end if;
       update private.school_portal_admin_invites set accepted_at = now(), accepted_by = me
       where id = v_invite.id;
-      insert into private.school_portal_admins(org_id, user_id, job_title, added_by)
-      values (v_org.id, me, v_invite.job_title, v_invite.invited_by)
+      insert into private.school_portal_admins(org_id, user_id, job_title,
+        agreement_version, added_by)
+      values (v_org.id, me, v_invite.job_title,
+        private.school_portal_agreement_version(), v_invite.invited_by)
       on conflict (org_id, user_id) where removed_at is null do nothing;
       response := jsonb_build_object('orgId', v_org.id);
 
@@ -1966,6 +1987,8 @@ returns jsonb language sql stable security definer set search_path = '' as $$
         'administered', coalesce((select jsonb_agg(jsonb_build_object(
             'school', o.name, 'country', o.country, 'city', o.city, 'kind', o.kind,
             'contactEmail', o.contact_email, 'status', o.status, 'jobTitle', a.job_title,
+            'agreementVersion', a.agreement_version,
+            'agreementAcceptedAt', a.agreement_accepted_at,
             'addedAt', a.added_at, 'removedAt', a.removed_at) order by a.added_at)
           from private.school_portal_admins a
           join private.school_portal_orgs o on o.id = a.org_id
@@ -2011,6 +2034,7 @@ begin
     'private.school_portal_teacher_page(uuid, uuid)',
     'private.school_portal_reserved(uuid, bigint)',
     'private.school_portal_confirm_adult(jsonb)',
+    'private.school_portal_agreement_version()',
     'private.school_portal_end_org_links(uuid, uuid)',
     'private.school_portal_forget_deleted_profile()',
     'private.school_portal_purge(integer)',

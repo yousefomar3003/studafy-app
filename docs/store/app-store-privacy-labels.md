@@ -25,6 +25,14 @@ When one changes, change all of them.
 2. **AI provider DPA.** Same as decision 2 in the Play doc. Without a DPA, Together AI is not a service provider and the answers change. AI is on from launch (DL-062) and the DPA is not accepted yet; privacy policy 1.5 §8 says so. Accept it before submitting these answers.
 3. **The Sentry setting "Prevent Storing of IP Addresses"** (`docs/deployment/fly-io.md`). These answers say crash data is not linked to the user, which needs that setting on. Also needed: the native crash handler must attach no installation ID. Item 4.7 checks this.
 4. **Arabic permission prompts.** `ios/Runner` has no `ar.lproj/InfoPlist.strings`, so Arabic users see the camera, microphone and photo prompts in English. Add Arabic strings before release. They need a localized variant group in Xcode, which is best done in Xcode itself.
+5. **Sharing with a school a teacher links with (School Portal, branch
+   `feat/school-admin-web`).** No box changes (see "When the School Portal
+   is switched on"). App Review guideline 5.1.2(i) needs a person's
+   permission before their data is shared, unless the law allows it.
+   Here the teacher gives it, for their classes, and students and parents
+   are told by the privacy policy rather than one by one (plan 9.4).
+   **Counsel to confirm** this is enough before the portal's release, and
+   the review notes should explain it (`docs/store/reviewer-access.md`).
 
 ---
 
@@ -108,6 +116,30 @@ Every type: **purpose App Functionality**, **not used for tracking** (no ads, no
 
 ---
 
+## When the School Portal is switched on
+
+Apple's form asks what is collected and whether it is used for tracking;
+it has no separate "shared" question. A linked school reads, read-only,
+the names, emails, Studafy IDs, education records, hand-in photos and
+files, answers, lessons and wellbeing notes of its teachers' classes
+(Play doc §2a, which lists them with evidence).
+
+- **No box changes.** Every one of those types is already ticked for App
+  Functionality and linked to the user. The app collects no new type: a
+  teacher's decisions on a school's requests and class groups, and their
+  reports about a school, are Other User Content and Product Interaction,
+  both already ticked.
+- **Not tracking.** Apple's tracking means linking data with other
+  companies' data for advertising, or sharing it with a data broker. A
+  school reading its own teachers' classes is neither, so "Used to track
+  you" stays No.
+- **The privacy manifest** is unchanged for the same reason.
+- **The privacy policy link** must point to version 2.1 (§3.13 and §7.4)
+  when the app update with the teacher's school screens is submitted.
+- **Guideline 5.1.2(i):** see decision 5.
+
+---
+
 ## The privacy manifest (`ios/Runner/PrivacyInfo.xcprivacy`)
 
 - **Tracking:** `NSPrivacyTracking = false`, with no tracking domains.
@@ -179,3 +211,4 @@ There is no `NSUserTrackingUsageDescription`, because there is no tracking and s
 - 2026-10-21: DL-072 (ADR-0045, privacy policy 1.7). AI for every student account; the AI Tutor name; personal notes; photos that are not stored. No box changes.
 - 2026-10-25: DL-073 (ADR-0046, privacy policy 1.8). AI-suggested marks for teachers: students' work and hand-in files go to Together AI when a teacher asks, unless the student opted out; suggestions are stored 180 days for the class's teachers; Studafy AI Marking is a new subscription. No box changes: Photos or Videos, Other User Content and Purchase History were already ticked for App Functionality, linked, not tracking.
 - 2026-11-02: DL-074 (privacy policy 1.9). AI study tools on from the start for a child account a parent creates (the parent can turn them off); no student opt-out from AI-suggested marks. No box changes.
+- 2026-11-06: School Portal (branch `feat/school-admin-web`, privacy policy 2.1). A linked school reads its teachers' classes. No box changes and no tracking; decision 5 (guideline 5.1.2) for counsel.

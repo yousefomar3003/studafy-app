@@ -3810,15 +3810,25 @@ class V1AcceptInvitationResponseDto {
 }
 
 class V1AcceptSchoolPortalInviteRequestDto {
-  const V1AcceptSchoolPortalInviteRequestDto({required this.adult});
+  const V1AcceptSchoolPortalInviteRequestDto({
+    required this.adult,
+    required this.agreementVersion,
+  });
 
   factory V1AcceptSchoolPortalInviteRequestDto.fromJson(
     Map<String, dynamic> json,
-  ) => V1AcceptSchoolPortalInviteRequestDto(adult: json['adult'] as bool);
+  ) => V1AcceptSchoolPortalInviteRequestDto(
+    adult: json['adult'] as bool,
+    agreementVersion: json['agreementVersion'] as String,
+  );
 
   final bool adult;
+  final String agreementVersion;
 
-  Map<String, Object?> toJson() => {'adult': adult};
+  Map<String, Object?> toJson() => {
+    'adult': adult,
+    'agreementVersion': agreementVersion,
+  };
 }
 
 class V1AcknowledgeDeliveryRequestDto {
@@ -7141,6 +7151,7 @@ class V1CreateSchoolPortalOrgRequestDto {
     this.contactEmail,
     required this.jobTitle,
     required this.adult,
+    required this.agreementVersion,
     this.captchaToken,
   });
 
@@ -7154,6 +7165,7 @@ class V1CreateSchoolPortalOrgRequestDto {
     contactEmail: json['contactEmail'] as String?,
     jobTitle: json['jobTitle'] as String,
     adult: json['adult'] as bool,
+    agreementVersion: json['agreementVersion'] as String,
     captchaToken: json['captchaToken'] as String?,
   );
 
@@ -7164,6 +7176,7 @@ class V1CreateSchoolPortalOrgRequestDto {
   final String? contactEmail;
   final String jobTitle;
   final bool adult;
+  final String agreementVersion;
   final String? captchaToken;
 
   Map<String, Object?> toJson() => {
@@ -7174,6 +7187,7 @@ class V1CreateSchoolPortalOrgRequestDto {
     'contactEmail': ?contactEmail,
     'jobTitle': jobTitle,
     'adult': adult,
+    'agreementVersion': agreementVersion,
     'captchaToken': ?captchaToken,
   };
 }

@@ -6,6 +6,7 @@
  */
 import { describe, expect, test } from "bun:test";
 import { Hono } from "hono";
+import { SCHOOL_AGREEMENT_VERSION } from "@studafy/contracts";
 import { createJsonLogger } from "@studafy/observability";
 import type { Actor } from "../../src/auth/middleware";
 import type { AuthorizationEnv } from "../../src/authorization/middleware";
@@ -207,6 +208,7 @@ describe("the server switch", () => {
       kind: "private",
       jobTitle: "Principal",
       adult: true,
+      agreementVersion: SCHOOL_AGREEMENT_VERSION,
     });
     expect(created.status).toBe(404);
     expect(seen.queries).toEqual([]);
@@ -268,12 +270,40 @@ describe("commands", () => {
         kind: "private",
         jobTitle: "Principal",
         adult: true,
+        agreementVersion: SCHOOL_AGREEMENT_VERSION,
         captchaToken: "token",
       },
     );
     expect(response.status).toBe(201);
     expect(seen.commands[0]?.operation).toBe("createOrg");
     expect(seen.commands[0]?.body["captchaToken"]).toBeUndefined();
+  });
+
+  test("a school is created only by someone accepting the current School Agreement", async () => {
+    const seen = calls();
+    const routes = app({ calls: seen });
+    const school = {
+      name: "Cedar Grove School",
+      country: "Jordan",
+      city: "Amman",
+      kind: "private",
+      jobTitle: "Principal",
+      adult: true,
+    };
+    for (const agreement of [{}, { agreementVersion: "2026-01-01" }]) {
+      const response = await post(routes, "/v1/school-portal/orgs", {
+        ...school,
+        ...agreement,
+      });
+      expect(response.status).toBe(400);
+    }
+    const invite = await post(
+      routes,
+      `/v1/school-portal/invites/${ORG}/accept`,
+      { adult: true },
+    );
+    expect(invite.status).toBe(400);
+    expect(seen.commands).toEqual([]);
   });
 
   test("a teacher is asked by a ten-digit Studafy ID only", async () => {

@@ -32737,10 +32737,15 @@
           "adult": {
             "type": "boolean",
             "const": true
+          },
+          "agreementVersion": {
+            "type": "string",
+            "const": "2026-11-06"
           }
         },
         "required": [
-          "adult"
+          "adult",
+          "agreementVersion"
         ],
         "additionalProperties": false
       },
@@ -37072,6 +37077,10 @@
             "type": "boolean",
             "const": true
           },
+          "agreementVersion": {
+            "type": "string",
+            "const": "2026-11-06"
+          },
           "captchaToken": {
             "type": "string",
             "minLength": 1,
@@ -37084,7 +37093,8 @@
           "city",
           "kind",
           "jobTitle",
-          "adult"
+          "adult",
+          "agreementVersion"
         ],
         "additionalProperties": false
       },

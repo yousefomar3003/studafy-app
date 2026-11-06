@@ -1,10 +1,10 @@
 import { type FormEvent, useState } from "react";
-import { api, ApiError } from "../api";
+import { AGREEMENT_VERSION, api, ApiError } from "../api";
 import { isHiddenEmail } from "../auth";
 import { portalConfig } from "../config";
 import { errorText, useCopy } from "../i18n";
 import { navigate } from "../router";
-import { Turnstile } from "../ui";
+import { AgreementCheck, Turnstile } from "../ui";
 
 type Kind = "public" | "private" | "international" | "other";
 
@@ -23,11 +23,13 @@ export function CreateSchool({ email, onCreated }: {
   const [contactEmail, setContactEmail] = useState(hidden ? "" : (email ?? ""));
   const [authorised, setAuthorised] = useState(false);
   const [adult, setAdult] = useState(false);
+  const [agreed, setAgreed] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const needsToken = Boolean(portalConfig.turnstileSiteKey);
-  const ready = authorised && adult && (!needsToken || token) && !busy;
+  const ready = authorised && adult && agreed && (!needsToken || token) &&
+    !busy;
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -43,6 +45,7 @@ export function CreateSchool({ email, onCreated }: {
         jobTitle: jobTitle.trim(),
         contactEmail: contactEmail.trim() || null,
         adult: true,
+        agreementVersion: AGREEMENT_VERSION,
         ...(token ? { captchaToken: token } : {}),
       });
       onCreated();
@@ -150,6 +153,7 @@ export function CreateSchool({ email, onCreated }: {
           />
           {copy.create.adult}
         </label>
+        <AgreementCheck checked={agreed} onChange={setAgreed} />
         <Turnstile onToken={setToken} lang={copy.lang} />
         {error && <p className="notice bad" role="alert">{error}</p>}
         <button type="submit" className="btn" disabled={!ready}>

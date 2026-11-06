@@ -8,7 +8,7 @@
  */
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { Hono } from "hono";
-import type { LogLevel } from "@studafy/contracts";
+import { type LogLevel, SCHOOL_AGREEMENT_VERSION } from "@studafy/contracts";
 import { createDatabase, type Sql } from "@studafy/database";
 import { createJsonLogger } from "@studafy/observability";
 import { integrationSuite, removeFixtures } from "@studafy/test-support";
@@ -203,6 +203,7 @@ suite("School Portal over real SQL", () => {
       kind: "private",
       jobTitle: "Principal",
       adult: true,
+      agreementVersion: SCHOOL_AGREEMENT_VERSION,
     });
     expect(created.status).toBe(201);
     const org = (await created.json() as { id: string }).id;
@@ -294,6 +295,7 @@ suite("School Portal over real SQL", () => {
       kind: "private",
       jobTitle: "Principal",
       adult: true,
+      agreementVersion: SCHOOL_AGREEMENT_VERSION,
     });
     expect(created.status).toBe(201);
     const org = (await created.json() as { id: string }).id;

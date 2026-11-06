@@ -1121,6 +1121,21 @@ a real sign-in or staging (there is no staging yet).
 5. Store listing note for the app update ("Teachers can now link with
    their school").
 
+**Status (2026-11-06):** 1 to 3 drafted on this branch, for counsel.
+
+- 1: privacy policy 2.1 and terms 1.9 (EN/AR), consent version
+  2026-11-06 (migration `202611060010`).
+- 2: `docs/legal/school-agreement.md` (and `ar/`), version 1.0, published
+  at `/school-agreement` on the legal site. Creating a school and accepting
+  an invite need its box ticked; the API takes only the current version
+  (`SCHOOL_AGREEMENT_VERSION`, `private.school_portal_agreement_version()`),
+  and each administrator's version and time are kept and exported. Asking
+  administrators again after a new version is not built yet (there is one
+  version).
+- 3: Play decision 10 and §2a (seven types become **Shared: Yes** when the
+  portal is on); App Store decision 5 and "When the School Portal is
+  switched on" (no box changes; guideline 5.1.2 for counsel).
+
 ### Step 8: Security review and staging test
 
 1. Run `/security-review` on the branch and fix findings.

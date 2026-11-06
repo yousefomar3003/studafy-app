@@ -87,6 +87,11 @@ export const portalEn = {
     failed: "That account could not sign in. Try another way.",
     notConfigured: "Sign-in isn't available on this site yet.",
   },
+  agreement: {
+    before: "I accept the ",
+    link: "Studafy School Agreement",
+    after: " for this school.",
+  },
   welcome: {
     title: "Welcome",
     text:

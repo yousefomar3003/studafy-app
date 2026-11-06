@@ -411,8 +411,9 @@ apply to it. This section is for a school's administrators.
 
 - **Who may use it.** An adult (18 or over) who is authorised by the school
   to act for it. By creating a school's page, or accepting an invitation to
-  run one, you confirm both. A school's page has up to three
-  administrators.
+  run one, you confirm both, and you accept the
+  [School Agreement](school-agreement) for the school. A school's page has
+  up to three administrators.
 - **Be who you say you are.** Give the school's real name and details. Do
   not create a page for a school you do not represent, or pretend to be
   someone you are not.
