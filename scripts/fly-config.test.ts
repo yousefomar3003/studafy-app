@@ -298,7 +298,10 @@ describe("Fly configs pass production validation", () => {
     expect(api.PAY071_BILLING_ENABLED).toBe("true");
     // ADR-0046: AI Marking on the test copy, as in production (DL-079).
     expect(api.MARKING_SUGGESTIONS_ENABLED).toBe("true");
-    expect(api.SCHOOL_PORTAL_ENABLED).toBe("false");
+    // The School Portal is on in the test copy (owner, 2026-11-07), and only
+    // its website may call the portal's routes from a browser.
+    expect(api.SCHOOL_PORTAL_ENABLED).toBe("true");
+    expect(api.SCHOOL_PORTAL_ORIGINS).toBe("https://school.studafy.com");
     expect(api.PAY071_ENVIRONMENT).toBe("development");
     expect(api.GOOGLE_PUBSUB_AUDIENCE).toBe(
       "https://studafy-api-test.fly.dev/webhooks/google",
