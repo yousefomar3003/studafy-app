@@ -2394,6 +2394,7 @@ export type Database = {
           file_object_id: string;
           id: string;
           nonce_hash: string;
+          portal_org_id: string | null;
           recipient_id: string;
           request_id: string | null;
           school_id: string;
@@ -2407,6 +2408,7 @@ export type Database = {
           file_object_id: string;
           id?: string;
           nonce_hash: string;
+          portal_org_id?: string | null;
           recipient_id: string;
           request_id?: string | null;
           school_id: string;
@@ -2420,6 +2422,7 @@ export type Database = {
           file_object_id?: string;
           id?: string;
           nonce_hash?: string;
+          portal_org_id?: string | null;
           recipient_id?: string;
           request_id?: string | null;
           school_id?: string;

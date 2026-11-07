@@ -22,6 +22,12 @@ export const V1MeResponse = z.strictObject({
    * database. Optional so an app reading an older server sees it absent.
    */
   platformOperator: z.boolean().optional(),
+  /**
+   * The Studafy School Portal is on (SCHOOL_PORTAL_ENABLED): the app offers
+   * a teacher their Studafy ID for schools and the schools' link requests.
+   * Optional so an app reading an older server sees it absent (off).
+   */
+  schoolPortal: z.boolean().optional(),
 });
 export type V1MeResponse = z.infer<typeof V1MeResponse>;
 

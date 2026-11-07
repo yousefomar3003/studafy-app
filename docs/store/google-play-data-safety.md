@@ -57,7 +57,21 @@ draft assumes until you decide.
    - uploaded files.
 
    (Source: `apps/worker/src/processors/accountDeletion.ts`, `supabase/migrations/202609190008_account_deletion_executor.sql`.) The deletion answers below describe the behaviour **after 3.6b**.
-9. **Web deletion URL.** Published by item 4.3 at
+10. **Sharing with a school a teacher links with (School Portal, branch
+    `feat/school-admin-web`).** A linked school reads its teachers' classes
+    for its own purposes, as a controller in its own right (privacy policy
+    2.1 §7.4). The school is a third party, not our service provider.
+    - **Why it might not be "sharing":** Google exempts a transfer that the
+      user starts and reasonably expects. Here the teacher starts it by
+      accepting, but most of the data is about students and parents, who
+      don't start it and aren't told one by one (plan 9.4).
+    - **Assumed:** **Shared: Yes**, purpose **App functionality**, for every
+      type a school can read (§2a). A wrong "No" breaks Play's User Data
+      policy; a careful "Yes" costs only a line on the store page.
+    - **Counsel** (privacy policy `TODO(legal)` School Portal) should confirm
+      this before the portal's release. Until then, the answers in §2 stand:
+      nothing is shared while the portal is off.
+11. **Web deletion URL.** Published by item 4.3 at
    `https://legal.studafy.com/delete-account` (DL-067; the old
    `studafy-legal.studafy.workers.dev` address still answers).
 
@@ -94,6 +108,8 @@ Terms used in the tables:
   - transfers to **service providers** that process data for Studafy under contract: Supabase, Fly.io, Sentry, Axiom, Cloudflare (encrypted backups in R2, EU; Turnstile; the alert relay; no longer in front of the API, DL-079), Together AI (DPA not yet accepted: item 2), Resend, Firebase Cloud Messaging and Redis (Upstash, Frankfurt). Telegram also receives an alert for each report of an AI answer, with only its id, the feature and the reason (DL-076). Telegram receives alerts that carry no user data (a report's id, kind and priority, a hashed school id; counts). The malware scanner is our own (item 1). Google Workspace (Meet) is not used: Studafy creates no meetings (DL-065);
   - transfers the **user starts themselves**: store purchases go to Google Play and Apple as independent controllers.
 - **Ephemeral** means processed only in memory and kept no longer than the request.
+- **Once the School Portal is on**, the data a linked school can read is
+  **shared** (decision 10, §2a). Everything else stays as below.
 
 No location, contacts, calendar, web browsing, health, financial account, SMS or installed-apps data is collected:
 - there is no permission or SDK for any of these (`android/app/src/main/AndroidManifest.xml`, `pubspec.yaml`);
@@ -204,6 +220,54 @@ Native crashes on iOS and Android go through the native SDK, not the Dart `befor
 
 ---
 
+## Section 2a: When the School Portal is switched on
+
+Submit these changes in the same step as the portal's release (plan 11.2,
+"after merging", step 3), never before: while `SCHOOL_PORTAL_ENABLED` is
+off, nothing is shared and §2 stands.
+
+**What a linked school can read** (`supabase/migrations/202611050010_school_portal.sql`,
+`api062_query`; plan 9.2; privacy policy 2.1 §7.4): every current class of
+a teacher who accepted (`school_portal_teacher_links.status = 'linked'`),
+read-only, by up to three administrators who sign in on the portal
+website.
+
+| Data type | Shared | Purposes | What the school reads |
+|---|---|---|---|
+| **Name** | **Yes** | App functionality | Students', linked parents' and the teacher's names |
+| **Email address** | **Yes** | App functionality | The same people's emails |
+| **User IDs** | **Yes** | App functionality | Students' Studafy IDs; a teacher is found by theirs |
+| **Other info** | **Yes** | App functionality | Education records: class membership, every mark (unpublished and AI-suggested ones too), attendance, and figures worked out from them. **Not** gender: no portal read returns it |
+| **Photos** | **Yes** | App functionality | Photos handed in as work, through single-use file links (`api062_file_download`) |
+| **Files and docs** | **Yes** | App functionality | Hand-in files and the teacher's lesson files |
+| **Other user-generated content** | **Yes** | App functionality | Typed answers and online test answers, lessons, class announcements, wellbeing notes (not those restricted to safeguarding) |
+
+**Never shared with a school**, so these stay "Shared: No": Other in-app
+messages, Voice or sound recordings, Purchase history, App interactions,
+Crash logs, Diagnostics, Device or other IDs. Nor are AI Tutor chats,
+personal notes and notebooks, or AI study material (the portal's SQL
+reads none of their tables; a pgTAP test proves it,
+`supabase/tests/school_portal.sql` section 7).
+
+**New data collected by the app** (no new type, so "Collected" is unchanged):
+- a teacher's answer to a school's request, unlinking, and their approval
+  of a class joining a class group (App interactions; Other user-generated
+  content);
+- a teacher's report about a school: the reason and optional details
+  (Other user-generated content);
+- announcements from a school that students, parents and teachers receive
+  (already "Other user-generated content", now from a school as well).
+
+**Data the portal website collects from school administrators** (name,
+email and job title, the School Agreement acceptance, the activity record)
+comes from the website, not the app, so it is not part of this form. It is
+in the privacy policy (§3.13).
+
+**Encryption in transit:** the portal is served only over HTTPS with HSTS
+(`apps/school-web/vercel.json`), and calls the same API.
+
+---
+
 ## Section 3: Differences by role
 
 The form is answered once for the whole app. This table shows who the data
@@ -214,7 +278,7 @@ comes from, to check the answers against each role.
 | **Student** | Name, email (unless a managed child account), gender (optional), Studafy ID. Class membership, if any (joining a class is optional, DL-072). Hand-ins (files, photos, text), exam answers, notebooks and personal notes, AI questions and photos, messages (if the school allows), voice notes, push token. Grades and attendance are entered about them by teachers. |
 | **Managed child account** (created by a parent) | Name and language only, entered by the parent; no email (ADR-0031). Otherwise the same as a student. |
 | **Parent or guardian** | Name, email, gender (optional). Guardian links and relationship. Family+ purchases. Messages with teachers. Turnstile check when looking up a student. |
-| **Teacher** | Name, email, gender (optional). Workspace and class details. Lessons and materials (files). Grades, attendance, absences, wellbeing notes about students. Announcements, meetings, messages. Studafy AI Marking purchases, reference answers and usage (DL-073). |
+| **Teacher** | Name, email, gender (optional). Workspace and class details. Lessons and materials (files). Grades, attendance, absences, wellbeing notes about students. Announcements, meetings, messages. Studafy AI Marking purchases, reference answers and usage (DL-073). Once the School Portal is on: their decisions on a school's requests and class groups, and reports about a school (§2a). |
 
 Data on the device only, not collected:
 - profile photos;
@@ -248,3 +312,4 @@ See `lib/data/local_cache/`, `lib/core/profile_photo.dart` and
 - 2026-10-21: DL-072 (ADR-0045, privacy policy 1.7). AI for every student account, in a class or not; the AI Tutor name; personal notes (Other user-generated content); photos from students with no class, and photos turned into personal notes, processed ephemerally and not stored. No answer in the form changes: every data type was already declared, and Photos stays "not ephemeral" because other photos are stored.
 - 2026-10-25: DL-073 (ADR-0046, privacy policy 1.8). AI-suggested marks for teachers (Studafy AI Marking): students' written answers and hand-in files go to Together AI when a teacher asks, unless the student opted out; suggestions kept 180 days; a teacher plan in Purchase history. No answer in the form changes: student work, files and photos were already declared, collected for app functionality, and Together AI was already a service provider (still pending its DPA, item 2).
 - 2026-11-02: DL-074 (privacy policy 1.9). A child account a parent creates starts with the AI study tools on, and the parent can turn them off; students can no longer opt out of AI-suggested marks. No answer in the form changes: the same data goes to the same provider for the same purpose, and Together AI was already declared.
+- 2026-11-06: School Portal (branch `feat/school-admin-web`, privacy policy 2.1). Decision 10 and §2a: Name, Email address, User IDs, Other info, Photos, Files and docs, and Other user-generated content become **Shared: Yes** (App functionality) when the portal is switched on. Nothing changes before then.

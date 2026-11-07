@@ -1,7 +1,7 @@
 # Studafy Privacy Policy
 
-**Last updated:** 3 November 2026\
-**Version:** 2.0
+**Last updated:** 6 November 2026\
+**Version:** 2.1
 
 <!--
 BEFORE PUBLISHING ON THE OWN DOMAIN - READ THIS (never rendered: the legal
@@ -170,9 +170,64 @@ and the reporter's own words, linked to their account, for 180 days. Confirm
 the period and the basis (legitimate interests in keeping the AI tools safe;
 the stores' AI-generated content rules).
 
+Version 2.1 (6 November 2026), with terms of use 1.9, consent version
+2026-11-06 for terms_and_privacy (migration
+202611060010_terms_and_privacy_school_portal.sql). The ai_features notice
+does not change. It adds the Studafy School Portal
+(docs/planning/school-portal.md, migration 202611050010_school_portal.sql):
+a school's page on a website whose administrators, once a teacher accepts
+their request, read every class of that teacher; export class lists,
+marks, attendance and reports; send announcements to linked classes; and
+make class groups joined with one code. §1, §1.1, §2, §3.3, §3.4, §3.7,
+§3.13 (new), §4, §5, §6.1, §7.1, §7.2, §7.4 (new), §9, §10, §11, §12, §13
+and the list of changes.
+
+BRANCH ONLY. This version lives on feat/school-admin-web and is published
+only at the portal's release gate (school-portal.md 11.2), after counsel
+has read it, together with the school agreement and the store privacy
+answers. If main publishes a newer consent version first, merge it in and
+publish this as the next one.
+
+TODO(legal): School Portal (school-portal.md section 9).
+(1) §1.1 and §7.4: is a linked school an independent controller of what it
+reads, and is disclosing a class's records to it on the teacher's decision
+alone lawful, especially where Studafy is controller (a teacher on their
+own) and for children's data? Is a school agreement (DPA or data-sharing
+agreement), accepted when a school's page is created, required before the
+first school uses it?
+(2) §7.4: students and parents are not told one by one when a teacher
+links (owner's decision, school-portal.md 9.4). Is this policy enough as
+the notice (Art. 13/14), particularly for children (9.6)?
+(3) §7.4: anyone can create a school's page and Studafy does not verify
+it (owner's decision, 9.5); the teacher's acceptance is the safeguard.
+Confirm this is acceptable for the scope of data shared.
+(4) §10: no period yet for school pages after they close, administrator
+records, link history, and reports about a school; activity record,
+searches and announcements are 12 months; closed groups 12 months.
+(5) §4: the legal basis for the disclosure and for exports.
+
 The Arabic translation is docs/legal/ar/privacy-policy.md. Change both
 together.
 -->
+
+### What changed in version 2.1
+
+- **The Studafy School Portal.** A school can make a page on the Studafy
+  School Portal, a website, and ask a teacher to link with it. **Nothing is
+  shared unless the teacher accepts.** While a teacher is linked, the
+  school's administrators can read, but never change, all of that
+  teacher's classes, including students' names, emails and Studafy IDs,
+  linked parents' names and emails, work and answers, every mark (drafts
+  and suggested marks included), attendance and wellbeing notes not
+  restricted to safeguarding. A school never sees messages, AI Tutor chats
+  or students' own notes. Students and parents are not told one by one
+  (§1.1, §2, §3.3, §5, §7.4).
+- A linked school can download class lists, marks, attendance and reports,
+  send announcements to its linked classes, and make class groups that
+  students join with one code (§7.4).
+- What we keep about schools and their administrators, for how long, what
+  deleting an account removes, and what the data export includes (§3.13,
+  §9, §10, §11).
 
 ### What changed in version 2.0
 
@@ -316,7 +371,9 @@ their guardians. It lets a student see and hand in that work and keep their
 own notes, and it lets a parent follow their child's progress. A student can
 also use Studafy on their own, without a class: their personal notebook and
 the AI study tools need no class. A teacher can also ask AI for suggested
-marks, which the teacher reviews and decides on (§6.1).
+marks, which the teacher reviews and decides on (§6.1). A school can use the
+**Studafy School Portal**, a website, to read the classes of teachers who
+agree to link with it (§7.4).
 
 **Data controller:** Studafy Limited, a company registered in Ireland under
 number 822430, with its registered office at 4/5 The Square, Cahir,
@@ -353,6 +410,11 @@ This distinction matters, and it is not a technicality.
 - **Where a student uses Studafy without a class**, and for every student's
   **personal notebook**, which belongs to no class, we act as the
   **controller**, for the same reason.
+- **Where a teacher links with a school** through the Studafy School Portal
+  (§7.4), the school decides for itself how it uses what it reads there,
+  and is responsible for that use as a controller in its own right. We run
+  the portal, and make a class's records available to the school only
+  because its teacher accepted.
 - **For our own operation of the service** — security, fraud prevention,
   safety reports, billing, backups, keeping the service working — we are
   the controller regardless.
@@ -381,7 +443,8 @@ The long version follows, and it governs. This summary is for orientation.
 - We collect what the app needs to work: who you are, which class you are in
   (if any), the lessons and work in it, your marks and attendance, your own
   notes, and the messages you send inside the app.
-- Teachers' marks stay **private until the teacher publishes them**. A
+- Teachers' marks stay **private until the teacher publishes them** (a
+  school the teacher has linked with can see drafts too, below). A
   published mark that is later corrected keeps a record of the old mark, who
   changed it, when and why, and the family is told when the mark changes.
 - **A teacher can ask AI for a suggested mark** on a written answer or a
@@ -407,6 +470,11 @@ The long version follows, and it governs. This summary is for orientation.
   replaced before anything is sent, and email addresses and marks are never
   sent; **photos are sent as they are**. A photo from a student who belongs
   to no class is not kept. See §6 and read it before using those tools.
+- **A teacher can link with a school** on the Studafy School Portal. Only if
+  the teacher accepts can the school read, never change, that teacher's
+  classes, including students' and parents' contact details, work, marks
+  and attendance. It never sees messages, AI Tutor chats or students' own
+  notes. Students and parents are not told one by one, so read §7.4.
 - If someone reports a message or a person, **Studafy reviews the report**
   and may act on it (§3.7). You can also report an AI answer, and Studafy
   reviews that too (§6).
@@ -480,10 +548,11 @@ student, parent or guardian), when that role was granted, and whether it is
 currently active. A teacher who signs up on their own gets their own teaching
 space. Changes to roles are recorded and kept for 2 years — see §9 and §10.
 
-**There is no school administrator in this version of Studafy.** Nobody
-holds that role, and no school administrator can see or change a class's
-work, marks or attendance. A class's records are read and changed by that
-class's own teachers.
+**There is no school administrator inside the app.** Nobody holds that
+role in the app, and only a class's own teachers can change its work, marks
+or attendance. Separately, a school can read a teacher's classes on the
+Studafy School Portal if the teacher accepts its request (§7.4); what we
+hold about schools and their administrators is in §3.13.
 
 For students we also hold a class roster entry, your enrolment in each class,
 the class code or link you joined with, and an internal student identifier
@@ -514,13 +583,15 @@ This is the substance of the service.
   Deadlines are set and shown in your school's time zone.
 - **Marks:** for work done online and on paper — a score, "absent" or "not
   graded", and the teacher's comment. **A mark is a draft, visible only to
-  the class's teachers, until the teacher publishes it.** A student with no
+  the class's teachers (and to a school the teacher has linked with,
+  §7.4), until the teacher publishes it.** A student with no
   mark is shown as not marked, never as zero.
 - **Suggested marks:** where a teacher asks for them (§6.1), the mark the AI
   suggests for a piece of work, what the answer met and missed against the
   teacher's reference, the reason and suggested feedback; and the teacher's
   reference answers, marking points and strictness. Suggestions are visible
-  only to the class's teachers and are not marks.
+  only to the class's teachers (and to a school the teacher has linked
+  with, §7.4) and are not marks.
 - **Changes to marks:** every publication and every correction of a mark,
   with the previous mark and comment, the new ones, who made the change, when,
   and the reason the teacher gave — see §9.
@@ -543,8 +614,10 @@ parent can see them, and joining a class later does not change them. They
 are included in the data export (§11) and deleted with the account (§9).
 
 Wellbeing notes and pastoral records can be sensitive. They are visible only
-to the class's teachers, and to a family only where a teacher chooses to
-share a note with them. They are never visible to other students.
+to the class's teachers, to a family only where a teacher chooses to share
+a note with them, and to a school the teacher has linked with unless the
+teacher restricted the note to safeguarding (§7.4). They are never visible
+to other students.
 
 ### 3.5 Family links and Family+
 
@@ -614,8 +687,8 @@ from inside the app. We hold the reports, the evidence attached to them,
 what was decided, blocks between users, and the grants that allow a
 reviewer to open a report.
 
-**Studafy reviews reports.** There is no school administrator in this
-version of the app, so reports come to us. A named person at Studafy, who
+**Studafy reviews reports.** There is no school administrator inside the
+app, so reports come to us. A named person at Studafy, who
 can be reached at hello@studafy.com, reviews each report. To open one, the
 reviewer needs a time-limited access grant and a second sign-in factor, and
 every grant, every opening of a report and every decision is recorded. The
@@ -745,6 +818,25 @@ did, and when.
   name, email address or message content.
 - **Short-lived cache and rate-limit records**, keyed by hashed identifiers.
 
+### 3.13 Schools and the School Portal
+
+The Studafy School Portal is a website (school.studafy.com) where a school
+reads the classes of teachers who link with it (§7.4). For it we hold:
+
+| What | Why |
+|---|---|
+| **A school's page:** its name, country, city, type (public, private, international or other) and a contact email teachers see | To show teachers who is asking |
+| **Administrators** (up to three per school): name and email from the sign-in provider (Google, Microsoft or Apple), job title, their confirmation that they are an adult and authorised by the school, which version of the [School Agreement](school-agreement) they accepted and when, and when they were added or removed. Invitations to become one: the email address invited and the job title, valid for 7 days | To let the right people run the school's page, and to show teachers who they are |
+| **Requests and links:** which teacher was asked, by whom, when, and whether the teacher accepted, declined or unlinked. A request nobody answers expires after 14 days | To make sharing depend on the teacher's decision |
+| **Studafy ID searches** an administrator makes, and whether a teacher was found | To limit guessing (10 searches an hour) |
+| **The activity record:** every page and file an administrator opens, and every download, with the class or student it concerned and when | To keep schools accountable for what they read |
+| **Announcements** a school sends: the title, the text, who it went to (students, parents, both, or teachers, of which classes) and who sent it | To deliver them in the app |
+| **Class groups:** each group's name, its code, which classes are in it and each teacher's decision. We do not store the code itself, only a keyed hash of it and the value our servers re-create it from | To let students join several classes with one code |
+| **Reports about a school** a teacher makes: the reason and any details. Each sends an alert to our private Telegram chat with only its reference, the school's reference and the reason | To find schools that misuse the portal |
+
+Creating a school's page and asking a teacher to link pass a Cloudflare
+Turnstile bot check.
+
 ---
 
 ## 4. Why we process it, and on what legal basis
@@ -763,6 +855,8 @@ did, and when.
 | Reviewing and acting on safety reports, and alerting our reviewer | Legitimate interests in protecting children; legal obligation where one applies |
 | The AI study tools | Consent, given separately before first use — see §6 |
 | Keeping and reviewing reports of AI answers, and alerting our reviewer | Legitimate interests in keeping the AI study tools safe and accurate, particularly for children — see §6 |
+| Making a linked teacher's classes readable by their school on the School Portal, and the school's downloads, announcements and class groups | The teacher's decision to link; the legitimate interests of the teacher and the school in the school overseeing teaching and its students' progress, or the school's public task. The school's own use is on its own legal basis, as a controller — see §7.4 |
+| Running the School Portal: administrators' accounts, the activity record, limiting searches, the bot check, and reviewing reports about schools | Legitimate interests in protecting students and preventing misuse; contract with the administrator |
 | Suggested marks by AI, when a teacher asks for them | Where a school is the controller, the school's legitimate interests or public task in marking work; otherwise the teacher's and our legitimate interests in helping teachers mark. The teacher decides whether to use it, and decides every mark; there is no setting to turn it off — see §6.1 |
 | Complying with the law, and defending legal claims | Legal obligation; legitimate interests |
 
@@ -816,6 +910,10 @@ A student can also use it on their own, without a class.
 - **A teacher can ask AI for suggested marks** on a student's work, and
   the teacher decides the mark. There is no setting to turn this off
   (§6.1).
+- **A teacher can link with a school** on the Studafy School Portal. The
+  school can then read the class's records, children's included, but not
+  change them or message a child; it can send announcements to the class's
+  students and parents. Families are not told one by one (§7.4).
 - We do not profile children for advertising, and we show no advertising.
 - Where a school is the controller, questions about a child's records should
   go to the school first.
@@ -1013,8 +1111,8 @@ strictly to mark (lenient, balanced or strict).
 **The AI only suggests. The teacher decides.** For each answer or hand-in
 the AI suggests a mark, what the answer met and missed against the
 reference, the reason, and feedback the teacher can edit. A suggestion is a
-draft that **only the class's teachers can see**; students and parents never
-see it. It is **never a mark**: it becomes one only if the teacher saves a
+draft that **only the class's teachers can see**, and a school the teacher
+has linked with (§7.4); students and parents never see it. It is **never a mark**: it becomes one only if the teacher saves a
 mark themselves, and then the usual rules apply (a mark is private until
 published, and a correction is recorded, §3.4). When a teacher changes the
 reference, nothing is marked again unless the teacher asks.
@@ -1074,11 +1172,12 @@ We do not sell personal data. We share it only as set out here.
 
 Your work, marks and attendance are visible to your class's teachers, and to
 a parent linked to you once a mark is published. Draft marks are visible to
-the class's teachers only. There is no school administrator in this version
-of the app. Other students cannot see your marks, your submitted work or your
-private messages. Your personal notebook is visible to you only: not to a
+the class's teachers only. There is no school administrator inside the app;
+if your teacher links with a school, that school can also read your class's
+records, drafts included (§7.4). Other students cannot see your marks, your
+submitted work or your private messages. Your personal notebook is visible to you only: not to a
 teacher, and not to a parent. Suggested marks (§6.1) are visible to the
-class's teachers only.
+class's teachers only, and to a school their teacher has linked with.
 
 ### 7.2 Our processors
 
@@ -1091,8 +1190,8 @@ own purposes.
 | **Fly.io** (application hosting) | Requests passing through our servers while they are handled | Frankfurt, Germany |
 | **Axiom** (operational logs) | Technical logs: request times, outcomes and error codes, with account identifiers and hashed network addresses. Most successful requests are not kept; logs are deleted after 30 days | Frankfurt, Germany |
 | **Sentry** (error reports) | What broke and where in our code, with the device model and versions. No names, emails, message content or photos | Germany |
-| **Cloudflare** (backup storage, alerts, bot check) | Our encrypted daily backups, which Cloudflare cannot read, in its R2 storage; the relay that forwards our operations alerts; the Turnstile bot check when a parent looks up a student; requests to the older address of these pages, studafy-legal.studafy.workers.dev, kept so that links already handed out still work | Backups: EU (Cloudflare's EU jurisdiction). Otherwise global |
-| **Vercel** (our website and these pages) | Requests to our website (studafy.com) and to the pages with this policy and our terms (legal.studafy.com and app.studafy.com), such as your IP address and browser details, as Vercel serves them. The app's requests to our servers do not pass through Vercel | Global; see §8 |
+| **Cloudflare** (backup storage, alerts, bot check) | Our encrypted daily backups, which Cloudflare cannot read, in its R2 storage; the relay that forwards our operations alerts; the Turnstile bot check when a parent looks up a student, when a school's page is created and when a school asks a teacher to link; requests to the older address of these pages, studafy-legal.studafy.workers.dev, kept so that links already handed out still work | Backups: EU (Cloudflare's EU jurisdiction). Otherwise global |
+| **Vercel** (our websites and these pages) | Requests to our website (studafy.com), to the School Portal website (school.studafy.com) and to the pages with this policy and our terms (legal.studafy.com and app.studafy.com), such as your IP address and browser details, as Vercel serves them. The app's and the School Portal's requests for data go to our own servers and do not pass through Vercel | Global; see §8 |
 | **Telegram** (alerts) | Alerts to our own private chat: for a safety report, its reference number, kind, priority and a hashed reference to the school; for a report of an AI answer, its reference number, which tool it came from and the reason; for operations, what failed and counts. Never message content, the reported text, names or account identifiers | Global |
 | **GitHub** (Microsoft) (backup job) | Runs our daily backup job: the backup is made and encrypted on a temporary GitHub machine and sent to Cloudflare. GitHub keeps no copy of it | See §8 |
 | **Upstash** (Redis: rate limits, short-lived caches, background jobs) | Counters and cache entries keyed by hashed identifiers (including hashed IP addresses), background job references, and, for up to 30 seconds, a copy of your session details (name, language and roles) | Frankfurt, Germany |
@@ -1135,6 +1234,81 @@ like the others (DPIA §4.2). -->
 
 **Google Meet** is not one of our processors: when you open a meeting link,
 Google provides the call under its own terms and privacy policy.
+
+### 7.4 Schools a teacher links with (the School Portal)
+
+A school can make a page on the **Studafy School Portal**, a website at
+school.studafy.com, and ask a teacher to link with it using the teacher's
+Studafy ID. **Nothing is shared unless the teacher accepts**, in the app,
+after being shown who is asking and what the school will see. A teacher
+links with one school at a time and can unlink at any moment; the school
+then stops seeing their classes at once.
+
+**What a linked school can read.** While a teacher is linked, the school's
+administrators (up to three people the school chooses) can **read, but
+never change**, every current class that teacher teaches:
+
+- the class: its name, grade, section, teachers and number of students;
+- the students: each one's name, email address and Studafy ID, and the name
+  and email address of each linked parent;
+- lessons, the teacher's lesson material and files, and the class's
+  announcements;
+- set work and hand-ins, including typed answers and handed-in files and
+  photos, and online tests with their questions and every answer;
+- every mark, including marks the teacher has not published yet and marks
+  suggested by AI (§6.1);
+- attendance;
+- the teacher's wellbeing notes, except notes the teacher restricted to
+  safeguarding;
+- figures worked out from these: attendance rates, average marks, missing
+  work, and which students may need attention (attendance under 85% over
+  the last 30 days, two or more pieces of missing work, or an average under
+  50%);
+- about the teacher: their name, email address, classes, recent lessons
+  and the marking they have still to do.
+
+**A school never sees** messages or conversations, AI Tutor chats,
+students' notebooks and personal notes, notes, quizzes and flashcards made
+with the AI study tools, wellbeing notes restricted to safeguarding,
+subscriptions or payments, anyone's gender, or anything from a teacher who
+has not accepted or has unlinked.
+
+**What a school can do.** It cannot change a class, a mark or any record,
+and it cannot message a student. Its administrators can:
+
+- **download** class lists, marks, attendance and reports as a spreadsheet
+  file (CSV, which opens in Excel), or print them or save them as a PDF. A
+  downloaded or printed copy is outside Studafy, and the school is
+  responsible for it;
+- **send announcements** to the students, the parents, or both, of all its
+  linked classes or the classes it chooses, or to its linked teachers —
+  never to one student alone. They reach people in the app, with a
+  notification that says only that a new announcement has arrived. If an
+  announcement is inappropriate, tell us at hello@studafy.com: Studafy can
+  remove it;
+- **make class groups**: one code for several linked classes. A class joins
+  a group only if its teacher approves, and the teacher can take it out
+  again. A student who types the group's code in "Join a class" joins every
+  class in the group, as with a class's own code, and can then be seen by
+  the school like any student of those classes.
+
+**Families are not told one by one.** When a teacher links with a school,
+students and parents are not sent a notice; this policy is how we tell
+you. If you want to know whether a teacher is linked with a school, ask
+the teacher, or write to us.
+
+**Who is responsible.** A school that reads a class's records through the
+portal decides for itself how it uses them, and is responsible for that
+use under data-protection law, as a controller in its own right. Questions
+about what a school does with them go to the school. Anyone can create a
+school's page, and Studafy does not check that it is a real school, so a
+teacher should accept only a school they know and are entitled to share
+their classes with. A teacher can report a school from the app, and
+Studafy can suspend a school's page, which then sees nothing.
+
+**Everything is recorded.** Every page and file a school's administrator
+opens, and every download, is recorded in an activity record, kept for 12
+months (§10).
 
 ---
 
@@ -1194,6 +1368,13 @@ with the real mechanism once the DPA is accepted. -->
   teacher, their Studafy AI Marking usage records;
 - delete the reports of AI answers the account made (§6);
 - remove its email address from invitations;
+- for a teacher, delete their links with schools and the reports they made
+  about schools; a school stops seeing their classes at once (§7.4);
+- for a school's administrator, end their place on the school's page and
+  delete their activity record and Studafy ID searches. A school's page left
+  with no administrator closes, and every teacher linked with it is
+  unlinked. Announcements they sent stay with the school, without their
+  name;
 - delete, in the same way, every child account the person manages: nobody
   else can sign in to a child account, so it cannot outlive its parent. The
   deletion screen names these accounts before the parent confirms.
@@ -1267,6 +1448,11 @@ we may be required to preserve it until that concludes.
 | Billing records | 6 years after the end of the tax year they relate to |
 | Files | While attached to something, subject to school policy; in any case deleted 12 months after the class is closed |
 | PDF previews and newer-format copies of documents (§3.8) | As long as the file they were made from; deleted with it |
+| School Portal activity record and Studafy ID searches (§3.13) | 12 months |
+| Announcements from a school | 12 months |
+| Requests from a school to link with a teacher | Unanswered requests expire after 14 days; requests and links are kept as a history while the teacher's account exists |
+| Class groups | While the group is open; 12 months after it is closed. A class declined or taken out of a group: 12 months |
+| A school's page and its administrators | While the page exists, and while each administrator's account exists |
 | Inactive accounts | Deleted after 2 years without use. At least 30 days before, we warn the account holder by email, whatever their email settings, and also in the app if they belong to a school. The 30 days count from when the warning reached them. If the warning cannot reach them, we do not delete the account |
 | Sign-in IP addresses held by Supabase | Up to 7 days in its security logs, and with an active session until it ends |
 | Error reports (Sentry) | Up to 90 days |
@@ -1322,7 +1508,11 @@ and their history, your attendance and its history, your notebooks
 (including your personal notes), the
 messages you sent and received, the reports you made (including reports
 of AI answers, with the text you reported), your consents, your purchases,
-your AI usage and, for a teacher, your Studafy AI Marking usage. **It lists your files — each one's name, type, size and date
+your AI usage and, for a teacher, your Studafy AI Marking usage, the
+schools that asked to link with you and your links, and the reports you
+made about schools. For a school's administrator it includes the schools
+you run, the announcements you sent and your School Portal activity
+record, downloads included. **It lists your files — each one's name, type, size and date
 — rather than including them.** You can open your files in the app, or write
 to hello@studafy.com for a copy. Messages, files and AI usage hold the newest
 5,000 entries each; write to us for the rest. A parent's export names the
@@ -1379,6 +1569,9 @@ and tell you we have done so, because it is the school's decision to make.
 - IP addresses are hashed with a keyed function rather than stored in our
   records, including in rate-limit counters.
 - Requests are rate-limited, and abuse-prone operations fail closed.
+- A school sees a class only while its teacher is linked: this is checked in
+  the database on every read, nothing in the School Portal can change a
+  class, and every read and download is recorded.
 - Backups are encrypted before they leave our systems, with a key held
   outside every service that stores them.
 
@@ -1407,6 +1600,10 @@ account signs out. **On Android, none of this is copied to your phone's
 cloud backup.**
 
 Cloudflare Turnstile sets what is needed to complete its bot check.
+
+The School Portal website keeps an administrator's sign-in session and
+language choice in their browser. It uses no advertising or analytics
+cookies.
 
 ---
 
@@ -1464,6 +1661,9 @@ WHAT TO COMPLETE BEFORE PUBLISHING ON THE OWN DOMAIN
    docs/store/app-store-privacy-labels.md) must match this document.
 8. The Arabic translation (docs/legal/ar/privacy-policy.md) and the Arabic
    in-app text must be reviewed by a native legal translator.
+9. The School Portal (version 2.1): the TODO(legal) items at the top, the
+   school agreement, and the store privacy answers (sharing with a school a
+   teacher links with).
 
 Version 1.5 was published on 17 October 2026 without that review, by the
 owner's decision (DL-068). Items 1 to 8 still stand. Version 1.6 (21 October

@@ -42,6 +42,9 @@ primary_region = "fra"
   AI_LESSON_TOOLS_ENABLED = "true"
   # Studafy AI Marking (ADR-0046), on in production too since DL-079.
   MARKING_SUGGESTIONS_ENABLED = "true"
+  # Studafy School Portal (docs/planning/school-portal.md): off until the
+  # portal passes its release gate (plan 11.2). Off, every portal route is 404.
+  SCHOOL_PORTAL_ENABLED = "false"
   # Messaging on, as in production (DL-063).
   MESSAGING_ENABLED = "true"
   # Google Play billing in test (work plan 3.9): license testers buy on the

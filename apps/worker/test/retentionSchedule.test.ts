@@ -32,6 +32,7 @@ test("every purge runs each pass, and one failing does not stop the rest", async
     retention_inactive_accounts: { warned: 2, deletion_requested: 0 },
     retention_expire_helper_photos: { helper_photos: 0 },
     ai_output_reports_purge: { ai_output_reports: 0 },
+    school_portal_purge: { school_portal_expired: 0 },
     inactive_warning_email_pending: {},
   });
   const collector = new LogCollector();
@@ -47,6 +48,7 @@ test("every purge runs each pass, and one failing does not stop the rest", async
     "retention_inactive_accounts",
     "retention_expire_helper_photos",
     "ai_output_reports_purge",
+    "school_portal_purge",
     // No email provider here: the warning emails only count what waits.
     "inactive_warning_email_pending",
   ]);
@@ -72,6 +74,7 @@ test("the inactive-accounts step reports undeliverable warnings and the alert he
     },
     retention_expire_helper_photos: { helper_photos: 0 },
     ai_output_reports_purge: { ai_output_reports: 0 },
+    school_portal_purge: { school_portal_expired: 0 },
     inactive_warning_email_pending: {},
   });
   const counts: number[] = [];
@@ -99,6 +102,7 @@ test("a failed inactive-accounts step neither raises nor resolves the alert", as
     retention_inactive_accounts: new Error("lock timeout"),
     retention_expire_helper_photos: { helper_photos: 0 },
     ai_output_reports_purge: { ai_output_reports: 0 },
+    school_portal_purge: { school_portal_expired: 0 },
     inactive_warning_email_pending: {},
   });
   const counts: number[] = [];
@@ -205,6 +209,7 @@ test("a pass that removes nothing logs nothing", async () => {
     retention_inactive_accounts: { warned: 0 },
     retention_expire_helper_photos: { helper_photos: 0 },
     ai_output_reports_purge: { ai_output_reports: 0 },
+    school_portal_purge: { school_portal_expired: 0 },
     inactive_warning_email_pending: {},
   });
   const collector = new LogCollector();

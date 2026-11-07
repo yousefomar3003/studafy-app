@@ -41,6 +41,25 @@ describe("Turnstile", () => {
       ).toBe(false);
     }
   });
+  test("the School Portal's solve and the app's are not interchangeable", async () => {
+    const portal = {
+      success: true,
+      action: "school_portal",
+      hostname: "api.example.com",
+    };
+    expect(
+      await verifyTurnstile(options, "token", result(portal), "school_portal"),
+    ).toBe(true);
+    expect(await verifyTurnstile(options, "token", result(portal))).toBe(false);
+    expect(
+      await verifyTurnstile(
+        options,
+        "token",
+        result({ ...portal, action: "student_lookup" }),
+        "school_portal",
+      ),
+    ).toBe(false);
+  });
   test("a testing-key answer counts only where testing keys are allowed", async () => {
     // What siteverify returns for Cloudflare's always-pass testing secret:
     // no action, and a testing marker.

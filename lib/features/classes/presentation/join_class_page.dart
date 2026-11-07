@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../../core/class_join_link.dart';
 import '../../../core/failures.dart';
+import '../../../core/user_content_text.dart';
 import '../../../l10n/generated/app_l10n.dart';
 import '../application/class_list_interactor.dart';
 import '../domain/classroom.dart';
@@ -81,9 +82,12 @@ class _JoinClassPageState extends State<JoinClassPage> {
         // your own class roster. The generic "no access" wording sent a
         // teacher checking their own link looking for a permissions fault
         // that does not exist, so it is named here.
-        _error = failure.code == Failure.forbiddenCode
-            ? AppL10n.of(context).joinClassAlreadyStaff
-            : failure.message;
+        _error = switch (failure.code) {
+          Failure.forbiddenCode => AppL10n.of(context).joinClassAlreadyStaff,
+          'ALREADY_IN_CLASS' => AppL10n.of(context).joinClassAlreadyIn,
+          'CLASS_CODE_UNKNOWN' => AppL10n.of(context).joinClassUnknownCode,
+          _ => failure.message,
+        };
       }),
     );
   }
@@ -182,10 +186,19 @@ class _JoinedView extends StatelessWidget {
       const Icon(Icons.check_circle_outline, size: 56),
       const SizedBox(height: 16),
       Text(
-        AppL10n.of(context).joinClassDone(joined.classroomName),
+        switch (joined.groupName) {
+          final group? => AppL10n.of(
+            context,
+          ).joinClassGroupDone(joined.groupClassNames.length, group),
+          null => AppL10n.of(context).joinClassDone(joined.classroomName),
+        },
         style: Theme.of(context).textTheme.titleLarge,
         textAlign: TextAlign.center,
       ),
+      if (joined.groupName != null) ...[
+        const SizedBox(height: 12),
+        for (final name in joined.groupClassNames) UserContentText(name),
+      ],
       const SizedBox(height: 24),
       FilledButton(
         onPressed: () => Navigator.of(context).pop(joined),

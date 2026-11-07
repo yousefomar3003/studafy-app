@@ -15,10 +15,16 @@ export type SiteverifyFetch = (
   url: string,
   init: RequestInit,
 ) => Promise<Response>;
+/**
+ * [action] is the one the widget was rendered with: "student_lookup" in the
+ * app's challenge page, "school_portal" on the portal's website, so a solve
+ * for one is never accepted by the other.
+ */
 export async function verifyTurnstile(
   options: TurnstileOptions,
   token: unknown,
   fetcher: SiteverifyFetch = fetch,
+  action = "student_lookup",
 ): Promise<boolean> {
   if (
     typeof token !== "string" || !token.trim() || token.length > 2048 ||
@@ -45,7 +51,7 @@ export async function verifyTurnstile(
       return options.allowTestingKeys === true && result.success === true &&
         hostnameAllowed;
     }
-    return result.success === true && result.action === "student_lookup" &&
+    return result.success === true && result.action === action &&
       hostnameAllowed;
   } catch {
     return false;

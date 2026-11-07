@@ -31,6 +31,7 @@ import { createSelectionRoutes } from "../../src/study/selectionRoutes";
 import { createAiConsentRoutes } from "../../src/study/aiConsentRoutes";
 import { createPersonalNotebookRoutes } from "../../src/study/personalNotebookRoutes";
 import { createMarkingRoutes } from "../../src/marking/routes";
+import { createSchoolPortalRoutes } from "../../src/school-portal/routes";
 import { createOutputReportRoutes } from "../../src/output-reports/routes";
 import { createNotebookRoutes } from "../../src/study/notebookRoutes";
 import { createManagedAccountRoutes } from "../../src/managed-accounts/routes";
@@ -658,6 +659,21 @@ function routeTable() {
     "/",
     createOutputReportRoutes(
       { reports: { file: async () => ({ outcome: "invalid" as const }) } },
+      authorization,
+      idempotency,
+    ),
+  );
+  combined.route(
+    "/",
+    createSchoolPortalRoutes(
+      {
+        repository: {
+          query: async () => ({ outcome: "not_found" }),
+          command: async () => ({ outcome: "invalid" as const }),
+          fileDownload: async () => ({ outcome: "invalid" as const }),
+        },
+        enabled: true,
+      },
       authorization,
       idempotency,
     ),

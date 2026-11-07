@@ -31,9 +31,11 @@ import '../l10n/generated/app_l10n.dart';
 import 'app_dependencies.dart';
 import 'assessment_navigation.dart';
 import 'notification_routes.dart';
+import 'school_announcements_entry.dart';
 import 'school_messaging_switch.dart';
 import 'tab_header.dart';
 import 'teacher_create_actions.dart';
+import 'teacher_school_links.dart';
 import 'teacher_today_page.dart';
 
 class TeacherShell extends StatefulWidget {
@@ -306,6 +308,7 @@ class _TeacherShellState extends State<TeacherShell>
       context,
       item,
       NotificationDestinations(
+        schoolAnnouncements: openSchoolAnnouncementsIn(context),
         feed: (target) => target.feed == AcademicFeed.grades
             ? tab(3)
             : setState(() {
@@ -316,6 +319,7 @@ class _TeacherShellState extends State<TeacherShell>
         announcements: () => tab(4),
         meetings: () => tab(0),
         plans: (_) => openMarkingPlan(context, widget.dependencies.marking),
+        schoolLinks: openSchoolLinkFrom(context, widget.dependencies),
       ),
     );
   }
@@ -419,6 +423,7 @@ class _TeacherShellState extends State<TeacherShell>
           onOpenNotifications: () =>
               open(NotificationsPage(onOpen: _openNotification)),
           onSeeAllClasses: () => setState(() => index = 1),
+          banner: teacherSchoolBanner(widget.dependencies),
           quickActions: [
             TodayQuickAction(
               icon: Icons.fact_check_rounded,
@@ -456,7 +461,10 @@ class _TeacherShellState extends State<TeacherShell>
         key: ValueKey(('classes', _classesKey)),
         classes: widget.dependencies.classes,
         onOpenClassroom: _openClassroom,
-        header: TabHeader(title: l10n.teacherShellClasses),
+        header: withSchoolBanner(
+          TabHeader(title: l10n.teacherShellClasses),
+          widget.dependencies,
+        ),
       ),
       // Teaching content lives here; every mark lives in the Gradebook.
       AcademicOverviewPage(

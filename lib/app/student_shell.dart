@@ -31,6 +31,7 @@ import 'account_hub_page.dart';
 import 'app_dependencies.dart';
 import 'assessment_navigation.dart';
 import 'notification_routes.dart';
+import 'school_announcements_entry.dart';
 import 'school_messaging_switch.dart';
 import 'student_helper_needs_class.dart';
 import 'student_lessons_page.dart';
@@ -208,6 +209,7 @@ class _StudentShellState extends State<StudentShell>
       context,
       item,
       NotificationDestinations(
+        schoolAnnouncements: openSchoolAnnouncementsIn(context),
         feed: inClass ? (target) => _tab(2, target) : null,
         lessons: inClass ? (_) => _tab(1) : null,
         messages: inClass && MessagingScope.isAvailable(context)

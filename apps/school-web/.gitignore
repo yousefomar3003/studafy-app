@@ -1,0 +1,4 @@
+
+# Playwright (apps/school-web/e2e)
+test-results/
+playwright-report/

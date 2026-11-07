@@ -294,6 +294,72 @@ const DEFINITIONS: Record<
     detail:
       "Nothing was saved. The errors list which files or links to remove and why.",
   },
+  TEACHER_NOT_FOUND: {
+    title: "Teacher not found",
+    detail: "No teacher has that Studafy ID. Check it and try again.",
+  },
+  SCHOOL_GROUP_LIMIT: {
+    title: "Group limit reached",
+    detail: "A school can have up to 50 groups.",
+  },
+  SCHOOL_GROUP_FULL: {
+    title: "Group full",
+    detail: "A group can have up to 30 classes.",
+  },
+  ALREADY_IN_GROUP: {
+    title: "Already in the group",
+    detail: "This class is already in the group, or waiting for its teacher.",
+  },
+  GROUP_CODES_UNAVAILABLE: {
+    title: "Group codes unavailable",
+    detail: "Group codes can't be made on this server yet.",
+  },
+  SCHOOL_ANNOUNCEMENT_NO_RECIPIENTS: {
+    title: "Nobody to send to",
+    detail: "No linked class has anyone this announcement would reach.",
+  },
+  GROUP_CLASS_RECENTLY_DECLINED: {
+    title: "Recently declined",
+    detail: "This class's teacher declined less than 30 days ago.",
+  },
+  LEAD_TEACHER_ONLY: {
+    title: "Lead teacher only",
+    detail: "Only the class's lead teacher can add it to a school's group.",
+  },
+  SCHOOL_ADMIN_LIMIT: {
+    title: "Administrator limit reached",
+    detail: "A school can have up to three administrators.",
+  },
+  ALREADY_ADMIN: {
+    title: "Already an administrator",
+    detail: "That person already administers this school.",
+  },
+  SCHOOL_LINK_EXISTS: {
+    title: "Already asked",
+    detail:
+      "This teacher already has a request from, or a link with, this school.",
+  },
+  SCHOOL_LINK_RECENTLY_DECLINED: {
+    title: "Recently declined",
+    detail: "This teacher declined less than 30 days ago.",
+  },
+  TEACHER_REQUESTS_FULL: {
+    title: "Too many waiting requests",
+    detail: "This teacher has too many requests waiting. Try again later.",
+  },
+  LINKED_ELSEWHERE: {
+    title: "Linked with another school",
+    detail:
+      "A teacher links with one school at a time. Accept again to leave the current school first.",
+  },
+  SCHOOL_UNAVAILABLE: {
+    title: "School unavailable",
+    detail: "This school's page is closed or suspended.",
+  },
+  ALREADY_REPORTED: {
+    title: "Already reported",
+    detail: "You have already reported this school.",
+  },
 };
 
 export class RequestTimeoutError extends Error {

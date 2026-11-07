@@ -1,5 +1,23 @@
+import '../../../core/failures.dart';
 import '../../../core/ids.dart';
 import 'classroom.dart';
+
+/// Why a class code or link joined nothing; "Join a class" words each.
+abstract final class ClassJoinRefusal {
+  /// Already in the class - or, for a school's group code, in every class
+  /// it joins.
+  static const alreadyIn = Failure(
+    'ALREADY_IN_CLASS',
+    "You're already in this class.",
+  );
+
+  /// No live class, or school group, has this code or link (unknown,
+  /// replaced, closed, or its classes no longer shared).
+  static const unknown = Failure(
+    'CLASS_CODE_UNKNOWN',
+    'No class has this code.',
+  );
+}
 
 /// Port for the classes slice. Adapters may throw; the interactor maps every
 /// error onto the failure taxonomy before anything reaches presentation.

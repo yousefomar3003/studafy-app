@@ -38,6 +38,15 @@ enum NotificationTargetKind {
 
   /// A safety report the person made.
   report,
+
+  /// A school's request to link with the teacher (School Portal).
+  schoolLink,
+
+  /// An announcement from a school (School Portal).
+  schoolAnnouncement,
+
+  /// A school's request to put one of the teacher's classes in a group.
+  schoolGroupClass,
 }
 
 /// The one thing a notification opens: a kind and the server's id for it.
@@ -87,60 +96,65 @@ class NotificationTarget {
 
   /// Each template key's kind, and the payload field holding its id
   /// (supabase/migrations: each emitter's latest payload).
-  static (NotificationTargetKind, String)? _routing(String templateKey) =>
-      switch (templateKey) {
-        'communications.message_sent' => (
-          NotificationTargetKind.conversation,
-          'conversationId',
-        ),
-        'communications.announcement_created' => (
-          NotificationTargetKind.announcement,
-          'id',
-        ),
-        'academic.assignment_published' => (
-          NotificationTargetKind.assignment,
-          'entityId',
-        ),
-        'academic.assessment_published' => (
-          NotificationTargetKind.assessment,
-          'entityId',
-        ),
-        'academic.grades_published' || 'academic.grades_corrected' => (
-          NotificationTargetKind.assessmentGrades,
-          'entityId',
-        ),
-        'academic.grade_published' => (
-          NotificationTargetKind.grade,
-          'entityId',
-        ),
-        'academic.resource_published' => (
-          NotificationTargetKind.resource,
-          'entityId',
-        ),
-        'academic.wellbeing_shared' => (
-          NotificationTargetKind.wellbeing,
-          'entityId',
-        ),
-        'meetings.scheduled' ||
-        'meetings.failed' => (NotificationTargetKind.meeting, 'meetingId'),
-        'meetings.requested' ||
-        'meetings.cancelled' => (NotificationTargetKind.meeting, 'id'),
-        'family.guardian_link_requested' ||
-        'family.guardian_link_verified' ||
-        'family.guardian_link_revoked' => (
-          NotificationTargetKind.guardianLink,
-          'id',
-        ),
-        'safety.report_resolved' || 'safety.report_escalated' => (
-          NotificationTargetKind.report,
-          'reportId',
-        ),
-        _ when templateKey.startsWith('billing.') => (
-          NotificationTargetKind.plan,
-          'featureKey',
-        ),
-        _ => null,
-      };
+  static (NotificationTargetKind, String)? _routing(
+    String templateKey,
+  ) => switch (templateKey) {
+    'communications.message_sent' => (
+      NotificationTargetKind.conversation,
+      'conversationId',
+    ),
+    'communications.announcement_created' => (
+      NotificationTargetKind.announcement,
+      'id',
+    ),
+    'academic.assignment_published' => (
+      NotificationTargetKind.assignment,
+      'entityId',
+    ),
+    'academic.assessment_published' => (
+      NotificationTargetKind.assessment,
+      'entityId',
+    ),
+    'academic.grades_published' || 'academic.grades_corrected' => (
+      NotificationTargetKind.assessmentGrades,
+      'entityId',
+    ),
+    'academic.grade_published' => (NotificationTargetKind.grade, 'entityId'),
+    'academic.resource_published' => (
+      NotificationTargetKind.resource,
+      'entityId',
+    ),
+    'academic.wellbeing_shared' => (
+      NotificationTargetKind.wellbeing,
+      'entityId',
+    ),
+    'meetings.scheduled' ||
+    'meetings.failed' => (NotificationTargetKind.meeting, 'meetingId'),
+    'meetings.requested' ||
+    'meetings.cancelled' => (NotificationTargetKind.meeting, 'id'),
+    'family.guardian_link_requested' ||
+    'family.guardian_link_verified' ||
+    'family.guardian_link_revoked' => (
+      NotificationTargetKind.guardianLink,
+      'id',
+    ),
+    'school_portal.announcement' => (
+      NotificationTargetKind.schoolAnnouncement,
+      'id',
+    ),
+    'school_portal.link_requested' => (NotificationTargetKind.schoolLink, 'id'),
+    'school_portal.group_class_requested' => (
+      NotificationTargetKind.schoolGroupClass,
+      'id',
+    ),
+    'safety.report_resolved' ||
+    'safety.report_escalated' => (NotificationTargetKind.report, 'reportId'),
+    _ when templateKey.startsWith('billing.') => (
+      NotificationTargetKind.plan,
+      'featureKey',
+    ),
+    _ => null,
+  };
 
   /// Ids and feature keys only: the payload comes from the server, but is
   /// still kept to plain ids before it reaches a screen.

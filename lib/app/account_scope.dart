@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import '../core/studafy_domain.dart';
 import '../features/account/application/account_interactor.dart';
 import '../features/safety_review/application/safety_review_interactor.dart';
+import '../features/school_portal/application/school_links_interactor.dart';
 
 /// Provides the account interactor to the deletion screen (AUTH-030).
 ///
@@ -14,6 +15,7 @@ class AccountScope extends InheritedWidget {
     super.key,
     required this.account,
     this.safetyReview,
+    this.schoolLinks,
     required super.child,
   });
 
@@ -23,6 +25,10 @@ class AccountScope extends InheritedWidget {
   /// screen (DL-063). Null in builds with no server; the account screen
   /// shows it only to an account the server marks as a platform operator.
   final SafetyReviewInteractor? safetyReview;
+
+  /// The teacher's School Portal links, opened from the account screen.
+  /// Null in builds with no server.
+  final SchoolLinksInteractor? schoolLinks;
 
   static AccountInteractor of(BuildContext context) {
     final scope = context.dependOnInheritedWidgetOfExactType<AccountScope>();
@@ -43,9 +49,15 @@ class AccountScope extends InheritedWidget {
   static SafetyReviewInteractor? safetyReviewOf(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<AccountScope>()?.safetyReview;
 
+  /// The teacher's School Portal links, or null where none is composed.
+  static SchoolLinksInteractor? schoolLinksOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<AccountScope>()?.schoolLinks;
+
   @override
   bool updateShouldNotify(AccountScope oldWidget) =>
-      account != oldWidget.account || safetyReview != oldWidget.safetyReview;
+      account != oldWidget.account ||
+      safetyReview != oldWidget.safetyReview ||
+      schoolLinks != oldWidget.schoolLinks;
 }
 
 /// The signed-in account's email address.

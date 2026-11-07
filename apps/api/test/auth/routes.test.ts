@@ -145,6 +145,17 @@ describe("authenticated context", () => {
     expect(body.platformOperator).toBe(true);
   });
 
+  test("GET /v1/me says whether the School Portal is on, from the server's switch", async () => {
+    for (const schoolPortal of [true, false, undefined]) {
+      const h = await harness(
+        schoolPortal === undefined ? {} : { schoolPortal },
+      );
+      const response = await h.request("/v1/me", { token: await validToken() });
+      const body = await response.json() as { schoolPortal: boolean };
+      expect(body.schoolPortal).toBe(schoolPortal === true);
+    }
+  });
+
   test("GET /v1/me reads a context cached before the field existed as no operator", async () => {
     const h = await harness();
     const context = baseContext();

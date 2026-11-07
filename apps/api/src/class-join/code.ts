@@ -119,3 +119,20 @@ export async function deriveJoinCredentials(
   }
   return { token, code };
 }
+
+/**
+ * A School Portal group's code (plan 13a.7), re-derived from its salt like a
+ * link's, under its own domain so it never equals a class's. Hashed with
+ * [hashClassCode], so a student types it where they type a class code.
+ */
+export async function deriveGroupCode(
+  key: string,
+  salt: string,
+): Promise<string> {
+  const bytes = await hmac(key, `school-group-code:${salt}`);
+  let code = "";
+  for (const byte of bytes.slice(0, CLASS_CODE_LENGTH)) {
+    code += CLASS_CODE_ALPHABET[byte % CLASS_CODE_ALPHABET.length];
+  }
+  return code;
+}

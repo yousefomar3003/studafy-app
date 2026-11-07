@@ -5,6 +5,7 @@ import '../../../core/idempotency.dart';
 import '../../../core/ids.dart';
 import '../../../core/studafy_domain.dart';
 import '../../../data/contracts/v1_client.generated.dart';
+import '../../../data/contracts/v1_http_transport.dart';
 import '../domain/classroom.dart';
 import '../domain/classroom_repository.dart';
 
@@ -155,9 +156,9 @@ class ApiClassroomRepository implements ClassroomRepository {
   Future<JoinedClass> joinWithLink(String token) async {
     // Deliberately does not read _schoolId: the joiner has no membership at
     // this school yet, and the token is the whole credential.
-    final response = await _client.redeemClassJoinLink(
+    final response = await _redeem(
       V1RedeemClassJoinLinkRequestDto(token: token),
-      idempotencyKey: newIdempotencyKey('join-redeem'),
+      newIdempotencyKey('join-redeem'),
     );
     return JoinedClass(
       schoolId: response.schoolId,
@@ -171,15 +172,44 @@ class ApiClassroomRepository implements ClassroomRepository {
     // Same reasoning as joinWithLink: no membership exists yet, so nothing
     // here may depend on one. The server hashes the code under its own key
     // and resolves it to exactly one live link, or refuses.
-    final response = await _client.redeemClassJoinLink(
+    final response = await _redeem(
       V1RedeemClassJoinLinkRequestDto(code: code),
-      idempotencyKey: newIdempotencyKey('join-code'),
+      newIdempotencyKey('join-code'),
     );
+    // A school's group code joined every class of the group.
+    final group = response.group;
+    final names = [
+      for (final item in (group?['classrooms'] as List<dynamic>?) ?? const [])
+        if (item is Map<String, dynamic> && item['classroomName'] is String)
+          item['classroomName'] as String,
+    ];
     return JoinedClass(
       schoolId: response.schoolId,
       classroomId: ClassroomId(response.classroomId),
       classroomName: response.classroomName,
+      groupName: group?['name'] is String ? group!['name'] as String : null,
+      groupClassNames: names,
     );
+  }
+
+  /// Redeems, naming the two refusals a student meets: already in, and a
+  /// code or link nothing answers to. Every other refusal stays as it was.
+  Future<V1RedeemClassJoinLinkResponseDto> _redeem(
+    V1RedeemClassJoinLinkRequestDto request,
+    String idempotencyKey,
+  ) async {
+    try {
+      return await _client.redeemClassJoinLink(
+        request,
+        idempotencyKey: idempotencyKey,
+      );
+    } on V1ApiException catch (error) {
+      if (error.status == 409 && error.code == 'INVALID_STATE') {
+        throw ClassJoinRefusal.alreadyIn;
+      }
+      if (error.status == 404) throw ClassJoinRefusal.unknown;
+      rethrow;
+    }
   }
 
   static ClassroomSummary _map(V1AcademicClassroomDto value, String schoolId) =>

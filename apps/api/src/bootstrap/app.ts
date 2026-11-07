@@ -57,6 +57,7 @@ export interface AppDependencies {
   challengePage?: Hono<AppEnv>;
   platform?: {
     allowedOrigins?: readonly string[];
+    portalOrigins?: readonly string[];
     limits?: Partial<PlatformLimits>;
     now?: () => number;
     /** Identity fields for the access log. Omitted leaves `ip_hash` null. */
@@ -102,6 +103,7 @@ export function createApp(deps: AppDependencies): Hono<AppEnv> {
       logger: deps.logger,
       environment: deps.info.environment,
       allowedOrigins: deps.platform?.allowedOrigins,
+      portalOrigins: deps.platform?.portalOrigins,
       limits,
     }),
   );

@@ -3086,6 +3086,591 @@ class V1ApiClient {
       requiresIdempotency: true,
     ),
   );
+
+  Future<V1SchoolPortalOrgsDto> listSchoolPortalOrgs() async =>
+      V1SchoolPortalOrgsDto.fromJson(
+        await _transport.get(_v1Path('/v1/school-portal/orgs', {}, {})),
+      );
+
+  Future<V1SchoolPortalOrgResultDto> createSchoolPortalOrg(
+    V1CreateSchoolPortalOrgRequestDto request, {
+    String? idempotencyKey,
+  }) async => V1SchoolPortalOrgResultDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/school-portal/orgs', {}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1SchoolPortalOrgResultDto> updateSchoolPortalOrg(
+    V1UpdateSchoolPortalOrgRequestDto request, {
+    required String orgId,
+    String? idempotencyKey,
+  }) async => V1SchoolPortalOrgResultDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/school-portal/orgs/{orgId}', {'orgId': orgId}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1SchoolPortalOrgRefDto> closeSchoolPortalOrg(
+    V1SchoolPortalEmptyRequestDto request, {
+    required String orgId,
+    String? idempotencyKey,
+  }) async => V1SchoolPortalOrgRefDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/school-portal/orgs/{orgId}/close', {'orgId': orgId}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1SchoolPortalInviteResultDto> inviteSchoolPortalAdmin(
+    V1InviteSchoolPortalAdminRequestDto request, {
+    required String orgId,
+    String? idempotencyKey,
+  }) async => V1SchoolPortalInviteResultDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/school-portal/orgs/{orgId}/admins', {'orgId': orgId}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1SchoolPortalOrgRefDto> removeSchoolPortalAdmin(
+    V1RemoveSchoolPortalAdminRequestDto request, {
+    required String orgId,
+    String? idempotencyKey,
+  }) async => V1SchoolPortalOrgRefDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/school-portal/orgs/{orgId}/admins/remove', {
+        'orgId': orgId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1SchoolPortalMyInvitesDto> listMySchoolPortalInvites() async =>
+      V1SchoolPortalMyInvitesDto.fromJson(
+        await _transport.get(_v1Path('/v1/school-portal/invites', {}, {})),
+      );
+
+  Future<V1SchoolPortalOrgRefDto> acceptSchoolPortalInvite(
+    V1AcceptSchoolPortalInviteRequestDto request, {
+    required String inviteId,
+    String? idempotencyKey,
+  }) async => V1SchoolPortalOrgRefDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/school-portal/invites/{inviteId}/accept', {
+        'inviteId': inviteId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1SchoolPortalDashboardDto> getSchoolPortalDashboard({
+    required String orgId,
+  }) async => V1SchoolPortalDashboardDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/school-portal/orgs/{orgId}/dashboard', {'orgId': orgId}, {}),
+    ),
+  );
+
+  Future<V1SchoolPortalTeachersDto> listSchoolPortalTeachers({
+    required String orgId,
+  }) async => V1SchoolPortalTeachersDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/school-portal/orgs/{orgId}/teachers', {'orgId': orgId}, {}),
+    ),
+  );
+
+  Future<V1SchoolPortalLinkRequestedDto> requestSchoolPortalLink(
+    V1RequestSchoolPortalLinkRequestDto request, {
+    required String orgId,
+    String? idempotencyKey,
+  }) async => V1SchoolPortalLinkRequestedDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/school-portal/orgs/{orgId}/link-requests', {
+        'orgId': orgId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1SchoolPortalLinkResultDto> cancelSchoolPortalLink(
+    V1SchoolPortalEmptyRequestDto request, {
+    required String orgId,
+    required String linkId,
+    String? idempotencyKey,
+  }) async => V1SchoolPortalLinkResultDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/school-portal/orgs/{orgId}/link-requests/{linkId}/cancel', {
+        'orgId': orgId,
+        'linkId': linkId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1SchoolPortalLinkResultDto> unlinkSchoolPortalTeacher(
+    V1SchoolPortalEmptyRequestDto request, {
+    required String orgId,
+    required String linkId,
+    String? idempotencyKey,
+  }) async => V1SchoolPortalLinkResultDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/school-portal/orgs/{orgId}/teachers/{linkId}/unlink', {
+        'orgId': orgId,
+        'linkId': linkId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1SchoolPortalClassesDto> listSchoolPortalClasses({
+    required String orgId,
+  }) async => V1SchoolPortalClassesDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/school-portal/orgs/{orgId}/classes', {'orgId': orgId}, {}),
+    ),
+  );
+
+  Future<V1SchoolPortalRosterDto> listSchoolPortalRoster({
+    required String orgId,
+    required String classroomId,
+  }) async => V1SchoolPortalRosterDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/school-portal/orgs/{orgId}/classes/{classroomId}/roster', {
+        'orgId': orgId,
+        'classroomId': classroomId,
+      }, {}),
+    ),
+  );
+
+  Future<V1SchoolPortalLessonsDto> listSchoolPortalLessons({
+    required String orgId,
+    required String classroomId,
+  }) async => V1SchoolPortalLessonsDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/school-portal/orgs/{orgId}/classes/{classroomId}/lessons', {
+        'orgId': orgId,
+        'classroomId': classroomId,
+      }, {}),
+    ),
+  );
+
+  Future<V1SchoolPortalAssignmentsDto> listSchoolPortalAssignments({
+    required String orgId,
+    required String classroomId,
+  }) async => V1SchoolPortalAssignmentsDto.fromJson(
+    await _transport.get(
+      _v1Path(
+        '/v1/school-portal/orgs/{orgId}/classes/{classroomId}/assignments',
+        {'orgId': orgId, 'classroomId': classroomId},
+        {},
+      ),
+    ),
+  );
+
+  Future<V1SchoolPortalHandInsDto> listSchoolPortalHandIns({
+    required String orgId,
+    required String assignmentId,
+  }) async => V1SchoolPortalHandInsDto.fromJson(
+    await _transport.get(
+      _v1Path(
+        '/v1/school-portal/orgs/{orgId}/assignments/{assignmentId}/hand-ins',
+        {'orgId': orgId, 'assignmentId': assignmentId},
+        {},
+      ),
+    ),
+  );
+
+  Future<V1SchoolPortalTestsDto> listSchoolPortalTests({
+    required String orgId,
+    required String classroomId,
+  }) async => V1SchoolPortalTestsDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/school-portal/orgs/{orgId}/classes/{classroomId}/tests', {
+        'orgId': orgId,
+        'classroomId': classroomId,
+      }, {}),
+    ),
+  );
+
+  Future<V1SchoolPortalTestAnswersDto> listSchoolPortalTestAnswers({
+    required String orgId,
+    required String assessmentId,
+  }) async => V1SchoolPortalTestAnswersDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/school-portal/orgs/{orgId}/tests/{assessmentId}/answers', {
+        'orgId': orgId,
+        'assessmentId': assessmentId,
+      }, {}),
+    ),
+  );
+
+  Future<V1SchoolPortalMarksDto> listSchoolPortalMarks({
+    required String orgId,
+    required String classroomId,
+  }) async => V1SchoolPortalMarksDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/school-portal/orgs/{orgId}/classes/{classroomId}/marks', {
+        'orgId': orgId,
+        'classroomId': classroomId,
+      }, {}),
+    ),
+  );
+
+  Future<V1SchoolPortalAttendanceDto> listSchoolPortalAttendance({
+    required String orgId,
+    required String classroomId,
+  }) async => V1SchoolPortalAttendanceDto.fromJson(
+    await _transport.get(
+      _v1Path(
+        '/v1/school-portal/orgs/{orgId}/classes/{classroomId}/attendance',
+        {'orgId': orgId, 'classroomId': classroomId},
+        {},
+      ),
+    ),
+  );
+
+  Future<V1SchoolPortalWellbeingDto> listSchoolPortalWellbeing({
+    required String orgId,
+    required String classroomId,
+  }) async => V1SchoolPortalWellbeingDto.fromJson(
+    await _transport.get(
+      _v1Path(
+        '/v1/school-portal/orgs/{orgId}/classes/{classroomId}/wellbeing',
+        {'orgId': orgId, 'classroomId': classroomId},
+        {},
+      ),
+    ),
+  );
+
+  Future<V1MySchoolLinksDto> listMySchoolLinks() async =>
+      V1MySchoolLinksDto.fromJson(
+        await _transport.get(_v1Path('/v1/me/school-links', {}, {})),
+      );
+
+  Future<V1SchoolPortalLinkResultDto> decideMySchoolLink(
+    V1DecideSchoolLinkRequestDto request, {
+    required String linkId,
+    String? idempotencyKey,
+  }) async => V1SchoolPortalLinkResultDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/me/school-links/{linkId}/decision', {'linkId': linkId}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1SchoolPortalLinkResultDto> unlinkMySchool(
+    V1SchoolPortalEmptyRequestDto request, {
+    required String linkId,
+    String? idempotencyKey,
+  }) async => V1SchoolPortalLinkResultDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/me/school-links/{linkId}/unlink', {'linkId': linkId}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1ReportSchoolResultDto> reportMySchoolLink(
+    V1ReportSchoolRequestDto request, {
+    required String linkId,
+    String? idempotencyKey,
+  }) async => V1ReportSchoolResultDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/me/school-links/{linkId}/report', {'linkId': linkId}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1DownloadIntentResponseDto> createSchoolPortalFileDownload(
+    V1DownloadIntentRequestDto request, {
+    required String orgId,
+    required String fileId,
+    String? idempotencyKey,
+  }) async => V1DownloadIntentResponseDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/school-portal/orgs/{orgId}/files/{fileId}/download-intent', {
+        'orgId': orgId,
+        'fileId': fileId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1SchoolPortalOverviewDto> getSchoolPortalOverview({
+    required String orgId,
+  }) async => V1SchoolPortalOverviewDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/school-portal/orgs/{orgId}/overview', {'orgId': orgId}, {}),
+    ),
+  );
+
+  Future<V1SchoolPortalStudentDto> getSchoolPortalStudent({
+    required String orgId,
+    required String studentId,
+  }) async => V1SchoolPortalStudentDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/school-portal/orgs/{orgId}/students/{studentId}', {
+        'orgId': orgId,
+        'studentId': studentId,
+      }, {}),
+    ),
+  );
+
+  Future<V1SchoolPortalTeacherDto> getSchoolPortalTeacher({
+    required String orgId,
+    required String teacherId,
+  }) async => V1SchoolPortalTeacherDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/school-portal/orgs/{orgId}/teachers/{teacherId}', {
+        'orgId': orgId,
+        'teacherId': teacherId,
+      }, {}),
+    ),
+  );
+
+  Future<V1SchoolPortalReportsDto> listSchoolPortalReports({
+    required String orgId,
+  }) async => V1SchoolPortalReportsDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/school-portal/orgs/{orgId}/reports', {'orgId': orgId}, {}),
+    ),
+  );
+
+  Future<V1RecordSchoolPortalExportResultDto> recordSchoolPortalExport(
+    V1RecordSchoolPortalExportRequestDto request, {
+    required String orgId,
+    String? idempotencyKey,
+  }) async => V1RecordSchoolPortalExportResultDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/school-portal/orgs/{orgId}/exports', {'orgId': orgId}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1SchoolPortalAnnouncementsDto> listSchoolPortalAnnouncements({
+    required String orgId,
+  }) async => V1SchoolPortalAnnouncementsDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/school-portal/orgs/{orgId}/announcements', {
+        'orgId': orgId,
+      }, {}),
+    ),
+  );
+
+  Future<V1SendSchoolPortalAnnouncementResultDto> sendSchoolPortalAnnouncement(
+    V1SendSchoolPortalAnnouncementRequestDto request, {
+    required String orgId,
+    String? idempotencyKey,
+  }) async => V1SendSchoolPortalAnnouncementResultDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/school-portal/orgs/{orgId}/announcements', {
+        'orgId': orgId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1MySchoolAnnouncementsDto> listMySchoolAnnouncements() async =>
+      V1MySchoolAnnouncementsDto.fromJson(
+        await _transport.get(_v1Path('/v1/me/school-announcements', {}, {})),
+      );
+
+  Future<V1SchoolPortalGroupsDto> listSchoolPortalGroups({
+    required String orgId,
+  }) async => V1SchoolPortalGroupsDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/school-portal/orgs/{orgId}/groups', {'orgId': orgId}, {}),
+    ),
+  );
+
+  Future<V1SchoolPortalGroupDto> createSchoolPortalGroup(
+    V1CreateSchoolPortalGroupRequestDto request, {
+    required String orgId,
+    String? idempotencyKey,
+  }) async => V1SchoolPortalGroupDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/school-portal/orgs/{orgId}/groups', {'orgId': orgId}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1SchoolPortalGroupDto> renewSchoolPortalGroupCode(
+    V1SchoolPortalEmptyRequestDto request, {
+    required String orgId,
+    required String groupId,
+    String? idempotencyKey,
+  }) async => V1SchoolPortalGroupDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/school-portal/orgs/{orgId}/groups/{groupId}/code', {
+        'orgId': orgId,
+        'groupId': groupId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1CloseSchoolPortalGroupResultDto> closeSchoolPortalGroup(
+    V1SchoolPortalEmptyRequestDto request, {
+    required String orgId,
+    required String groupId,
+    String? idempotencyKey,
+  }) async => V1CloseSchoolPortalGroupResultDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/school-portal/orgs/{orgId}/groups/{groupId}/close', {
+        'orgId': orgId,
+        'groupId': groupId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1SchoolPortalGroupDto> addSchoolPortalGroupClass(
+    V1SchoolPortalGroupClassRequestDto request, {
+    required String orgId,
+    required String groupId,
+    String? idempotencyKey,
+  }) async => V1SchoolPortalGroupDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/school-portal/orgs/{orgId}/groups/{groupId}/classes', {
+        'orgId': orgId,
+        'groupId': groupId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1SchoolPortalGroupDto> removeSchoolPortalGroupClass(
+    V1SchoolPortalGroupClassRequestDto request, {
+    required String orgId,
+    required String groupId,
+    String? idempotencyKey,
+  }) async => V1SchoolPortalGroupDto.fromJson(
+    await _transport.post(
+      _v1Path(
+        '/v1/school-portal/orgs/{orgId}/groups/{groupId}/classes/remove',
+        {'orgId': orgId, 'groupId': groupId},
+        {},
+      ),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1MySchoolGroupClassesDto> listMySchoolGroupClasses() async =>
+      V1MySchoolGroupClassesDto.fromJson(
+        await _transport.get(_v1Path('/v1/me/school-group-classes', {}, {})),
+      );
+
+  Future<V1DecideMySchoolGroupClassResultDto> decideMySchoolGroupClass(
+    V1DecideMySchoolGroupClassRequestDto request, {
+    required String entryId,
+    String? idempotencyKey,
+  }) async => V1DecideMySchoolGroupClassResultDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/me/school-group-classes/{entryId}/decision', {
+        'entryId': entryId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1SchoolPortalClassOverviewDto> getSchoolPortalClassOverview({
+    required String orgId,
+    required String classroomId,
+  }) async => V1SchoolPortalClassOverviewDto.fromJson(
+    await _transport.get(
+      _v1Path('/v1/school-portal/orgs/{orgId}/classes/{classroomId}/overview', {
+        'orgId': orgId,
+        'classroomId': classroomId,
+      }, {}),
+    ),
+  );
+
+  Future<V1SchoolPortalOrgRefDto> revokeSchoolPortalInvite(
+    V1RevokeSchoolPortalInviteRequestDto request, {
+    required String orgId,
+    String? idempotencyKey,
+  }) async => V1SchoolPortalOrgRefDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/school-portal/orgs/{orgId}/invites/revoke', {
+        'orgId': orgId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1SchoolPortalOrgRefDto> suspendSchoolPortalOrg(
+    V1SuspendSchoolPortalOrgRequestDto request, {
+    required String orgId,
+    String? idempotencyKey,
+  }) async => V1SchoolPortalOrgRefDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/school-portal/orgs/{orgId}/suspend', {'orgId': orgId}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1SchoolPortalAnnouncementRemovedDto> removeSchoolPortalAnnouncement(
+    V1SchoolPortalEmptyRequestDto request, {
+    required String announcementId,
+    String? idempotencyKey,
+  }) async => V1SchoolPortalAnnouncementRemovedDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/school-portal/announcements/{announcementId}/remove', {
+        'announcementId': announcementId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
 }
 
 String _v1Path(
@@ -3276,6 +3861,28 @@ class V1AcceptInvitationResponseDto {
     'role': role,
     'status': status,
     'version': version,
+  };
+}
+
+class V1AcceptSchoolPortalInviteRequestDto {
+  const V1AcceptSchoolPortalInviteRequestDto({
+    required this.adult,
+    required this.agreementVersion,
+  });
+
+  factory V1AcceptSchoolPortalInviteRequestDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1AcceptSchoolPortalInviteRequestDto(
+    adult: json['adult'] as bool,
+    agreementVersion: json['agreementVersion'] as String,
+  );
+
+  final bool adult;
+  final String agreementVersion;
+
+  Map<String, Object?> toJson() => {
+    'adult': adult,
+    'agreementVersion': agreementVersion,
   };
 }
 
@@ -5628,6 +6235,25 @@ class V1CloseLessonSessionResponseDto {
   Map<String, Object?> toJson() => {'id': id, 'filedAt': filedAt};
 }
 
+class V1CloseSchoolPortalGroupResultDto {
+  const V1CloseSchoolPortalGroupResultDto({
+    required this.id,
+    required this.status,
+  });
+
+  factory V1CloseSchoolPortalGroupResultDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1CloseSchoolPortalGroupResultDto(
+    id: json['id'] as String,
+    status: json['status'] as String,
+  );
+
+  final String id;
+  final String status;
+
+  Map<String, Object?> toJson() => {'id': id, 'status': status};
+}
+
 class V1CompleteUploadRequestDto {
   const V1CompleteUploadRequestDto();
 
@@ -6559,6 +7185,68 @@ class V1CreateResourceRequestDto {
   };
 }
 
+class V1CreateSchoolPortalGroupRequestDto {
+  const V1CreateSchoolPortalGroupRequestDto({required this.name});
+
+  factory V1CreateSchoolPortalGroupRequestDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1CreateSchoolPortalGroupRequestDto(name: json['name'] as String);
+
+  final String name;
+
+  Map<String, Object?> toJson() => {'name': name};
+}
+
+class V1CreateSchoolPortalOrgRequestDto {
+  const V1CreateSchoolPortalOrgRequestDto({
+    required this.name,
+    required this.country,
+    required this.city,
+    required this.kind,
+    this.contactEmail,
+    required this.jobTitle,
+    required this.adult,
+    required this.agreementVersion,
+    this.captchaToken,
+  });
+
+  factory V1CreateSchoolPortalOrgRequestDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1CreateSchoolPortalOrgRequestDto(
+    name: json['name'] as String,
+    country: json['country'] as String,
+    city: json['city'] as String,
+    kind: json['kind'] as String,
+    contactEmail: json['contactEmail'] as String?,
+    jobTitle: json['jobTitle'] as String,
+    adult: json['adult'] as bool,
+    agreementVersion: json['agreementVersion'] as String,
+    captchaToken: json['captchaToken'] as String?,
+  );
+
+  final String name;
+  final String country;
+  final String city;
+  final String kind;
+  final String? contactEmail;
+  final String jobTitle;
+  final bool adult;
+  final String agreementVersion;
+  final String? captchaToken;
+
+  Map<String, Object?> toJson() => {
+    'name': name,
+    'country': country,
+    'city': city,
+    'kind': kind,
+    'contactEmail': ?contactEmail,
+    'jobTitle': jobTitle,
+    'adult': adult,
+    'agreementVersion': agreementVersion,
+    'captchaToken': ?captchaToken,
+  };
+}
+
 class V1CreateStudentRequestDto {
   const V1CreateStudentRequestDto({required this.displayName, this.userId});
 
@@ -6907,6 +7595,39 @@ class V1DecideGuardianLinkRequestDto {
   Map<String, Object?> toJson() => {'decision': decision};
 }
 
+class V1DecideMySchoolGroupClassRequestDto {
+  const V1DecideMySchoolGroupClassRequestDto({required this.decision});
+
+  factory V1DecideMySchoolGroupClassRequestDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1DecideMySchoolGroupClassRequestDto(
+    decision: json['decision'] as String,
+  );
+
+  final String decision;
+
+  Map<String, Object?> toJson() => {'decision': decision};
+}
+
+class V1DecideMySchoolGroupClassResultDto {
+  const V1DecideMySchoolGroupClassResultDto({
+    required this.id,
+    required this.status,
+  });
+
+  factory V1DecideMySchoolGroupClassResultDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1DecideMySchoolGroupClassResultDto(
+    id: json['id'] as String,
+    status: json['status'] as String,
+  );
+
+  final String id;
+  final String status;
+
+  Map<String, Object?> toJson() => {'id': id, 'status': status};
+}
+
 class V1DecidePurchaseApprovalRequestDto {
   const V1DecidePurchaseApprovalRequestDto({required this.approve});
 
@@ -6917,6 +7638,27 @@ class V1DecidePurchaseApprovalRequestDto {
   final bool approve;
 
   Map<String, Object?> toJson() => {'approve': approve};
+}
+
+class V1DecideSchoolLinkRequestDto {
+  const V1DecideSchoolLinkRequestDto({
+    required this.decision,
+    this.replaceCurrent,
+  });
+
+  factory V1DecideSchoolLinkRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1DecideSchoolLinkRequestDto(
+        decision: json['decision'] as String,
+        replaceCurrent: json['replaceCurrent'] as bool?,
+      );
+
+  final String decision;
+  final bool? replaceCurrent;
+
+  Map<String, Object?> toJson() => {
+    'decision': decision,
+    'replaceCurrent': ?replaceCurrent,
+  };
 }
 
 class V1DeleteNotebookEntryRequestDto {
@@ -8750,6 +9492,25 @@ class V1InvitationPageDto {
   };
 }
 
+class V1InviteSchoolPortalAdminRequestDto {
+  const V1InviteSchoolPortalAdminRequestDto({
+    required this.email,
+    required this.jobTitle,
+  });
+
+  factory V1InviteSchoolPortalAdminRequestDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1InviteSchoolPortalAdminRequestDto(
+    email: json['email'] as String,
+    jobTitle: json['jobTitle'] as String,
+  );
+
+  final String email;
+  final String jobTitle;
+
+  Map<String, Object?> toJson() => {'email': email, 'jobTitle': jobTitle};
+}
+
 class V1IssueInvitationRequestDto {
   const V1IssueInvitationRequestDto({
     required this.email,
@@ -9676,6 +10437,7 @@ class V1MeResponseDto {
     required this.memberships,
     required this.activeTermId,
     this.platformOperator,
+    this.schoolPortal,
   });
 
   factory V1MeResponseDto.fromJson(Map<String, dynamic> json) =>
@@ -9688,6 +10450,7 @@ class V1MeResponseDto {
         ],
         activeTermId: json['activeTermId'] as String?,
         platformOperator: json['platformOperator'] as bool?,
+        schoolPortal: json['schoolPortal'] as bool?,
       );
 
   final String id;
@@ -9695,6 +10458,7 @@ class V1MeResponseDto {
   final List<V1MembershipDto> memberships;
   final String? activeTermId;
   final bool? platformOperator;
+  final bool? schoolPortal;
 
   Map<String, Object?> toJson() => {
     'id': id,
@@ -9702,6 +10466,7 @@ class V1MeResponseDto {
     'memberships': [for (final item in memberships) item.toJson()],
     'activeTermId': activeTermId,
     'platformOperator': ?platformOperator,
+    'schoolPortal': ?schoolPortal,
   };
 }
 
@@ -10497,6 +11262,100 @@ class V1MyNotebooksDto {
   final List<Map<String, dynamic>> classes;
 
   Map<String, Object?> toJson() => {'classes': classes};
+}
+
+class V1MySchoolAnnouncementsDto {
+  const V1MySchoolAnnouncementsDto({required this.announcements});
+
+  factory V1MySchoolAnnouncementsDto.fromJson(Map<String, dynamic> json) =>
+      V1MySchoolAnnouncementsDto(
+        announcements: [
+          for (final item in json['announcements'] as List<dynamic>)
+            V1SchoolAnnouncementDto.fromJson(item as Map<String, dynamic>),
+        ],
+      );
+
+  final List<V1SchoolAnnouncementDto> announcements;
+
+  Map<String, Object?> toJson() => {
+    'announcements': [for (final item in announcements) item.toJson()],
+  };
+}
+
+class V1MySchoolGroupClassDto {
+  const V1MySchoolGroupClassDto({
+    required this.id,
+    required this.status,
+    required this.groupName,
+    required this.school,
+    required this.classroomId,
+    required this.className,
+    required this.requestedAt,
+    required this.decidedAt,
+  });
+
+  factory V1MySchoolGroupClassDto.fromJson(Map<String, dynamic> json) =>
+      V1MySchoolGroupClassDto(
+        id: json['id'] as String,
+        status: json['status'] as String,
+        groupName: json['groupName'] as String,
+        school: json['school'] as String,
+        classroomId: json['classroomId'] as String,
+        className: json['className'] as String,
+        requestedAt: json['requestedAt'] as String,
+        decidedAt: json['decidedAt'] as String?,
+      );
+
+  final String id;
+  final String status;
+  final String groupName;
+  final String school;
+  final String classroomId;
+  final String className;
+  final String requestedAt;
+  final String? decidedAt;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'status': status,
+    'groupName': groupName,
+    'school': school,
+    'classroomId': classroomId,
+    'className': className,
+    'requestedAt': requestedAt,
+    'decidedAt': decidedAt,
+  };
+}
+
+class V1MySchoolGroupClassesDto {
+  const V1MySchoolGroupClassesDto({required this.classes});
+
+  factory V1MySchoolGroupClassesDto.fromJson(Map<String, dynamic> json) =>
+      V1MySchoolGroupClassesDto(
+        classes: [
+          for (final item in json['classes'] as List<dynamic>)
+            V1MySchoolGroupClassDto.fromJson(item as Map<String, dynamic>),
+        ],
+      );
+
+  final List<V1MySchoolGroupClassDto> classes;
+
+  Map<String, Object?> toJson() => {
+    'classes': [for (final item in classes) item.toJson()],
+  };
+}
+
+class V1MySchoolLinksDto {
+  const V1MySchoolLinksDto({required this.links});
+
+  factory V1MySchoolLinksDto.fromJson(Map<String, dynamic> json) =>
+      V1MySchoolLinksDto(
+        links: (json['links'] as List<dynamic>).cast<Map<String, dynamic>>(),
+      );
+
+  final List<Map<String, dynamic>> links;
+
+  Map<String, Object?> toJson() => {'links': links};
 }
 
 class V1NotebookCitationDto {
@@ -11717,6 +12576,44 @@ class V1RecordAttendanceResponseDto {
   };
 }
 
+class V1RecordSchoolPortalExportRequestDto {
+  const V1RecordSchoolPortalExportRequestDto({
+    required this.kind,
+    required this.format,
+    this.classroomId,
+  });
+
+  factory V1RecordSchoolPortalExportRequestDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1RecordSchoolPortalExportRequestDto(
+    kind: json['kind'] as String,
+    format: json['format'] as String,
+    classroomId: json['classroomId'] as String?,
+  );
+
+  final String kind;
+  final String format;
+  final String? classroomId;
+
+  Map<String, Object?> toJson() => {
+    'kind': kind,
+    'format': format,
+    'classroomId': ?classroomId,
+  };
+}
+
+class V1RecordSchoolPortalExportResultDto {
+  const V1RecordSchoolPortalExportResultDto({required this.recorded});
+
+  factory V1RecordSchoolPortalExportResultDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1RecordSchoolPortalExportResultDto(recorded: json['recorded'] as bool);
+
+  final bool recorded;
+
+  Map<String, Object?> toJson() => {'recorded': recorded};
+}
+
 class V1RedeemClassJoinLinkRequestDto {
   const V1RedeemClassJoinLinkRequestDto({this.token, this.code});
 
@@ -11737,6 +12634,7 @@ class V1RedeemClassJoinLinkResponseDto {
     required this.schoolId,
     required this.classroomId,
     required this.classroomName,
+    this.group,
   });
 
   factory V1RedeemClassJoinLinkResponseDto.fromJson(
@@ -11745,16 +12643,19 @@ class V1RedeemClassJoinLinkResponseDto {
     schoolId: json['schoolId'] as String,
     classroomId: json['classroomId'] as String,
     classroomName: json['classroomName'] as String,
+    group: json['group'] as Map<String, dynamic>?,
   );
 
   final String schoolId;
   final String classroomId;
   final String classroomName;
+  final Map<String, dynamic>? group;
 
   Map<String, Object?> toJson() => {
     'schoolId': schoolId,
     'classroomId': classroomId,
     'classroomName': classroomName,
+    'group': ?group,
   };
 }
 
@@ -11837,6 +12738,18 @@ class V1RemoveClassroomStaffRequestDto {
   final String staffAssignmentId;
 
   Map<String, Object?> toJson() => {'staffAssignmentId': staffAssignmentId};
+}
+
+class V1RemoveSchoolPortalAdminRequestDto {
+  const V1RemoveSchoolPortalAdminRequestDto({required this.userId});
+
+  factory V1RemoveSchoolPortalAdminRequestDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1RemoveSchoolPortalAdminRequestDto(userId: json['userId'] as String);
+
+  final String userId;
+
+  Map<String, Object?> toJson() => {'userId': userId};
 }
 
 class V1ReopenAssignmentRequestDto {
@@ -12061,6 +12974,32 @@ class V1ReportPageDto {
   };
 }
 
+class V1ReportSchoolRequestDto {
+  const V1ReportSchoolRequestDto({required this.reason, this.details});
+
+  factory V1ReportSchoolRequestDto.fromJson(Map<String, dynamic> json) =>
+      V1ReportSchoolRequestDto(
+        reason: json['reason'] as String,
+        details: json['details'] as String?,
+      );
+
+  final String reason;
+  final String? details;
+
+  Map<String, Object?> toJson() => {'reason': reason, 'details': ?details};
+}
+
+class V1ReportSchoolResultDto {
+  const V1ReportSchoolResultDto({required this.reportId});
+
+  factory V1ReportSchoolResultDto.fromJson(Map<String, dynamic> json) =>
+      V1ReportSchoolResultDto(reportId: json['reportId'] as String);
+
+  final String reportId;
+
+  Map<String, Object?> toJson() => {'reportId': reportId};
+}
+
 class V1RequestDataExportRequestDto {
   const V1RequestDataExportRequestDto();
 
@@ -12192,6 +13131,28 @@ class V1RequestPurchaseApprovalRequestDto {
   final String featureKey;
 
   Map<String, Object?> toJson() => {'featureKey': featureKey};
+}
+
+class V1RequestSchoolPortalLinkRequestDto {
+  const V1RequestSchoolPortalLinkRequestDto({
+    required this.studafyId,
+    this.captchaToken,
+  });
+
+  factory V1RequestSchoolPortalLinkRequestDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1RequestSchoolPortalLinkRequestDto(
+    studafyId: json['studafyId'] as String,
+    captchaToken: json['captchaToken'] as String?,
+  );
+
+  final String studafyId;
+  final String? captchaToken;
+
+  Map<String, Object?> toJson() => {
+    'studafyId': studafyId,
+    'captchaToken': ?captchaToken,
+  };
 }
 
 class V1RequestSupportAccessRequestDto {
@@ -12526,6 +13487,20 @@ class V1RevokeModerationAccessRequestDto {
   };
 }
 
+class V1RevokeSchoolPortalInviteRequestDto {
+  const V1RevokeSchoolPortalInviteRequestDto({required this.inviteId});
+
+  factory V1RevokeSchoolPortalInviteRequestDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1RevokeSchoolPortalInviteRequestDto(
+    inviteId: json['inviteId'] as String,
+  );
+
+  final String inviteId;
+
+  Map<String, Object?> toJson() => {'inviteId': inviteId};
+}
+
 class V1RevokeSupportAccessRequestDto {
   const V1RevokeSupportAccessRequestDto({
     required this.expectedVersion,
@@ -12849,6 +13824,57 @@ class V1SchoolAdminDto {
   };
 }
 
+class V1SchoolAnnouncementDto {
+  const V1SchoolAnnouncementDto({
+    required this.id,
+    required this.title,
+    required this.body,
+    required this.audience,
+    required this.classroomIds,
+    required this.createdAt,
+    required this.removed,
+    required this.school,
+    required this.author,
+  });
+
+  factory V1SchoolAnnouncementDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolAnnouncementDto(
+        id: json['id'] as String,
+        title: json['title'] as String,
+        body: json['body'] as String,
+        audience: json['audience'] as String,
+        classroomIds: json['classroomIds'] == null
+            ? null
+            : (json['classroomIds'] as List<dynamic>).cast<String>(),
+        createdAt: json['createdAt'] as String,
+        removed: json['removed'] as bool,
+        school: json['school'] as String,
+        author: json['author'] as String?,
+      );
+
+  final String id;
+  final String title;
+  final String body;
+  final String audience;
+  final List<String>? classroomIds;
+  final String createdAt;
+  final bool removed;
+  final String school;
+  final String? author;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'title': title,
+    'body': body,
+    'audience': audience,
+    'classroomIds': classroomIds,
+    'createdAt': createdAt,
+    'removed': removed,
+    'school': school,
+    'author': author,
+  };
+}
+
 class V1SchoolIdQueryDto {
   const V1SchoolIdQueryDto({required this.schoolId});
 
@@ -12879,6 +13905,820 @@ class V1SchoolLifecycleRequestDto {
     'expectedVersion': expectedVersion,
     'reason': ?reason,
   };
+}
+
+class V1SchoolPortalAdminDto {
+  const V1SchoolPortalAdminDto({
+    required this.id,
+    required this.name,
+    required this.email,
+    required this.jobTitle,
+    required this.addedAt,
+  });
+
+  factory V1SchoolPortalAdminDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalAdminDto(
+        id: json['id'] as String,
+        name: json['name'] as String,
+        email: json['email'] as String?,
+        jobTitle: json['jobTitle'] as String,
+        addedAt: json['addedAt'] as String,
+      );
+
+  final String id;
+  final String name;
+  final String? email;
+  final String jobTitle;
+  final String addedAt;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'name': name,
+    'email': email,
+    'jobTitle': jobTitle,
+    'addedAt': addedAt,
+  };
+}
+
+class V1SchoolPortalAnnouncementRemovedDto {
+  const V1SchoolPortalAnnouncementRemovedDto({
+    required this.id,
+    required this.removed,
+  });
+
+  factory V1SchoolPortalAnnouncementRemovedDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1SchoolPortalAnnouncementRemovedDto(
+    id: json['id'] as String,
+    removed: json['removed'] as bool,
+  );
+
+  final String id;
+  final bool removed;
+
+  Map<String, Object?> toJson() => {'id': id, 'removed': removed};
+}
+
+class V1SchoolPortalAnnouncementsDto {
+  const V1SchoolPortalAnnouncementsDto({required this.announcements});
+
+  factory V1SchoolPortalAnnouncementsDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalAnnouncementsDto(
+        announcements: (json['announcements'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+      );
+
+  final List<Map<String, dynamic>> announcements;
+
+  Map<String, Object?> toJson() => {'announcements': announcements};
+}
+
+class V1SchoolPortalAssignmentsDto {
+  const V1SchoolPortalAssignmentsDto({required this.assignments});
+
+  factory V1SchoolPortalAssignmentsDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalAssignmentsDto(
+        assignments: (json['assignments'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+      );
+
+  final List<Map<String, dynamic>> assignments;
+
+  Map<String, Object?> toJson() => {'assignments': assignments};
+}
+
+class V1SchoolPortalAttendanceDto {
+  const V1SchoolPortalAttendanceDto({required this.records});
+
+  factory V1SchoolPortalAttendanceDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalAttendanceDto(
+        records: (json['records'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+      );
+
+  final List<Map<String, dynamic>> records;
+
+  Map<String, Object?> toJson() => {'records': records};
+}
+
+class V1SchoolPortalClassDto {
+  const V1SchoolPortalClassDto({
+    required this.id,
+    required this.name,
+    required this.grade,
+    required this.section,
+    required this.status,
+    required this.timezone,
+    required this.teachers,
+    required this.students,
+    this.term,
+    this.lastActivityAt,
+  });
+
+  factory V1SchoolPortalClassDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalClassDto(
+        id: json['id'] as String,
+        name: json['name'] as String,
+        grade: json['grade'] as String?,
+        section: json['section'] as String?,
+        status: json['status'] as String,
+        timezone: json['timezone'] as String,
+        teachers: (json['teachers'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+        students: json['students'] as int,
+        term: json['term'] as Map<String, dynamic>?,
+        lastActivityAt: json['lastActivityAt'] as String?,
+      );
+
+  final String id;
+  final String name;
+  final String? grade;
+  final String? section;
+  final String status;
+  final String timezone;
+  final List<Map<String, dynamic>> teachers;
+  final int students;
+  final Map<String, dynamic>? term;
+  final String? lastActivityAt;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'name': name,
+    'grade': grade,
+    'section': section,
+    'status': status,
+    'timezone': timezone,
+    'teachers': teachers,
+    'students': students,
+    'term': ?term,
+    'lastActivityAt': ?lastActivityAt,
+  };
+}
+
+class V1SchoolPortalClassOverviewDto {
+  const V1SchoolPortalClassOverviewDto({
+    required this.monthStart,
+    required this.attendance,
+    required this.averageMark,
+    required this.markedStudents,
+    required this.upcomingAssignments,
+    required this.upcomingTests,
+  });
+
+  factory V1SchoolPortalClassOverviewDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalClassOverviewDto(
+        monthStart: json['monthStart'] as String,
+        attendance: json['attendance'] as Map<String, dynamic>,
+        averageMark: json['averageMark'] as num?,
+        markedStudents: json['markedStudents'] as int,
+        upcomingAssignments: (json['upcomingAssignments'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+        upcomingTests: (json['upcomingTests'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+      );
+
+  final String monthStart;
+  final Map<String, dynamic> attendance;
+  final num? averageMark;
+  final int markedStudents;
+  final List<Map<String, dynamic>> upcomingAssignments;
+  final List<Map<String, dynamic>> upcomingTests;
+
+  Map<String, Object?> toJson() => {
+    'monthStart': monthStart,
+    'attendance': attendance,
+    'averageMark': averageMark,
+    'markedStudents': markedStudents,
+    'upcomingAssignments': upcomingAssignments,
+    'upcomingTests': upcomingTests,
+  };
+}
+
+class V1SchoolPortalClassesDto {
+  const V1SchoolPortalClassesDto({required this.classes});
+
+  factory V1SchoolPortalClassesDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalClassesDto(
+        classes: [
+          for (final item in json['classes'] as List<dynamic>)
+            V1SchoolPortalClassDto.fromJson(item as Map<String, dynamic>),
+        ],
+      );
+
+  final List<V1SchoolPortalClassDto> classes;
+
+  Map<String, Object?> toJson() => {
+    'classes': [for (final item in classes) item.toJson()],
+  };
+}
+
+class V1SchoolPortalDashboardDto {
+  const V1SchoolPortalDashboardDto({
+    required this.linkedTeachers,
+    required this.classes,
+    required this.students,
+    required this.waiting,
+  });
+
+  factory V1SchoolPortalDashboardDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalDashboardDto(
+        linkedTeachers: json['linkedTeachers'] as int,
+        classes: json['classes'] as int,
+        students: json['students'] as int,
+        waiting: (json['waiting'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+      );
+
+  final int linkedTeachers;
+  final int classes;
+  final int students;
+  final List<Map<String, dynamic>> waiting;
+
+  Map<String, Object?> toJson() => {
+    'linkedTeachers': linkedTeachers,
+    'classes': classes,
+    'students': students,
+    'waiting': waiting,
+  };
+}
+
+class V1SchoolPortalEmptyRequestDto {
+  const V1SchoolPortalEmptyRequestDto();
+
+  factory V1SchoolPortalEmptyRequestDto.fromJson(Map<String, dynamic> json) =>
+      const V1SchoolPortalEmptyRequestDto();
+
+  Map<String, Object?> toJson() => const <String, Object?>{};
+}
+
+class V1SchoolPortalGroupDto {
+  const V1SchoolPortalGroupDto({
+    required this.id,
+    required this.name,
+    required this.status,
+    required this.createdAt,
+    required this.code,
+    required this.classes,
+  });
+
+  factory V1SchoolPortalGroupDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalGroupDto(
+        id: json['id'] as String,
+        name: json['name'] as String,
+        status: json['status'] as String,
+        createdAt: json['createdAt'] as String,
+        code: json['code'] as String?,
+        classes: (json['classes'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+      );
+
+  final String id;
+  final String name;
+  final String status;
+  final String createdAt;
+  final String? code;
+  final List<Map<String, dynamic>> classes;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'name': name,
+    'status': status,
+    'createdAt': createdAt,
+    'code': code,
+    'classes': classes,
+  };
+}
+
+class V1SchoolPortalGroupClassRequestDto {
+  const V1SchoolPortalGroupClassRequestDto({required this.classroomId});
+
+  factory V1SchoolPortalGroupClassRequestDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1SchoolPortalGroupClassRequestDto(
+    classroomId: json['classroomId'] as String,
+  );
+
+  final String classroomId;
+
+  Map<String, Object?> toJson() => {'classroomId': classroomId};
+}
+
+class V1SchoolPortalGroupsDto {
+  const V1SchoolPortalGroupsDto({required this.groups});
+
+  factory V1SchoolPortalGroupsDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalGroupsDto(
+        groups: [
+          for (final item in json['groups'] as List<dynamic>)
+            V1SchoolPortalGroupDto.fromJson(item as Map<String, dynamic>),
+        ],
+      );
+
+  final List<V1SchoolPortalGroupDto> groups;
+
+  Map<String, Object?> toJson() => {
+    'groups': [for (final item in groups) item.toJson()],
+  };
+}
+
+class V1SchoolPortalHandInsDto {
+  const V1SchoolPortalHandInsDto({
+    required this.assignmentId,
+    required this.handIns,
+  });
+
+  factory V1SchoolPortalHandInsDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalHandInsDto(
+        assignmentId: json['assignmentId'] as String,
+        handIns: (json['handIns'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+      );
+
+  final String assignmentId;
+  final List<Map<String, dynamic>> handIns;
+
+  Map<String, Object?> toJson() => {
+    'assignmentId': assignmentId,
+    'handIns': handIns,
+  };
+}
+
+class V1SchoolPortalInviteDto {
+  const V1SchoolPortalInviteDto({
+    required this.id,
+    required this.email,
+    required this.jobTitle,
+    required this.expiresAt,
+  });
+
+  factory V1SchoolPortalInviteDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalInviteDto(
+        id: json['id'] as String,
+        email: json['email'] as String,
+        jobTitle: json['jobTitle'] as String,
+        expiresAt: json['expiresAt'] as String,
+      );
+
+  final String id;
+  final String email;
+  final String jobTitle;
+  final String expiresAt;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'email': email,
+    'jobTitle': jobTitle,
+    'expiresAt': expiresAt,
+  };
+}
+
+class V1SchoolPortalInviteResultDto {
+  const V1SchoolPortalInviteResultDto({required this.id});
+
+  factory V1SchoolPortalInviteResultDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalInviteResultDto(id: json['id'] as String);
+
+  final String id;
+
+  Map<String, Object?> toJson() => {'id': id};
+}
+
+class V1SchoolPortalLessonsDto {
+  const V1SchoolPortalLessonsDto({
+    required this.sessions,
+    required this.materials,
+    required this.announcements,
+  });
+
+  factory V1SchoolPortalLessonsDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalLessonsDto(
+        sessions: (json['sessions'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+        materials: (json['materials'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+        announcements: (json['announcements'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+      );
+
+  final List<Map<String, dynamic>> sessions;
+  final List<Map<String, dynamic>> materials;
+  final List<Map<String, dynamic>> announcements;
+
+  Map<String, Object?> toJson() => {
+    'sessions': sessions,
+    'materials': materials,
+    'announcements': announcements,
+  };
+}
+
+class V1SchoolPortalLinkRequestedDto {
+  const V1SchoolPortalLinkRequestedDto({
+    required this.linkId,
+    required this.teacher,
+    required this.status,
+  });
+
+  factory V1SchoolPortalLinkRequestedDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalLinkRequestedDto(
+        linkId: json['linkId'] as String,
+        teacher: V1SchoolPortalPersonDto.fromJson(
+          json['teacher'] as Map<String, dynamic>,
+        ),
+        status: json['status'] as String,
+      );
+
+  final String linkId;
+  final V1SchoolPortalPersonDto teacher;
+  final String status;
+
+  Map<String, Object?> toJson() => {
+    'linkId': linkId,
+    'teacher': teacher.toJson(),
+    'status': status,
+  };
+}
+
+class V1SchoolPortalLinkResultDto {
+  const V1SchoolPortalLinkResultDto({
+    required this.linkId,
+    required this.status,
+    this.replaced,
+  });
+
+  factory V1SchoolPortalLinkResultDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalLinkResultDto(
+        linkId: json['linkId'] as String,
+        status: json['status'] as String,
+        replaced: json['replaced'] as String?,
+      );
+
+  final String linkId;
+  final String status;
+  final String? replaced;
+
+  Map<String, Object?> toJson() => {
+    'linkId': linkId,
+    'status': status,
+    'replaced': ?replaced,
+  };
+}
+
+class V1SchoolPortalMarksDto {
+  const V1SchoolPortalMarksDto({
+    required this.items,
+    required this.marks,
+    required this.suggestions,
+    required this.students,
+  });
+
+  factory V1SchoolPortalMarksDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalMarksDto(
+        items: (json['items'] as List<dynamic>).cast<Map<String, dynamic>>(),
+        marks: (json['marks'] as List<dynamic>).cast<Map<String, dynamic>>(),
+        suggestions: (json['suggestions'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+        students: (json['students'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+      );
+
+  final List<Map<String, dynamic>> items;
+  final List<Map<String, dynamic>> marks;
+  final List<Map<String, dynamic>> suggestions;
+  final List<Map<String, dynamic>> students;
+
+  Map<String, Object?> toJson() => {
+    'items': items,
+    'marks': marks,
+    'suggestions': suggestions,
+    'students': students,
+  };
+}
+
+class V1SchoolPortalMyInvitesDto {
+  const V1SchoolPortalMyInvitesDto({required this.invites});
+
+  factory V1SchoolPortalMyInvitesDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalMyInvitesDto(
+        invites: (json['invites'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+      );
+
+  final List<Map<String, dynamic>> invites;
+
+  Map<String, Object?> toJson() => {'invites': invites};
+}
+
+class V1SchoolPortalOrgDto {
+  const V1SchoolPortalOrgDto({
+    required this.id,
+    required this.name,
+    required this.country,
+    required this.city,
+    required this.kind,
+    required this.contactEmail,
+    required this.status,
+    required this.createdAt,
+    required this.admins,
+    required this.invites,
+  });
+
+  factory V1SchoolPortalOrgDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalOrgDto(
+        id: json['id'] as String,
+        name: json['name'] as String,
+        country: json['country'] as String,
+        city: json['city'] as String,
+        kind: json['kind'] as String,
+        contactEmail: json['contactEmail'] as String?,
+        status: json['status'] as String,
+        createdAt: json['createdAt'] as String,
+        admins: [
+          for (final item in json['admins'] as List<dynamic>)
+            V1SchoolPortalAdminDto.fromJson(item as Map<String, dynamic>),
+        ],
+        invites: [
+          for (final item in json['invites'] as List<dynamic>)
+            V1SchoolPortalInviteDto.fromJson(item as Map<String, dynamic>),
+        ],
+      );
+
+  final String id;
+  final String name;
+  final String country;
+  final String city;
+  final String kind;
+  final String? contactEmail;
+  final String status;
+  final String createdAt;
+  final List<V1SchoolPortalAdminDto> admins;
+  final List<V1SchoolPortalInviteDto> invites;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'name': name,
+    'country': country,
+    'city': city,
+    'kind': kind,
+    'contactEmail': contactEmail,
+    'status': status,
+    'createdAt': createdAt,
+    'admins': [for (final item in admins) item.toJson()],
+    'invites': [for (final item in invites) item.toJson()],
+  };
+}
+
+class V1SchoolPortalOrgRefDto {
+  const V1SchoolPortalOrgRefDto({required this.orgId, this.status});
+
+  factory V1SchoolPortalOrgRefDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalOrgRefDto(
+        orgId: json['orgId'] as String,
+        status: json['status'] as String?,
+      );
+
+  final String orgId;
+  final String? status;
+
+  Map<String, Object?> toJson() => {'orgId': orgId, 'status': ?status};
+}
+
+class V1SchoolPortalOrgResultDto {
+  const V1SchoolPortalOrgResultDto({required this.id, this.status});
+
+  factory V1SchoolPortalOrgResultDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalOrgResultDto(
+        id: json['id'] as String,
+        status: json['status'] as String?,
+      );
+
+  final String id;
+  final String? status;
+
+  Map<String, Object?> toJson() => {'id': id, 'status': ?status};
+}
+
+class V1SchoolPortalOrgsDto {
+  const V1SchoolPortalOrgsDto({required this.orgs});
+
+  factory V1SchoolPortalOrgsDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalOrgsDto(
+        orgs: [
+          for (final item in json['orgs'] as List<dynamic>)
+            V1SchoolPortalOrgDto.fromJson(item as Map<String, dynamic>),
+        ],
+      );
+
+  final List<V1SchoolPortalOrgDto> orgs;
+
+  Map<String, Object?> toJson() => {
+    'orgs': [for (final item in orgs) item.toJson()],
+  };
+}
+
+class V1SchoolPortalOverviewDto {
+  const V1SchoolPortalOverviewDto({
+    required this.classes,
+    required this.attention,
+  });
+
+  factory V1SchoolPortalOverviewDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalOverviewDto(
+        classes: (json['classes'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+        attention: (json['attention'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+      );
+
+  final List<Map<String, dynamic>> classes;
+  final List<Map<String, dynamic>> attention;
+
+  Map<String, Object?> toJson() => {'classes': classes, 'attention': attention};
+}
+
+class V1SchoolPortalPersonDto {
+  const V1SchoolPortalPersonDto({
+    required this.id,
+    required this.name,
+    required this.email,
+  });
+
+  factory V1SchoolPortalPersonDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalPersonDto(
+        id: json['id'] as String,
+        name: json['name'] as String,
+        email: json['email'] as String?,
+      );
+
+  final String id;
+  final String name;
+  final String? email;
+
+  Map<String, Object?> toJson() => {'id': id, 'name': name, 'email': email};
+}
+
+class V1SchoolPortalReportsDto {
+  const V1SchoolPortalReportsDto({required this.weeks, required this.classes});
+
+  factory V1SchoolPortalReportsDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalReportsDto(
+        weeks: (json['weeks'] as List<dynamic>).cast<Map<String, dynamic>>(),
+        classes: (json['classes'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+      );
+
+  final List<Map<String, dynamic>> weeks;
+  final List<Map<String, dynamic>> classes;
+
+  Map<String, Object?> toJson() => {'weeks': weeks, 'classes': classes};
+}
+
+class V1SchoolPortalRosterDto {
+  const V1SchoolPortalRosterDto({required this.students});
+
+  factory V1SchoolPortalRosterDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalRosterDto(
+        students: (json['students'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+      );
+
+  final List<Map<String, dynamic>> students;
+
+  Map<String, Object?> toJson() => {'students': students};
+}
+
+class V1SchoolPortalStudentDto {
+  const V1SchoolPortalStudentDto({
+    required this.student,
+    required this.classes,
+    required this.recentMarks,
+    required this.missingWork,
+    required this.wellbeing,
+  });
+
+  factory V1SchoolPortalStudentDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalStudentDto(
+        student: json['student'] as Map<String, dynamic>,
+        classes: (json['classes'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+        recentMarks: (json['recentMarks'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+        missingWork: (json['missingWork'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+        wellbeing: (json['wellbeing'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+      );
+
+  final Map<String, dynamic> student;
+  final List<Map<String, dynamic>> classes;
+  final List<Map<String, dynamic>> recentMarks;
+  final List<Map<String, dynamic>> missingWork;
+  final List<Map<String, dynamic>> wellbeing;
+
+  Map<String, Object?> toJson() => {
+    'student': student,
+    'classes': classes,
+    'recentMarks': recentMarks,
+    'missingWork': missingWork,
+    'wellbeing': wellbeing,
+  };
+}
+
+class V1SchoolPortalTeacherDto {
+  const V1SchoolPortalTeacherDto({
+    required this.teacher,
+    required this.classes,
+    required this.recentLessons,
+    required this.toMark,
+  });
+
+  factory V1SchoolPortalTeacherDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalTeacherDto(
+        teacher: json['teacher'] as Map<String, dynamic>,
+        classes: (json['classes'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+        recentLessons: (json['recentLessons'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+        toMark: json['toMark'] as Map<String, dynamic>,
+      );
+
+  final Map<String, dynamic> teacher;
+  final List<Map<String, dynamic>> classes;
+  final List<Map<String, dynamic>> recentLessons;
+  final Map<String, dynamic> toMark;
+
+  Map<String, Object?> toJson() => {
+    'teacher': teacher,
+    'classes': classes,
+    'recentLessons': recentLessons,
+    'toMark': toMark,
+  };
+}
+
+class V1SchoolPortalTeachersDto {
+  const V1SchoolPortalTeachersDto({required this.teachers});
+
+  factory V1SchoolPortalTeachersDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalTeachersDto(
+        teachers: (json['teachers'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+      );
+
+  final List<Map<String, dynamic>> teachers;
+
+  Map<String, Object?> toJson() => {'teachers': teachers};
+}
+
+class V1SchoolPortalTestAnswersDto {
+  const V1SchoolPortalTestAnswersDto({
+    required this.testId,
+    required this.questions,
+    required this.attempts,
+  });
+
+  factory V1SchoolPortalTestAnswersDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalTestAnswersDto(
+        testId: json['testId'] as String,
+        questions: (json['questions'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+        attempts: (json['attempts'] as List<dynamic>)
+            .cast<Map<String, dynamic>>(),
+      );
+
+  final String testId;
+  final List<Map<String, dynamic>> questions;
+  final List<Map<String, dynamic>> attempts;
+
+  Map<String, Object?> toJson() => {
+    'testId': testId,
+    'questions': questions,
+    'attempts': attempts,
+  };
+}
+
+class V1SchoolPortalTestsDto {
+  const V1SchoolPortalTestsDto({required this.tests});
+
+  factory V1SchoolPortalTestsDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalTestsDto(
+        tests: (json['tests'] as List<dynamic>).cast<Map<String, dynamic>>(),
+      );
+
+  final List<Map<String, dynamic>> tests;
+
+  Map<String, Object?> toJson() => {'tests': tests};
+}
+
+class V1SchoolPortalWellbeingDto {
+  const V1SchoolPortalWellbeingDto({required this.notes});
+
+  factory V1SchoolPortalWellbeingDto.fromJson(Map<String, dynamic> json) =>
+      V1SchoolPortalWellbeingDto(
+        notes: (json['notes'] as List<dynamic>).cast<Map<String, dynamic>>(),
+      );
+
+  final List<Map<String, dynamic>> notes;
+
+  Map<String, Object?> toJson() => {'notes': notes};
 }
 
 class V1SchoolScopeQueryDto {
@@ -13045,6 +14885,57 @@ class V1SendMessageRequestDto {
     'body': body,
     'attachmentFileIds': ?attachmentFileIds,
   };
+}
+
+class V1SendSchoolPortalAnnouncementRequestDto {
+  const V1SendSchoolPortalAnnouncementRequestDto({
+    required this.title,
+    required this.body,
+    required this.audience,
+    this.classroomIds,
+  });
+
+  factory V1SendSchoolPortalAnnouncementRequestDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1SendSchoolPortalAnnouncementRequestDto(
+    title: json['title'] as String,
+    body: json['body'] as String,
+    audience: json['audience'] as String,
+    classroomIds: json['classroomIds'] == null
+        ? null
+        : (json['classroomIds'] as List<dynamic>).cast<String>(),
+  );
+
+  final String title;
+  final String body;
+  final String audience;
+  final List<String>? classroomIds;
+
+  Map<String, Object?> toJson() => {
+    'title': title,
+    'body': body,
+    'audience': audience,
+    'classroomIds': ?classroomIds,
+  };
+}
+
+class V1SendSchoolPortalAnnouncementResultDto {
+  const V1SendSchoolPortalAnnouncementResultDto({
+    required this.id,
+    required this.recipients,
+  });
+
+  factory V1SendSchoolPortalAnnouncementResultDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1SendSchoolPortalAnnouncementResultDto(
+    id: json['id'] as String,
+    recipients: json['recipients'] as int,
+  );
+
+  final String id;
+  final int recipients;
+
+  Map<String, Object?> toJson() => {'id': id, 'recipients': recipients};
 }
 
 class V1SetSelfPurchaseRequestDto {
@@ -14015,6 +15906,25 @@ class V1SupportAccessLifecycleRequestDto {
   Map<String, Object?> toJson() => {'expectedVersion': expectedVersion};
 }
 
+class V1SuspendSchoolPortalOrgRequestDto {
+  const V1SuspendSchoolPortalOrgRequestDto({
+    required this.suspend,
+    this.reason,
+  });
+
+  factory V1SuspendSchoolPortalOrgRequestDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1SuspendSchoolPortalOrgRequestDto(
+    suspend: json['suspend'] as bool,
+    reason: json['reason'] as String?,
+  );
+
+  final bool suspend;
+  final String? reason;
+
+  Map<String, Object?> toJson() => {'suspend': suspend, 'reason': ?reason};
+}
+
 class V1TermDto {
   const V1TermDto({
     required this.id,
@@ -14571,6 +16481,40 @@ class V1UpdateProfileRequestDto {
     'gender': ?gender,
     'completeSetup': ?completeSetup,
     'accountKind': ?accountKind,
+  };
+}
+
+class V1UpdateSchoolPortalOrgRequestDto {
+  const V1UpdateSchoolPortalOrgRequestDto({
+    this.name,
+    this.country,
+    this.city,
+    this.kind,
+    this.contactEmail,
+  });
+
+  factory V1UpdateSchoolPortalOrgRequestDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1UpdateSchoolPortalOrgRequestDto(
+    name: json['name'] as String?,
+    country: json['country'] as String?,
+    city: json['city'] as String?,
+    kind: json['kind'] as String?,
+    contactEmail: json['contactEmail'] as String?,
+  );
+
+  final String? name;
+  final String? country;
+  final String? city;
+  final String? kind;
+  final String? contactEmail;
+
+  Map<String, Object?> toJson() => {
+    'name': ?name,
+    'country': ?country,
+    'city': ?city,
+    'kind': ?kind,
+    'contactEmail': ?contactEmail,
   };
 }
 

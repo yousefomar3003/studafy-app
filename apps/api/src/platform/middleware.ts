@@ -29,9 +29,22 @@ export interface PlatformMiddlewareOptions {
   logger: Logger;
   environment: EnvironmentType;
   allowedOrigins?: readonly string[];
+  /** Origins allowed only on the School Portal's routes (and GET /v1/me). */
+  portalOrigins?: readonly string[];
   limits?: Partial<PlatformLimits>;
   now?: () => number;
 }
+
+/** The paths the School Portal website may call from its own origin. */
+export function isSchoolPortalPath(method: string, path: string): boolean {
+  return path === "/v1/school-portal" ||
+    path.startsWith("/v1/school-portal/") ||
+    ((method === "GET" || method === "OPTIONS") &&
+      (path === "/v1/me" || DELIVERY_CONTENT.test(path)));
+}
+
+/** FILE-051 delivery: the website fetches a file it was given a link for. */
+const DELIVERY_CONTENT = /^\/delivery\/v1\/files\/[^/]+\/content$/;
 
 export function requestContext(
   now: () => number = Date.now,
@@ -170,6 +183,7 @@ export function protocolControls(
 ): MiddlewareHandler<PlatformEnv> {
   const limits = { ...DEFAULT_PLATFORM_LIMITS, ...options.limits };
   const allowed = new Set(options.allowedOrigins ?? []);
+  const portal = new Set(options.portalOrigins ?? []);
   return async (c, next) => {
     if (!METHODS.has(c.req.method)) {
       return problem(c, "METHOD_NOT_ALLOWED", 405);
@@ -181,7 +195,14 @@ export function protocolControls(
     }
 
     const origin = c.req.header("origin");
-    if (origin && !allowed.has(origin)) return problem(c, "FORBIDDEN", 403);
+    // A preflight names the real method in its own header.
+    const method = c.req.method === "OPTIONS"
+      ? (c.req.header("access-control-request-method") ?? "OPTIONS")
+      : c.req.method;
+    if (
+      origin && !allowed.has(origin) &&
+      !(portal.has(origin) && isSchoolPortalPath(method, c.req.path))
+    ) return problem(c, "FORBIDDEN", 403);
     if (origin) {
       c.header("Access-Control-Allow-Origin", origin);
       c.header("Vary", "Origin", { append: true });

@@ -113,6 +113,42 @@ void main() {
     expect(find.textContaining('Grade 7 Science'), findsOne);
   });
 
+  testWidgets('a school\'s group code says every class it joined', (
+    tester,
+  ) async {
+    final repository = _Recording(
+      joined: const JoinedClass(
+        schoolId: 'school-1',
+        classroomId: ClassroomId('class-1'),
+        classroomName: 'Grade 7 Science',
+        groupName: 'Grade 7 - A',
+        groupClassNames: ['Grade 7 Science', 'Grade 7 Mathematics'],
+      ),
+    );
+    await tester.pumpWidget(page(repository));
+    await tester.pumpAndSettle();
+
+    await submit(tester, 'K7QM-4XTR');
+
+    expect(find.textContaining('You joined 2 classes in'), findsOne);
+    expect(find.text('Grade 7 Science'), findsOne);
+    expect(find.text('Grade 7 Mathematics'), findsOne);
+  });
+
+  testWidgets('already in, or a code nothing answers to, is said plainly', (
+    tester,
+  ) async {
+    await tester.pumpWidget(page(_Recording(fail: ClassJoinRefusal.alreadyIn)));
+    await tester.pumpAndSettle();
+    await submit(tester, 'K7QM-4XTR');
+    expect(find.textContaining("You're already in this class"), findsOne);
+
+    await tester.pumpWidget(page(_Recording(fail: ClassJoinRefusal.unknown)));
+    await tester.pumpAndSettle();
+    await submit(tester, 'K7QM-4XTR');
+    expect(find.textContaining('No class has this code'), findsOne);
+  });
+
   testWidgets('a code with a misreadable character is refused unsent', (
     tester,
   ) async {
@@ -159,9 +195,10 @@ void main() {
 }
 
 class _Recording implements ClassroomRepository {
-  _Recording({this.fail});
+  _Recording({this.fail, this.joined = _joined});
 
   final Failure? fail;
+  final JoinedClass joined;
   final List<String> tokens = [];
   final List<String> codes = [];
 
@@ -182,7 +219,7 @@ class _Recording implements ClassroomRepository {
   Future<JoinedClass> joinWithCode(String code) async {
     codes.add(code);
     if (fail case final failure?) throw failure;
-    return _joined;
+    return joined;
   }
 
   @override

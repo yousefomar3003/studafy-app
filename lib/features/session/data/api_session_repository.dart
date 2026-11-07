@@ -270,6 +270,7 @@ class ApiSessionRepository implements SessionRepository {
       accountKind: kind,
       // The server's word only; an older server leaves it out.
       platformOperator: me.platformOperator ?? false,
+      schoolPortal: me.schoolPortal ?? false,
       id: me.id,
       displayName: me.displayName,
       // Email is identity-provider profile data, not school authorization

@@ -20,6 +20,7 @@
     "test:plans:rls": "bun scripts/verify-rls-policy-plans.ts",
     "test:plans:academic": "bun scripts/verify-academic-query-plans.ts",
     "test:plans:coursework": "bun scripts/verify-coursework-query-plans.ts",
+    "test:plans:school-portal": "bun scripts/verify-school-portal-query-plans.ts",
     "test:plans:uploads": "bun scripts/verify-upload-query-plans.ts",
     "test:uploads:storage": "bun scripts/verify-upload-storage.ts",
     "test:plans:delivery": "bun scripts/verify-delivery-query-plans.ts",

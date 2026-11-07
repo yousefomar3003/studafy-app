@@ -181,6 +181,20 @@ export const apiEnvSchema = z.object({
    */
   MARKING_SUGGESTIONS_ENABLED: disabledSwitchFlag,
   /**
+   * Studafy School Portal (docs/planning/school-portal.md). Off unless set:
+   * every /v1/school-portal/* and /v1/me/school-links* route answers 404, as
+   * if it did not exist, and GET /v1/me says schoolPortal: false. On, it is
+   * on for everyone. Stays off until the portal's release gate (plan 11.2).
+   */
+  SCHOOL_PORTAL_ENABLED: disabledSwitchFlag,
+  /**
+   * The School Portal website's own addresses (https://school.studafy.com
+   * and staging). Unlike API_ALLOWED_ORIGINS, a browser from one of these
+   * may call only the portal's routes, GET /v1/me and the FILE-051 delivery
+   * route that serves the files it was given links for.
+   */
+  SCHOOL_PORTAL_ORIGINS: origins,
+  /**
    * Messaging, server-wide (DL-061, DL-063). Off unless set; production
    * turns it on (DL-063: messaging launches, with one report reviewer) and
    * keeps it as the way to turn messaging off for everyone fast. Off, every
@@ -1066,6 +1080,8 @@ export function describeApiEnv(env: ApiEnv): Record<string, unknown> {
     },
     sentry_configured: Boolean(env.SENTRY_DSN),
     allowed_origins: env.API_ALLOWED_ORIGINS,
+    school_portal_enabled: env.SCHOOL_PORTAL_ENABLED,
+    school_portal_origins: env.SCHOOL_PORTAL_ORIGINS,
     client_ip_source: env.CLIENT_IP_SOURCE,
     origin_require_cloudflare: env.ORIGIN_REQUIRE_CLOUDFLARE,
     database_ca_configured: Boolean(env.DATABASE_CA_CERT),

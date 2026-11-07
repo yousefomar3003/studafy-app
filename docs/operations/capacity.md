@@ -141,6 +141,55 @@ dataset: 45,200 access decisions and 26 role-and-list combinations (admin,
 teacher, student, parent; 4,925 rows), with **zero differences**. The 38
 existing database test suites give identical results before and after.
 
+## The School Portal (2026-11-07, branch `feat/school-admin-web`)
+
+Measured on the same 100-school database (50,000 students, 3 million
+attendance records, 750,000 marks), with `seed-school-portal.sql` on top: 96
+school pages - 95 of 60 classes and one of 300 (five workspaces' teachers) -
+4,000 linked teachers, 2,304 announcements, 500 class groups and a year of
+activity record (1.4 million rows).
+
+One read at a time, for the 300-class school:
+
+| Read | Before | After |
+|---|---|---|
+| A student's or parent's "Announcements from schools" (app) | 68 s | 6-13 ms |
+| Classes list | 4.7 s | 202 ms |
+| Class groups | 2.8 s | 36 ms |
+| Reports | 2.8 s | 317 ms |
+| Dashboard overview | 855 ms | 280 ms |
+| One student's page | 363 ms | 26 ms |
+| One teacher's page | 303 ms | 24 ms |
+| The school's announcements | 867 ms | 2 ms |
+| Any one class's page (roster, marks, attendance, ...) | 3-17 ms | 2-11 ms |
+
+What was wrong: the app's announcements read checked every school's
+announcements of the last year for each reader; a class's work and
+announcements and wellbeing notes had no index by class, so each row of the
+classes list scanned all 90,000 assignments; a class's visibility was
+answered by listing every class of the school, once per row; the student and
+teacher pages computed the whole school's figures to show one person's; and
+the overview and reports re-scanned their figures for every class and week.
+All are fixed in `202611050010_school_portal.sql`, and
+`scripts/verify-school-portal-query-plans.ts` (CI: "Verify School Portal query
+plans") holds the indexes and bounds at a 200-class school.
+
+**Under load** (`bench.ts --portal`, 100 simultaneous users flat out, pool
+5, 20 s):
+
+| Mix | Requests a second | p95 | Errors |
+|---|---|---|---|
+| App only | 644 | 261 ms | 0 |
+| App and portal, 0.5 % of visits administrators | 572 | 292 ms | 0 |
+| App and portal, 3 % administrators (stress) | 468 | 382 ms | 0 |
+
+The seed's real share of administrators is under 0.1 %. Under full load the
+heaviest portal screens (overview, reports, classes) stay under 0.8 s at
+p95. Their floor is the data itself: the overview for a 300-class school
+reads about 150,000 attendance records and 37,500 marks (about 130 ms for 60
+classes, 285 ms for 300, warm). If schools of 1,000+ classes appear, a
+nightly per-class summary table is the next step.
+
 ## Rerunning it
 
 ```sh
@@ -153,6 +202,13 @@ bun run scale:prepare            # sizes: -v schools=200 -v students=800 ...
 # 2. The load test (students 70%, parents 20%, teachers 10%):
 SCALE_DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/studafy_scale \
 bun run scale:bench -- --pool 20 --users 10,50,100,200 --seconds 20
+
+# 2b. The School Portal on top, and the load test with administrators:
+psql postgresql://postgres:postgres@127.0.0.1:54322/studafy_scale \
+  -v schools=100 -v teachers=40 -v classes=60 -v big=5 \
+  -f scripts/scale/seed-school-portal.sql
+SCALE_DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/studafy_scale \
+bun run scale:bench -- --pool 5 --users 10,50,100 --seconds 20 --portal --admins 0.005
 
 # 3. Where the time went (statements inside the app's functions too):
 psql postgresql://supabase_admin:postgres@127.0.0.1:54322/studafy_scale \

@@ -575,13 +575,13 @@ abstract class AppL10n {
   /// In-app summary of docs/legal/privacy-policy.md (version 1.8, consent version 2026-10-25), which governs. Update both together, publish a new consent version and bump termsPolicyVersion. Published 2026-10-17 (DL-068), 2026-10-21 (DL-071), 2026-10-22 (DL-072) and 2026-10-25 (Studafy AI Marking, ADR-0046) without review by counsel; the Arabic translation has not been reviewed by a native legal translator.
   ///
   /// In en, this message translates to:
-  /// **'WHAT WE COLLECT\nYour name and email from the sign-in provider you choose, and your gender only if you choose to give it (it is shown to nobody else). The school or class you belong to and your role in it. Lessons, the work you are set and hand in, each earlier hand-in, your marks and the history of any change to them, your attendance, pastoral notes, and your own notebooks, including a personal notebook that belongs to no class and that only you can see. Messages, voice notes, announcements and meeting links inside the app, and reports you make. Files you upload. Your subscriptions, your notification settings and what you agreed to, including the AI study tools.\n\nWHY\nTo run your classes, to keep your account secure, to bill subscriptions, and to meet legal duties. We do not sell personal data. We show no advertising. We do not use your data to train any AI model.\n\nMARKS AND ATTENDANCE\nTeachers can mark work done on paper as well as work handed in online. A mark is a draft that only your teachers can see until the teacher publishes it; a missing mark is never counted as zero. If a published mark is corrected, we keep the old mark, the new one, who changed it, when and why, and you and your parents are told if the mark changed. Attendance changes after the lesson\'s day need a reason, only the class\'s lead teacher can change a register more than seven days old, and every change is kept. Deadlines are set in your school\'s time zone.\n\nWHO SEES YOUR WORK\nYour class\'s teachers, and a parent linked to you once a mark is published. There is no school administrator in this version of the app. Other students cannot see your marks, your work or your private messages. Messages are stored on our servers and are not end-to-end encrypted.\n\nREPORTS\nYou can report or block anyone from inside the app. Studafy reviews reports: a named person at Studafy, reachable at hello@studafy.com, reads what was reported and may remove content or suspend or close accounts. Each new report sends an alert to our private Telegram chat with its reference number, kind and priority - never its content, a name or an account ID. You are told when your report is resolved. You can also report an AI answer from inside the app: we keep the text you reported, your reason and any details for 180 days so Studafy can review it, and its alert carries only the reference number, the tool and the reason.\n\nPARENTS AND CHILDREN\nA parent asks to be linked to a student, and the student approves or declines it on their own device. A parent may also create and manage an account for a child with no email or phone, and accepts these terms for the child. A linked parent sees published marks, attendance, work and class material, and can hand work in for a young child, but cannot change marks or attendance and is not given the child\'s private messages. Family+ is a paid plan for parents that covers up to 4 or up to 8 linked children, earliest linked first. For each child it covers it summarises what the parent can already see - marks by class, trends, attendance, missing work and missed tests - compares the child only with their own earlier record, and uses no AI.\n\nAI STUDY TOOLS\nThese tools are optional. They are for student accounts, whether or not you are in a class, and only after you agree to them separately; for a child account a parent creates, they are off unless the parent turns them on, when creating the account or later on the child\'s card, and the parent can turn them off at any time. They can be turned off at any time. What you give them is sent to Together AI, an AI company in the United States: the question you type and the recent turns of the same chat, and - if you choose - a lesson\'s text, your own notes, or a photo or screenshot you add (the AI Tutor, notes from photos, lesson notes, quizzes and flashcards). Names Studafy knows are replaced with words like [student] first, and your email, school and marks are never sent. Photos are sent as they are, so do not photograph names or faces. A photo you send to the AI Tutor from a class is kept for 30 days; if you are in no class it is read once and not kept. Chats are kept only on your device. Our data processing agreement with Together AI is not yet in place. Answers can be wrong, so never hand them in as your own work. AI never marks your work on its own.\n\nAI-SUGGESTED MARKS\nA teacher with Studafy AI Marking, a paid plan for teachers, can ask AI for a suggested mark on written work - written answers in an online assessment, and work handed in for a graded assignment, including its files - compared with the teacher\'s own reference answers. The work and the teacher\'s reference are sent to Together AI. Names Studafy knows are replaced with words like [student] first. Files are read for the suggestion and are not kept by the AI step. A suggestion is a draft that only the class\'s teachers see: the teacher decides every mark, and AI never marks work on its own. Suggestions are kept for the teacher for up to 180 days.\n\nFILES\nTeachers can attach PDF, Word, Excel, PowerPoint and CSV files, older Office files included, and photos. Files are stored privately, scanned on our own servers before anyone can download them, and opened only through links that work once and expire within minutes. On our own servers we make a PDF preview of documents so they open in the app, and a newer-format copy of older Office files so the AI tools can read them; these copies are deleted with the file. The AI does not read hidden sheets, rows or columns. A photo in another format, or one that is too large, becomes a JPEG on your phone first. Hidden details are removed from photos and voice notes. If a teacher replaces or removes a file, the class no longer sees it, but it is kept for the school.\n\nPAYMENTS\nStudafy Plus, Studafy Max, Family+ and Studafy AI Marking are charged by Google Play or the App Store under their own terms, from the payment method on the store account on the phone. A student can subscribe in the app without a parent\'s approval in Studafy; for a child, a parent can approve purchases with Google Family Link or Apple\'s Ask to Buy. We receive only a confirmation of the purchase and never see card details.\n\nWHO ELSE PROCESSES DATA\nSupabase hosts the database, sign-in and files; Fly.io hosts the app; Axiom keeps its technical logs and Sentry its error reports; Vercel hosts our website and our legal pages; Cloudflare stores our encrypted backups in the EU, relays our alerts, runs a bot check and keeps an older copy of our legal pages; GitHub runs the backup job but keeps no copy; Telegram carries our alerts, which hold no content or names; Upstash, in Frankfurt, holds short-lived counters and background jobs; Google, Microsoft and Apple verify sign-in; Together AI runs the AI study tools and suggested marks; Resend sends email and Firebase sends push notifications, which never contain your marks or messages. Each acts only on our instructions. Studafy creates no meetings: a meeting link a teacher shares opens in Google Meet under Google\'s terms.\n\nWHERE YOUR DATA IS\nOur main systems and our backups are in the EU. Some providers process data outside the EEA, protected by Standard Contractual Clauses or an adequacy decision; for Together AI that safeguard is not yet in place.\n\nWHAT WE CANNOT DELETE\nRecords of significant actions are append-only: nobody can edit them, including us, and they are deleted only when their retention period ends. This includes the history of marks and attendance, earlier hand-ins, and files a teacher replaced. Schools are often required to keep attendance, assessment and safeguarding records. The app shows you which records stay with your school before you confirm a deletion. Encrypted backups are kept for 30 days.\n\nINACTIVE ACCOUNTS\nAn account that is not used for 2 years is deleted. We warn you by email at least 30 days before, and in the app too if you are in a school. If the warning cannot reach you, we do not delete the account.\n\nON YOUR DEVICE\nThe app keeps your session, your language, a cache of what you opened and downloaded, your AI Tutor chats and your profile photo, separately for each account. Your profile photo is never uploaded to our servers, so nobody else sees it. They are cleared when that account signs out.\n\nHOW WE PROTECT IT\nAccess to a class\'s data is enforced in the database itself, and only that class\'s teachers can change its marks and attendance. Secrets are stripped from logs. In our own records IP addresses are stored only as a one-way hash; the sign-in service (Supabase) keeps the IP address of a sign-in for up to 7 days. Backups are encrypted before they leave our systems.\n\nYOUR RIGHTS\nYou may ask for a copy of your data, correct it, delete your account, restrict or object to processing, or withdraw consent. Account deletion and data export are in Account settings, and deletion can be cancelled for 14 days; a parent does this for a child account they manage. The export is a JSON file of your own data. It lists your files (name, type, size and date) rather than including them: open them in the app, or write to hello@studafy.com for a copy. It leaves out exam questions and marks your teacher has not released yet, wellbeing notes, and conversations you have left. You may complain to the Data Protection Commission in Ireland at any time.\n\nIf your school controls your records, ask your school first; we will pass your request on and tell you we have.\n\nThe full policy is at legal.studafy.com/privacy. Questions: hello@studafy.com.'**
+  /// **'WHAT WE COLLECT\nYour name and email from the sign-in provider you choose, and your gender only if you choose to give it (it is shown to nobody else). The school or class you belong to and your role in it. Lessons, the work you are set and hand in, each earlier hand-in, your marks and the history of any change to them, your attendance, pastoral notes, and your own notebooks, including a personal notebook that belongs to no class and that only you can see. Messages, voice notes, announcements and meeting links inside the app, and reports you make. Files you upload. Your subscriptions, your notification settings and what you agreed to, including the AI study tools.\n\nWHY\nTo run your classes, to keep your account secure, to bill subscriptions, and to meet legal duties. We do not sell personal data. We show no advertising. We do not use your data to train any AI model.\n\nMARKS AND ATTENDANCE\nTeachers can mark work done on paper as well as work handed in online. A mark is a draft that only your teachers (and a school your teacher links with) can see until the teacher publishes it; a missing mark is never counted as zero. If a published mark is corrected, we keep the old mark, the new one, who changed it, when and why, and you and your parents are told if the mark changed. Attendance changes after the lesson\'s day need a reason, only the class\'s lead teacher can change a register more than seven days old, and every change is kept. Deadlines are set in your school\'s time zone.\n\nWHO SEES YOUR WORK\nYour class\'s teachers, and a parent linked to you once a mark is published. There is no school administrator inside the app; if your teacher links with a school on the Studafy School Portal, that school can also read your class\'s records (see SCHOOLS YOUR TEACHER LINKS WITH). Other students cannot see your marks, your work or your private messages. Messages are stored on our servers and are not end-to-end encrypted.\n\nREPORTS\nYou can report or block anyone from inside the app. Studafy reviews reports: a named person at Studafy, reachable at hello@studafy.com, reads what was reported and may remove content or suspend or close accounts. Each new report sends an alert to our private Telegram chat with its reference number, kind and priority - never its content, a name or an account ID. You are told when your report is resolved. You can also report an AI answer from inside the app: we keep the text you reported, your reason and any details for 180 days so Studafy can review it, and its alert carries only the reference number, the tool and the reason.\n\nPARENTS AND CHILDREN\nA parent asks to be linked to a student, and the student approves or declines it on their own device. A parent may also create and manage an account for a child with no email or phone, and accepts these terms for the child. A linked parent sees published marks, attendance, work and class material, and can hand work in for a young child, but cannot change marks or attendance and is not given the child\'s private messages. Family+ is a paid plan for parents that covers up to 4 or up to 8 linked children, earliest linked first. For each child it covers it summarises what the parent can already see - marks by class, trends, attendance, missing work and missed tests - compares the child only with their own earlier record, and uses no AI.\n\nAI STUDY TOOLS\nThese tools are optional. They are for student accounts, whether or not you are in a class, and only after you agree to them separately; for a child account a parent creates, they are off unless the parent turns them on, when creating the account or later on the child\'s card, and the parent can turn them off at any time. They can be turned off at any time. What you give them is sent to Together AI, an AI company in the United States: the question you type and the recent turns of the same chat, and - if you choose - a lesson\'s text, your own notes, or a photo or screenshot you add (the AI Tutor, notes from photos, lesson notes, quizzes and flashcards). Names Studafy knows are replaced with words like [student] first, and your email, school and marks are never sent. Photos are sent as they are, so do not photograph names or faces. A photo you send to the AI Tutor from a class is kept for 30 days; if you are in no class it is read once and not kept. Chats are kept only on your device. Our data processing agreement with Together AI is not yet in place. Answers can be wrong, so never hand them in as your own work. AI never marks your work on its own.\n\nAI-SUGGESTED MARKS\nA teacher with Studafy AI Marking, a paid plan for teachers, can ask AI for a suggested mark on written work - written answers in an online assessment, and work handed in for a graded assignment, including its files - compared with the teacher\'s own reference answers. The work and the teacher\'s reference are sent to Together AI. Names Studafy knows are replaced with words like [student] first. Files are read for the suggestion and are not kept by the AI step. A suggestion is a draft that only the class\'s teachers, and a school their teacher links with, see: the teacher decides every mark, and AI never marks work on its own. Suggestions are kept for the teacher for up to 180 days.\n\nSCHOOLS YOUR TEACHER LINKS WITH\nA school can ask a teacher to link with it on the Studafy School Portal, a website. Nothing is shared unless the teacher accepts, and the teacher can unlink at any time. While linked, up to three administrators of the school can read, but never change, all of that teacher\'s classes: students\' names, emails and Studafy IDs, linked parents\' names and emails, lessons and files, work, answers and hand-ins, every mark including unpublished and AI-suggested ones, attendance, and wellbeing notes not restricted to safeguarding. The school never sees messages, AI Tutor chats, students\' notebooks and notes, or study material made with AI. Students and parents are not told one by one. The school can download class lists, marks, attendance and reports, and is then responsible for those files as a controller. It can send announcements to the students and parents of its linked classes, kept for 12 months, and make class groups that students join with one code. Everything an administrator opens or downloads is recorded for 12 months. Anyone can create a school\'s page and Studafy does not check it, so teachers should accept only a school they know; Studafy can suspend a school that is reported.\n\nFILES\nTeachers can attach PDF, Word, Excel, PowerPoint and CSV files, older Office files included, and photos. Files are stored privately, scanned on our own servers before anyone can download them, and opened only through links that work once and expire within minutes. On our own servers we make a PDF preview of documents so they open in the app, and a newer-format copy of older Office files so the AI tools can read them; these copies are deleted with the file. The AI does not read hidden sheets, rows or columns. A photo in another format, or one that is too large, becomes a JPEG on your phone first. Hidden details are removed from photos and voice notes. If a teacher replaces or removes a file, the class no longer sees it, but it is kept for the school.\n\nPAYMENTS\nStudafy Plus, Studafy Max, Family+ and Studafy AI Marking are charged by Google Play or the App Store under their own terms, from the payment method on the store account on the phone. A student can subscribe in the app without a parent\'s approval in Studafy; for a child, a parent can approve purchases with Google Family Link or Apple\'s Ask to Buy. We receive only a confirmation of the purchase and never see card details.\n\nWHO ELSE PROCESSES DATA\nSupabase hosts the database, sign-in and files; Fly.io hosts the app; Axiom keeps its technical logs and Sentry its error reports; Vercel hosts our websites, including the School Portal, and our legal pages; Cloudflare stores our encrypted backups in the EU, relays our alerts, runs a bot check and keeps an older copy of our legal pages; GitHub runs the backup job but keeps no copy; Telegram carries our alerts, which hold no content or names; Upstash, in Frankfurt, holds short-lived counters and background jobs; Google, Microsoft and Apple verify sign-in; Together AI runs the AI study tools and suggested marks; Resend sends email and Firebase sends push notifications, which never contain your marks or messages. Each acts only on our instructions. Studafy creates no meetings: a meeting link a teacher shares opens in Google Meet under Google\'s terms.\n\nWHERE YOUR DATA IS\nOur main systems and our backups are in the EU. Some providers process data outside the EEA, protected by Standard Contractual Clauses or an adequacy decision; for Together AI that safeguard is not yet in place.\n\nWHAT WE CANNOT DELETE\nRecords of significant actions are append-only: nobody can edit them, including us, and they are deleted only when their retention period ends. This includes the history of marks and attendance, earlier hand-ins, and files a teacher replaced. Schools are often required to keep attendance, assessment and safeguarding records. The app shows you which records stay with your school before you confirm a deletion. Encrypted backups are kept for 30 days.\n\nINACTIVE ACCOUNTS\nAn account that is not used for 2 years is deleted. We warn you by email at least 30 days before, and in the app too if you are in a school. If the warning cannot reach you, we do not delete the account.\n\nON YOUR DEVICE\nThe app keeps your session, your language, a cache of what you opened and downloaded, your AI Tutor chats and your profile photo, separately for each account. Your profile photo is never uploaded to our servers, so nobody else sees it. They are cleared when that account signs out.\n\nHOW WE PROTECT IT\nAccess to a class\'s data is enforced in the database itself, and only that class\'s teachers can change its marks and attendance. Secrets are stripped from logs. In our own records IP addresses are stored only as a one-way hash; the sign-in service (Supabase) keeps the IP address of a sign-in for up to 7 days. Backups are encrypted before they leave our systems.\n\nYOUR RIGHTS\nYou may ask for a copy of your data, correct it, delete your account, restrict or object to processing, or withdraw consent. Account deletion and data export are in Account settings, and deletion can be cancelled for 14 days; a parent does this for a child account they manage. The export is a JSON file of your own data. It lists your files (name, type, size and date) rather than including them: open them in the app, or write to hello@studafy.com for a copy. It leaves out exam questions and marks your teacher has not released yet, wellbeing notes, and conversations you have left. You may complain to the Data Protection Commission in Ireland at any time.\n\nIf your school controls your records, ask your school first; we will pass your request on and tell you we have.\n\nThe full policy is at legal.studafy.com/privacy. Questions: hello@studafy.com.'**
   String get policyPrivacyBody;
 
   /// In-app summary of docs/legal/terms-of-use.md (version 1.6, consent version 2026-10-25), which governs. See policyPrivacyBody.
   ///
   /// In en, this message translates to:
-  /// **'WHO THIS IS FOR\nStudafy is for teachers, students and parents. There is no school administrator in this version of the app. By signing in you accept these terms and the Privacy Policy.\n\nYOUR ACCOUNT\nSign in with Google, Microsoft or Apple and keep that account secure. You can add several accounts to one device; sign out on a device you share. A parent may create an account for a child with no email or phone, accepts these terms for the child, and is responsible for how it is used. Do not impersonate anyone.\n\nUSE IT PROPERLY\nUse Studafy only for learning, teaching and school communication. Do not bully, harass or threaten anyone, share sexual, violent, hateful or unlawful content, upload files you have no right to share, try to see records that are not yours, or hand in someone else\'s work - or AI output - as your own. You can report or block anyone from inside the app. Studafy reviews reports, and may remove content and suspend or close accounts that break these rules.\n\nTEACHERS\nYou are responsible for the marks and attendance you record. Marks are drafts until you publish them. A published mark is changed only by correcting it with a reason, and the old mark is kept. Attendance changes after the lesson\'s day need a reason; after seven days only the class\'s lead teacher can change a register. Give students more time or reopen work with a reason. Files you replace or remove are kept for the school. Share only what you have the right to share. With Studafy AI Marking you can ask AI for suggested marks on written work, compared with your own reference answers. A suggestion is only a draft: you decide every mark, and you are responsible for the marks you save.\n\nSTUDENTS\nJoining a class is optional: you can study on your own and join a class later with your teacher\'s link or code. Hand in your own work. You can replace it until the deadline, which is in your school\'s time zone; earlier hand-ins are kept. After the deadline, or once a mark is published, you need your teacher\'s permission to hand in again. If a mark or attendance record looks wrong, ask your teacher.\n\nPARENTS\nYou can link to your child only with their approval, unless you created their account. You can see published marks, attendance, work and class material, and hand work in for a young child. You cannot change marks or attendance, and you do not see your child\'s private messages. Family+ is your own paid plan: one plan covers up to 4 linked children, a larger one up to 8, in the order you linked them. It summarises what you can already see, compares a child only with their own earlier record, and predicts nothing.\n\nYOUR CONTENT\nYou keep the rights in what you write and upload. You let us store and show it only to run Studafy for you and your school. Work handed in, marks, attendance and shared files become part of the school\'s records.\n\nAI STUDY TOOLS\nThey are optional, for student accounts whether or not they are in a class, and only after the student agrees to them separately; for a child account a parent creates, they are off unless the parent turns them on, and the parent can turn them off at any time. Names are replaced before anything is sent, but photos are sent as they are. The tools can be wrong: check what they produce and never hand it in as your own work. AI never marks work on its own: a teacher may ask it for a suggested mark, and the teacher decides. Weekly or monthly allowances apply.\n\nSUBSCRIPTIONS\nLessons, notebooks, work, marks and attendance are free. Studafy Plus and Studafy Max are for students, who can subscribe in the app; Family+ is for parents, for up to 4 or up to 8 linked children; Studafy AI Marking is for teachers. Payment is made through Google Play or the App Store with the payment method on that store account. For a child, that account and its payment method should belong to, or be controlled by, a parent or guardian, who is responsible for purchases made with it; Google Family Link and Apple\'s Ask to Buy let a parent approve purchases. Subscriptions renew monthly at the price the store shows until you cancel in your store account, and refunds follow the store\'s rules. We never see card details.\n\nMEETINGS\nStudafy does not host video calls or create meetings. A meeting link a teacher shares opens in Google Meet under Google\'s terms.\n\nCHANGES AND ENDING\nWe may change or withdraw features, and will tell you before a change to these terms that affects you. You can delete your account in Account settings and cancel within 14 days. Records the school must keep stay with the school.\n\nThe full terms are at legal.studafy.com/terms. Questions: hello@studafy.com.'**
+  /// **'WHO THIS IS FOR\nStudafy is for teachers, students and parents. There is no school administrator inside the app; a school can read the classes of a teacher who links with it on the Studafy School Portal website. By signing in you accept these terms and the Privacy Policy.\n\nYOUR ACCOUNT\nSign in with Google, Microsoft or Apple and keep that account secure. You can add several accounts to one device; sign out on a device you share. A parent may create an account for a child with no email or phone, accepts these terms for the child, and is responsible for how it is used. Do not impersonate anyone.\n\nUSE IT PROPERLY\nUse Studafy only for learning, teaching and school communication. Do not bully, harass or threaten anyone, share sexual, violent, hateful or unlawful content, upload files you have no right to share, try to see records that are not yours, or hand in someone else\'s work - or AI output - as your own. You can report or block anyone from inside the app. Studafy reviews reports, and may remove content and suspend or close accounts that break these rules.\n\nTEACHERS\nYou are responsible for the marks and attendance you record. Marks are drafts until you publish them. A published mark is changed only by correcting it with a reason, and the old mark is kept. Attendance changes after the lesson\'s day need a reason; after seven days only the class\'s lead teacher can change a register. Give students more time or reopen work with a reason. Files you replace or remove are kept for the school. Share only what you have the right to share. With Studafy AI Marking you can ask AI for suggested marks on written work, compared with your own reference answers. A suggestion is only a draft: you decide every mark, and you are responsible for the marks you save.\n\nSTUDENTS\nJoining a class is optional: you can study on your own and join a class later with your teacher\'s link or code. Hand in your own work. You can replace it until the deadline, which is in your school\'s time zone; earlier hand-ins are kept. After the deadline, or once a mark is published, you need your teacher\'s permission to hand in again. If a mark or attendance record looks wrong, ask your teacher.\n\nPARENTS\nYou can link to your child only with their approval, unless you created their account. You can see published marks, attendance, work and class material, and hand work in for a young child. You cannot change marks or attendance, and you do not see your child\'s private messages. Family+ is your own paid plan: one plan covers up to 4 linked children, a larger one up to 8, in the order you linked them. It summarises what you can already see, compares a child only with their own earlier record, and predicts nothing.\n\nSCHOOLS\nA school can ask a teacher to link with it on the Studafy School Portal. Only if the teacher accepts can the school\'s administrators read - never change - that teacher\'s classes, and the teacher can unlink at any time and report a school. Studafy does not check that a school is real, so accept only a school you know. Students and parents are not told one by one. A school can send announcements to its linked classes and make class groups that students join with one code; a class joins a group only if its teacher approves. A school\'s administrators must be adults authorised by the school, use what they see only for the school, keep it confidential, and keep any file they download secure.\n\nYOUR CONTENT\nYou keep the rights in what you write and upload. You let us store and show it only to run Studafy for you and your school. Work handed in, marks, attendance and shared files become part of the school\'s records.\n\nAI STUDY TOOLS\nThey are optional, for student accounts whether or not they are in a class, and only after the student agrees to them separately; for a child account a parent creates, they are off unless the parent turns them on, and the parent can turn them off at any time. Names are replaced before anything is sent, but photos are sent as they are. The tools can be wrong: check what they produce and never hand it in as your own work. AI never marks work on its own: a teacher may ask it for a suggested mark, and the teacher decides. Weekly or monthly allowances apply.\n\nSUBSCRIPTIONS\nLessons, notebooks, work, marks and attendance are free. Studafy Plus and Studafy Max are for students, who can subscribe in the app; Family+ is for parents, for up to 4 or up to 8 linked children; Studafy AI Marking is for teachers. Payment is made through Google Play or the App Store with the payment method on that store account. For a child, that account and its payment method should belong to, or be controlled by, a parent or guardian, who is responsible for purchases made with it; Google Family Link and Apple\'s Ask to Buy let a parent approve purchases. Subscriptions renew monthly at the price the store shows until you cancel in your store account, and refunds follow the store\'s rules. We never see card details.\n\nMEETINGS\nStudafy does not host video calls or create meetings. A meeting link a teacher shares opens in Google Meet under Google\'s terms.\n\nCHANGES AND ENDING\nWe may change or withdraw features, and will tell you before a change to these terms that affects you. You can delete your account in Account settings and cancel within 14 days. Records the school must keep stay with the school.\n\nThe full terms are at legal.studafy.com/terms. Questions: hello@studafy.com.'**
   String get policyTermsBody;
 
   /// No description provided for @deleteTitle.
@@ -2437,6 +2437,18 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'The AI Tutor is for student accounts. Sign out and sign in again through the Student door, or join a class with your teacher\'s link.'**
   String get studyHelperNeedsClassBody;
+
+  /// No description provided for @joinClassAlreadyIn.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re already in this class. A school\'s code joins you to every class in its group, so you\'re in all of them.'**
+  String get joinClassAlreadyIn;
+
+  /// No description provided for @joinClassUnknownCode.
+  ///
+  /// In en, this message translates to:
+  /// **'No class has this code. Check it with your teacher or school - a code can be replaced or closed.'**
+  String get joinClassUnknownCode;
 
   /// Shown when redeeming a class link is refused because the account already holds a non-student role at that school - typically a teacher opening their own link.
   ///
@@ -5520,6 +5532,18 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'A family connection was verified.'**
   String get notificationCopyFamilyGuardianLinkVerifiedDetail;
+
+  /// No description provided for @notificationCopySchoolPortalLinkRequestedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A school asked to link'**
+  String get notificationCopySchoolPortalLinkRequestedTitle;
+
+  /// No description provided for @notificationCopySchoolPortalLinkRequestedDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'A school asked to see your classes. Open the request to accept or decline.'**
+  String get notificationCopySchoolPortalLinkRequestedDetail;
 
   /// No description provided for @notificationCopyInvitationsIssuedTitle.
   ///
@@ -14328,6 +14352,546 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'See trends and what to focus on for {name} with Family+'**
   String familyPlusNudge(String name);
+
+  /// No description provided for @schoolLinkIdDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Give this to your school so it can ask to link with you. Studafy support may also ask for it.'**
+  String get schoolLinkIdDetail;
+
+  /// No description provided for @schoolLinksTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Schools'**
+  String get schoolLinksTitle;
+
+  /// No description provided for @schoolLinksAccountRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Schools that asked to link'**
+  String get schoolLinksAccountRow;
+
+  /// School Portal (teacher side). Placeholders are school names, user content, wrapped in isolates.
+  ///
+  /// In en, this message translates to:
+  /// **'Your classes are visible to ⁨{school}⁩'**
+  String schoolLinksAccountLinked(String school);
+
+  /// No description provided for @schoolLinksAccountNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No school can see your classes'**
+  String get schoolLinksAccountNone;
+
+  /// No description provided for @schoolLinksIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'A school can ask to see your classes. Nothing is shared until you accept, the school can only look, never change anything, and you can unlink at any time.'**
+  String get schoolLinksIntro;
+
+  /// No description provided for @schoolLinksEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No school has asked to link with you.'**
+  String get schoolLinksEmpty;
+
+  /// No description provided for @schoolLinksLinkedSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked now'**
+  String get schoolLinksLinkedSection;
+
+  /// No description provided for @schoolLinksPendingSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for your answer'**
+  String get schoolLinksPendingSection;
+
+  /// No description provided for @schoolLinksPastSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Earlier'**
+  String get schoolLinksPastSection;
+
+  /// No description provided for @schoolLinksReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Review'**
+  String get schoolLinksReview;
+
+  /// No description provided for @schoolLinksLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Your school links couldn\'t be loaded.'**
+  String get schoolLinksLoadError;
+
+  /// No description provided for @schoolLinkRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get schoolLinkRetry;
+
+  /// No description provided for @schoolLinkCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get schoolLinkCancel;
+
+  /// No description provided for @schoolLinkStatusLinked.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked'**
+  String get schoolLinkStatusLinked;
+
+  /// No description provided for @schoolLinkStatusDeclined.
+  ///
+  /// In en, this message translates to:
+  /// **'Declined'**
+  String get schoolLinkStatusDeclined;
+
+  /// No description provided for @schoolLinkStatusCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdrawn by the school'**
+  String get schoolLinkStatusCancelled;
+
+  /// No description provided for @schoolLinkStatusExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired'**
+  String get schoolLinkStatusExpired;
+
+  /// No description provided for @schoolLinkStatusUnlinked.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlinked'**
+  String get schoolLinkStatusUnlinked;
+
+  /// No description provided for @schoolLinkKindPublic.
+  ///
+  /// In en, this message translates to:
+  /// **'Public school'**
+  String get schoolLinkKindPublic;
+
+  /// No description provided for @schoolLinkKindPrivate.
+  ///
+  /// In en, this message translates to:
+  /// **'Private school'**
+  String get schoolLinkKindPrivate;
+
+  /// No description provided for @schoolLinkKindInternational.
+  ///
+  /// In en, this message translates to:
+  /// **'International school'**
+  String get schoolLinkKindInternational;
+
+  /// No description provided for @schoolLinkKindOther.
+  ///
+  /// In en, this message translates to:
+  /// **'School'**
+  String get schoolLinkKindOther;
+
+  /// School Portal (teacher side). Placeholders are school names, user content, wrapped in isolates.
+  ///
+  /// In en, this message translates to:
+  /// **'Your classes are visible to ⁨{school}⁩.'**
+  String schoolLinkBanner(String school);
+
+  /// No description provided for @schoolLinkUnlink.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlink'**
+  String get schoolLinkUnlink;
+
+  /// No description provided for @schoolLinkUnlinkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlink from this school?'**
+  String get schoolLinkUnlinkTitle;
+
+  /// School Portal (teacher side). Placeholders are school names, user content, wrapped in isolates.
+  ///
+  /// In en, this message translates to:
+  /// **'⁨{school}⁩ will stop seeing your classes at once.'**
+  String schoolLinkUnlinkBody(String school);
+
+  /// No description provided for @schoolLinkUnlinked.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlinked. The school can no longer see your classes.'**
+  String get schoolLinkUnlinked;
+
+  /// No description provided for @schoolLinkRequestTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'School request'**
+  String get schoolLinkRequestTitle;
+
+  /// School Portal (teacher side). Placeholders are school names, user content, wrapped in isolates.
+  ///
+  /// In en, this message translates to:
+  /// **'⁨{school}⁩ asks to see your classes'**
+  String schoolLinkRequestHeading(String school);
+
+  /// No description provided for @schoolLinkAskedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Asked by'**
+  String get schoolLinkAskedBy;
+
+  /// No description provided for @schoolLinkSeesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What the school will see'**
+  String get schoolLinkSeesTitle;
+
+  /// No description provided for @schoolLinkSeesClasses.
+  ///
+  /// In en, this message translates to:
+  /// **'All your classes, including ones you create later'**
+  String get schoolLinkSeesClasses;
+
+  /// No description provided for @schoolLinkSeesStudents.
+  ///
+  /// In en, this message translates to:
+  /// **'Every student\'s name, email and Studafy ID'**
+  String get schoolLinkSeesStudents;
+
+  /// No description provided for @schoolLinkSeesParents.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked parents\' names and emails'**
+  String get schoolLinkSeesParents;
+
+  /// No description provided for @schoolLinkSeesLessons.
+  ///
+  /// In en, this message translates to:
+  /// **'Lessons, your files and class announcements'**
+  String get schoolLinkSeesLessons;
+
+  /// No description provided for @schoolLinkSeesWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Hand-ins and test answers'**
+  String get schoolLinkSeesWork;
+
+  /// No description provided for @schoolLinkSeesMarks.
+  ///
+  /// In en, this message translates to:
+  /// **'All marks, including unpublished and AI-suggested ones'**
+  String get schoolLinkSeesMarks;
+
+  /// No description provided for @schoolLinkSeesAttendance.
+  ///
+  /// In en, this message translates to:
+  /// **'Each student\'s attendance, day by day'**
+  String get schoolLinkSeesAttendance;
+
+  /// No description provided for @schoolLinkSeesWellbeing.
+  ///
+  /// In en, this message translates to:
+  /// **'Your wellbeing notes, except safeguarding-restricted ones'**
+  String get schoolLinkSeesWellbeing;
+
+  /// No description provided for @schoolLinkNeverTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What it will never see'**
+  String get schoolLinkNeverTitle;
+
+  /// No description provided for @schoolLinkNeverMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get schoolLinkNeverMessages;
+
+  /// No description provided for @schoolLinkNeverTutor.
+  ///
+  /// In en, this message translates to:
+  /// **'Students\' AI Tutor chats'**
+  String get schoolLinkNeverTutor;
+
+  /// No description provided for @schoolLinkNeverNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Students\' own notebooks, notes, flashcards and quizzes'**
+  String get schoolLinkNeverNotes;
+
+  /// No description provided for @schoolLinkReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'The school can only look, never change anything. You can unlink at any time.'**
+  String get schoolLinkReadOnly;
+
+  /// No description provided for @schoolLinkAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get schoolLinkAccept;
+
+  /// No description provided for @schoolLinkDecline.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline'**
+  String get schoolLinkDecline;
+
+  /// No description provided for @schoolLinkReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Report this school'**
+  String get schoolLinkReport;
+
+  /// School Portal (teacher side). Placeholders are school names, user content, wrapped in isolates.
+  ///
+  /// In en, this message translates to:
+  /// **'Share your classes with ⁨{school}⁩?'**
+  String schoolLinkAcceptTitle(String school);
+
+  /// No description provided for @schoolLinkAcceptBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Its administrators will see everything listed on this page until you unlink.'**
+  String get schoolLinkAcceptBody;
+
+  /// No description provided for @schoolLinkDeclineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline this request?'**
+  String get schoolLinkDeclineTitle;
+
+  /// School Portal (teacher side). Placeholders are school names, user content, wrapped in isolates.
+  ///
+  /// In en, this message translates to:
+  /// **'⁨{school}⁩ can\'t ask again for 30 days.'**
+  String schoolLinkDeclineBody(String school);
+
+  /// No description provided for @schoolLinkReplaceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re linked with another school'**
+  String get schoolLinkReplaceTitle;
+
+  /// School Portal (teacher side). Placeholders are school names, user content, wrapped in isolates.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re linked with ⁨{current}⁩. To link with ⁨{school}⁩, you\'ll be unlinked from ⁨{current}⁩, which will stop seeing your classes.'**
+  String schoolLinkReplaceBody(String current, String school);
+
+  /// No description provided for @schoolLinkReplaceConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlink and accept'**
+  String get schoolLinkReplaceConfirm;
+
+  /// No description provided for @schoolLinkAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked. The school can now see your classes.'**
+  String get schoolLinkAccepted;
+
+  /// No description provided for @schoolLinkDeclined.
+  ///
+  /// In en, this message translates to:
+  /// **'Request declined.'**
+  String get schoolLinkDeclined;
+
+  /// No description provided for @schoolLinkNoLongerWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'This request is no longer waiting for an answer.'**
+  String get schoolLinkNoLongerWaiting;
+
+  /// No description provided for @schoolReportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Report this school'**
+  String get schoolReportTitle;
+
+  /// No description provided for @schoolReportIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell Studafy what\'s wrong. The school isn\'t told who reported it.'**
+  String get schoolReportIntro;
+
+  /// No description provided for @schoolReportNotMySchool.
+  ///
+  /// In en, this message translates to:
+  /// **'This isn\'t my school'**
+  String get schoolReportNotMySchool;
+
+  /// No description provided for @schoolReportFake.
+  ///
+  /// In en, this message translates to:
+  /// **'This school seems fake'**
+  String get schoolReportFake;
+
+  /// No description provided for @schoolReportPressure.
+  ///
+  /// In en, this message translates to:
+  /// **'I\'m being pressured to accept'**
+  String get schoolReportPressure;
+
+  /// No description provided for @schoolReportOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Something else'**
+  String get schoolReportOther;
+
+  /// No description provided for @schoolReportDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Details (optional)'**
+  String get schoolReportDetails;
+
+  /// No description provided for @schoolReportSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send report'**
+  String get schoolReportSend;
+
+  /// No description provided for @schoolReportSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Thank you. Studafy will review your report.'**
+  String get schoolReportSent;
+
+  /// No description provided for @schoolLinkErrorUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This school\'s page is no longer available.'**
+  String get schoolLinkErrorUnavailable;
+
+  /// No description provided for @schoolLinkErrorAlreadyReported.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve already reported this school.'**
+  String get schoolLinkErrorAlreadyReported;
+
+  /// No description provided for @schoolLinkErrorNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'No connection. Check your internet and try again.'**
+  String get schoolLinkErrorNetwork;
+
+  /// No description provided for @schoolLinkErrorGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Try again.'**
+  String get schoolLinkErrorGeneric;
+
+  /// No description provided for @schoolAnnouncementsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'From your school'**
+  String get schoolAnnouncementsTitle;
+
+  /// No description provided for @schoolAnnouncementsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No announcements from a school yet.'**
+  String get schoolAnnouncementsEmpty;
+
+  /// No description provided for @schoolAnnouncementsLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Announcements couldn\'t be loaded.'**
+  String get schoolAnnouncementsLoadError;
+
+  /// No description provided for @schoolAnnouncementsAccountRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Announcements from schools'**
+  String get schoolAnnouncementsAccountRow;
+
+  /// No description provided for @notificationCopySchoolPortalAnnouncementTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New announcement from a school'**
+  String get notificationCopySchoolPortalAnnouncementTitle;
+
+  /// No description provided for @notificationCopySchoolPortalAnnouncementDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Open it to read what the school sent.'**
+  String get notificationCopySchoolPortalAnnouncementDetail;
+
+  /// No description provided for @schoolGroupsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Class groups'**
+  String get schoolGroupsSection;
+
+  /// School Portal (teacher side). Placeholders are user content, wrapped in isolates.
+  ///
+  /// In en, this message translates to:
+  /// **'⁨{school}⁩ asks to add this class to its group ⁨{group}⁩. Students who type the group\'s code will join this class.'**
+  String schoolGroupAsk(String school, String group);
+
+  /// School Portal (teacher side). Placeholders are user content, wrapped in isolates.
+  ///
+  /// In en, this message translates to:
+  /// **'In ⁨{school}⁩\'s group ⁨{group}⁩. Students who type its code join this class.'**
+  String schoolGroupIn(String school, String group);
+
+  /// No description provided for @schoolGroupApprove.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve'**
+  String get schoolGroupApprove;
+
+  /// No description provided for @schoolGroupDecline.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline'**
+  String get schoolGroupDecline;
+
+  /// No description provided for @schoolGroupRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Take out of the group'**
+  String get schoolGroupRemove;
+
+  /// No description provided for @schoolGroupApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved. Students can join with the group\'s code.'**
+  String get schoolGroupApproved;
+
+  /// No description provided for @schoolGroupDeclined.
+  ///
+  /// In en, this message translates to:
+  /// **'Declined.'**
+  String get schoolGroupDeclined;
+
+  /// No description provided for @schoolGroupLeadTeacherOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the class\'s lead teacher can add it to a school\'s group. You can still decline.'**
+  String get schoolGroupLeadTeacherOnly;
+
+  /// No description provided for @schoolGroupRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Taken out of the group. Students already in the class stay.'**
+  String get schoolGroupRemoved;
+
+  /// After a school's group code joined several classes. groupName is user content.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{You joined 1 class in ⁨{groupName}⁩} other{You joined {count} classes in ⁨{groupName}⁩}}'**
+  String joinClassGroupDone(int count, String groupName);
+
+  /// No description provided for @notificationCopySchoolPortalGroupClassRequestedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A school asked to group your class'**
+  String get notificationCopySchoolPortalGroupClassRequestedTitle;
+
+  /// No description provided for @notificationCopySchoolPortalGroupClassRequestedDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'A school asked to add your class to a class group. Open Schools to approve or decline.'**
+  String get notificationCopySchoolPortalGroupClassRequestedDetail;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

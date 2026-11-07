@@ -169,6 +169,14 @@ const RETENTION_STEPS = [
       sql<{ counts: Record<string, number> }[]>`
     select private.ai_output_reports_purge(5000) as counts`,
   },
+  // School Portal: link requests left 14 days expire; the activity record
+  // and Studafy ID lookups are kept 12 months (docs/planning/school-portal.md).
+  {
+    name: "school_portal",
+    query: (sql: Sql) =>
+      sql<{ counts: Record<string, number> }[]>`
+    select private.school_portal_purge(5000) as counts`,
+  },
 ] as const;
 
 /**

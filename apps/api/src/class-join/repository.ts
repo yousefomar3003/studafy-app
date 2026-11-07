@@ -41,7 +41,15 @@ export class PostgresClassJoinRepository implements CatalogueRepository {
    * way in: a code is never minted, and one presented for redemption is
    * refused rather than looked up with a key that does not exist.
    */
-  constructor(readonly sql: Sql, readonly codeKey?: string) {}
+  constructor(
+    readonly sql: Sql,
+    readonly codeKey?: string,
+    /**
+     * A code no class has may be a School Portal group's, only while the
+     * portal is switched on (SCHOOL_PORTAL_ENABLED): off, it joins nothing.
+     */
+    readonly schoolGroups = false,
+  ) {}
 
   async query(
     context: RequestDbContext,
@@ -150,6 +158,8 @@ export class PostgresClassJoinRepository implements CatalogueRepository {
           schoolId: link["schoolId"],
           classroomId: link["classroomId"],
           classroomName: link["classroomName"],
+          // A school's group code joined several classes at once.
+          ...(link["group"] ? { group: link["group"] } : {}),
         },
       };
     }
@@ -172,7 +182,11 @@ export class PostgresClassJoinRepository implements CatalogueRepository {
    */
   private async redemptionCredential(
     body: Record<string, unknown>,
-  ): Promise<{ tokenHash: string } | { codeHash: string } | null> {
+  ): Promise<
+    | { tokenHash: string }
+    | { codeHash: string; schoolGroups?: true }
+    | null
+  > {
     const token = body["token"];
     const code = body["code"];
     if (typeof token === "string" && code === undefined) {
@@ -181,7 +195,10 @@ export class PostgresClassJoinRepository implements CatalogueRepository {
     if (typeof code === "string" && token === undefined && this.codeKey) {
       const canonical = normalizeClassCode(code);
       if (!canonical) return null;
-      return { codeHash: await hashClassCode(canonical, this.codeKey) };
+      const codeHash = await hashClassCode(canonical, this.codeKey);
+      return this.schoolGroups
+        ? { codeHash, schoolGroups: true }
+        : { codeHash };
     }
     return null;
   }

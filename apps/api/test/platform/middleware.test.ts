@@ -29,6 +29,7 @@ const route = {
 
 function harness(options: {
   allowedOrigins?: string[];
+  portalOrigins?: string[];
   maxBodyBytes?: number;
   maxJsonDepth?: number;
   maxJsonKeys?: number;
@@ -48,6 +49,7 @@ function harness(options: {
     checks: {},
     platform: {
       allowedOrigins: options.allowedOrigins,
+      portalOrigins: options.portalOrigins,
       limits: options,
       ...(options.hmacKey
         ? {
@@ -202,6 +204,40 @@ describe("API-040 response controls", () => {
     expect(allowed.headers.get("access-control-allow-origin")).toBe(
       "https://app.studafy.test",
     );
+  });
+
+  test("the School Portal website's origin reaches only the portal's routes", async () => {
+    const { app } = harness({ portalOrigins: ["https://school.studafy.test"] });
+    const origin = { origin: "https://school.studafy.test" };
+    // Anything else on the API stays closed to it.
+    const elsewhere = await app.request("/healthz", { headers: origin });
+    expect(elsewhere.status).toBe(403);
+    const preflight = await app.request("/v1/school-portal/orgs", {
+      method: "OPTIONS",
+      headers: { ...origin, "access-control-request-method": "POST" },
+    });
+    expect(preflight.status).toBe(204);
+    expect(preflight.headers.get("access-control-allow-origin")).toBe(
+      "https://school.studafy.test",
+    );
+    const me = await app.request("/v1/me", {
+      method: "OPTIONS",
+      headers: { ...origin, "access-control-request-method": "GET" },
+    });
+    expect(me.status).toBe(204);
+    const file = await app.request(
+      "/delivery/v1/files/00000000-0000-4000-8000-0000000000f1/content",
+      {
+        method: "OPTIONS",
+        headers: { ...origin, "access-control-request-method": "GET" },
+      },
+    );
+    expect(file.status).toBe(204);
+    const notMe = await app.request("/v1/me/school-links", {
+      method: "OPTIONS",
+      headers: { ...origin, "access-control-request-method": "GET" },
+    });
+    expect(notMe.status).toBe(403);
   });
 
   test("ignores spoofed request IDs and emits hardened no-store responses", async () => {

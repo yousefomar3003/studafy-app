@@ -1,0 +1,244 @@
+/* Page-specific pieces: inner page tops, questions, steps, contact, 404. */
+
+.page-hero {
+  position: relative;
+  isolation: isolate;
+  padding-block: clamp(64px, 9vw, 120px) clamp(48px, 6vw, 80px);
+}
+
+.page-hero .section-head {
+  margin-block-end: 0;
+}
+
+.page-hero h1 {
+  font-size: clamp(2.4rem, 5.4vw, 4.25rem);
+}
+
+.jump {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-block-start: 36px;
+}
+
+.jump a {
+  padding: 10px 20px;
+  border-radius: 999px;
+  background: var(--white);
+  border: 1px solid var(--hairline);
+  color: var(--navy);
+  font-weight: 650;
+  text-decoration: none;
+  box-shadow: var(--shadow-soft);
+  transition: transform 0.3s var(--ease), border-color 0.3s;
+}
+
+.jump a:hover {
+  transform: translateY(-2px);
+  border-color: var(--frost);
+}
+
+/* Questions */
+
+.faq-title {
+  margin-block-end: 36px;
+  text-align: center;
+}
+
+.faq {
+  display: grid;
+  gap: 12px;
+  max-width: 52rem;
+  margin-inline: auto;
+}
+
+.faq details {
+  border-radius: 18px;
+  background: var(--white);
+  border: 1px solid var(--hairline);
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.faq details[open] {
+  border-color: var(--frost);
+  box-shadow: var(--shadow-soft);
+}
+
+.faq summary {
+  position: relative;
+  padding: 20px 24px;
+  padding-inline-end: 56px;
+  font-weight: 650;
+  cursor: pointer;
+  list-style: none;
+}
+
+.faq summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq summary::after {
+  content: "";
+  position: absolute;
+  inset-inline-end: 24px;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  border-inline-end: 2px solid var(--steel);
+  border-block-end: 2px solid var(--steel);
+  transform: translateY(-70%) rotate(45deg);
+  transition: transform 0.3s var(--ease);
+}
+
+.faq details[open] summary::after {
+  transform: translateY(-30%) rotate(-135deg);
+}
+
+.faq details p {
+  padding: 0 24px 22px;
+  color: var(--muted);
+}
+
+/* Steps (School Portal) */
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  counter-reset: step;
+}
+
+.step-number {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-block-end: 18px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--navy), var(--indigo));
+  color: var(--white);
+  font-weight: 800;
+}
+
+.never {
+  display: grid;
+  gap: 12px;
+  max-width: 40rem;
+  margin-inline: auto;
+}
+
+.never li {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 22px;
+  border-radius: 18px;
+  background: rgb(255 255 255 / 0.06);
+  border: 1px solid rgb(255 255 255 / 0.12);
+  color: var(--white);
+  font-weight: 550;
+}
+
+.never .icon {
+  flex: none;
+  color: var(--sky);
+}
+
+@media (max-width: 900px) {
+  .steps {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* About */
+
+.mission {
+  max-width: 54rem;
+  margin-inline: auto;
+  text-align: center;
+}
+
+.mission h2 {
+  margin-block-end: 28px;
+}
+
+.mission p {
+  color: var(--ink);
+  font-size: clamp(1.2rem, 2.2vw, 1.6rem);
+  line-height: 1.6;
+  font-weight: 450;
+}
+
+/* Contact */
+
+.email {
+  display: inline-block;
+  margin-block-start: 28px;
+  font-size: clamp(1.5rem, 3.4vw, 2.4rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+  background: linear-gradient(100deg, var(--indigo), var(--teal));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.link-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+
+.link-card h2 {
+  font-size: 1.2rem;
+  letter-spacing: -0.015em;
+}
+
+.link-card .arrow {
+  display: inline-block;
+  margin-block-start: auto;
+  padding-block-start: 18px;
+  color: var(--indigo);
+  font-size: 1.3rem;
+  font-weight: 700;
+  transition: transform 0.3s var(--ease);
+}
+
+.link-card:hover .arrow {
+  transform: translateX(6px);
+}
+
+[dir="rtl"] .link-card .arrow {
+  transform: scaleX(-1);
+}
+
+[dir="rtl"] .link-card:hover .arrow {
+  transform: scaleX(-1) translateX(6px);
+}
+
+/* 404 */
+
+.big-404 {
+  font-size: clamp(6rem, 18vw, 11rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.06em;
+  background: linear-gradient(120deg, var(--indigo), var(--sky));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.not-found .lead {
+  margin-block-end: 32px;
+}
+
+.not-found .wrap {
+  display: grid;
+  justify-items: center;
+}

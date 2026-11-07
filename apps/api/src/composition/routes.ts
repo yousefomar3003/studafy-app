@@ -41,6 +41,10 @@ import {
   createOutputReportRoutes,
   PostgresOutputReportRepository,
 } from "../output-reports/routes";
+import {
+  createSchoolPortalRoutes,
+  PostgresSchoolPortalRepository,
+} from "../school-portal/routes";
 import { createAiConsentRoutes } from "../study/aiConsentRoutes";
 import { createMessagingSwitch } from "../communications/messagingSwitch";
 import { PostgresMaterialRepository } from "../study/material";
@@ -233,6 +237,7 @@ export function buildRoutes(platform: Platform) {
         repository: new PostgresClassJoinRepository(
           sql,
           env.CLASS_JOIN_CODE_KEY,
+          env.SCHOOL_PORTAL_ENABLED,
         ),
         cursorSigningKey: env.API_CURSOR_SIGNING_KEY,
         enabledSlices: { classJoin: true },
@@ -529,23 +534,25 @@ export function buildRoutes(platform: Platform) {
     )
     : undefined;
 
+  // FILE-051 switches default off; delivery also needs its own signing key
+  // and public origin (production refuses to start without them). Shared
+  // with the School Portal, whose links are served by the same route.
+  const fileDelivery = env.FILE051_DELIVERY_ENABLED &&
+      env.FILE051_DELIVERY_SIGNING_KEY &&
+      env.FILE051_DELIVERY_PUBLIC_BASE_URL
+    ? {
+      signingKey: env.FILE051_DELIVERY_SIGNING_KEY,
+      publicBaseUrl: env.FILE051_DELIVERY_PUBLIC_BASE_URL,
+    }
+    : null;
   const files = sql && privateStorage
     ? createFileRoutes(
       {
         repository: new PostgresFileRepository(sql),
         storage: privateStorage,
         newIntentsEnabled: env.FILE050_NEW_INTENTS_ENABLED,
-        // FILE-051 switches default off; delivery also needs its own signing
-        // key and public origin (production refuses to start without them).
         publishEnabled: env.FILE051_PUBLISH_ENABLED,
-        delivery: env.FILE051_DELIVERY_ENABLED &&
-            env.FILE051_DELIVERY_SIGNING_KEY &&
-            env.FILE051_DELIVERY_PUBLIC_BASE_URL
-          ? {
-            signingKey: env.FILE051_DELIVERY_SIGNING_KEY,
-            publicBaseUrl: env.FILE051_DELIVERY_PUBLIC_BASE_URL,
-          }
-          : null,
+        delivery: fileDelivery,
       },
       authorization,
       idempotencyDependencies,
@@ -770,6 +777,24 @@ export function buildRoutes(platform: Platform) {
       idempotencyDependencies,
     )
     : undefined;
+  // Studafy School Portal (docs/planning/school-portal.md), appended last in
+  // the catalogue. Always mounted so the switch can answer 404 for every
+  // route while SCHOOL_PORTAL_ENABLED is off.
+  const schoolPortal = sql && idempotencyDependencies
+    ? createSchoolPortalRoutes(
+      {
+        repository: new PostgresSchoolPortalRepository(
+          sql,
+          env.CLASS_JOIN_CODE_KEY,
+        ),
+        enabled: env.SCHOOL_PORTAL_ENABLED,
+        ...(turnstile ? { turnstile } : {}),
+        delivery: fileDelivery,
+      },
+      authorization,
+      idempotencyDependencies,
+    )
+    : undefined;
   // DL-061: with messaging off server-wide, in front of every module.
   const messagingSwitch = env.MESSAGING_ENABLED
     ? undefined
@@ -815,6 +840,7 @@ export function buildRoutes(platform: Platform) {
     personalNotebook,
     marking,
     outputReports,
+    schoolPortal,
   ].filter((module) => module !== undefined && module !== null);
   const combinedRoutes = modules.length > 0
     ? modules.reduce(

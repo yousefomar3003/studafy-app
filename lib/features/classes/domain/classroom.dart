@@ -110,11 +110,18 @@ class JoinedClass {
     required this.schoolId,
     required this.classroomId,
     required this.classroomName,
+    this.groupName,
+    this.groupClassNames = const [],
   });
 
   final String schoolId;
   final ClassroomId classroomId;
   final String classroomName;
+
+  /// A school's group code (School Portal) joins several classes at once:
+  /// the group, and every class it joined. Null for one class's code.
+  final String? groupName;
+  final List<String> groupClassNames;
 }
 
 /// A class's live join link, as the teacher sees it after creation.

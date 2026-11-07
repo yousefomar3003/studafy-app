@@ -103,6 +103,9 @@ export function createAuthRoutes(
         // Only what the app needs to offer the safety-review area; the
         // review routes are refused by the database to anyone else.
         platformOperator: context.platformOperator === true,
+        // The School Portal's teacher screens (plan 6.5); the routes behind
+        // them answer 404 while it is off, whatever the app shows.
+        schoolPortal: deps.schoolPortal === true,
       });
     },
   );

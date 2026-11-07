@@ -16,6 +16,7 @@ Widget appScopes(AppDependencies deps, Widget child) => SessionScope(
   child: AccountScope(
     account: deps.account,
     safetyReview: deps.safetyReview,
+    schoolLinks: deps.schoolLinks,
     child: UploadsScope(
       uploads: deps.fileUploads,
       child: MeetingsScope(

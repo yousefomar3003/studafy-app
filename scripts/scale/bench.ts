@@ -20,8 +20,13 @@
  *             or AI), to compare like with like
  * --max-p95   fail (exit 1) when any screen's p95 exceeds this many ms, or
  *             any request errors - the CI regression guard
+ * --portal    also the School Portal (seed-school-portal.sql): administrators
+ *             make --admins of visits (default 0.03) and open the dashboard,
+ *             overview, classes, one class, a student and the reports;
+ *             students sometimes open their schools' announcements and
+ *             teachers their links and class-group requests
  * Sizes must match the seed: --schools --students --teachers --classes --enrol
- *   --exams
+ *   --exams --big
  *
  * Since 2026-10-12 (launch plan 4.8) a visit also covers online exams
  * (open, answer, hand in; teachers list attempts), study notebooks (list,
@@ -54,6 +59,8 @@ const think = Number(opt("think", "0"));
 const maxP95 = Number(opt("max-p95", "0"));
 // --classic: only the screens measured on 2026-09-29, to compare like with like.
 const classic = args.includes("--classic");
+const portal = args.includes("--portal");
+const admins = Number(opt("admins", "0.03"));
 const size = {
   schools: Number(opt("schools", "100")),
   students: Number(opt("students", "500")),
@@ -61,6 +68,7 @@ const size = {
   classes: Number(opt("classes", "60")),
   enrol: Number(opt("enrol", "3")),
   exams: Number(opt("exams", "2")),
+  big: Number(opt("big", "5")),
 };
 
 function sid(kind: string, a: number, b = 0): string {
@@ -360,10 +368,109 @@ function studentStudy(
   return calls;
 }
 
+/**
+ * A school administrator on the portal (seed-school-portal.sql): the
+ * workspace's teachers link with org s, or with the large org 0 for the
+ * last --big workspaces. Self-scoped, checked in SQL: no authorization call
+ * and no school, as the API runs them.
+ */
+function adminVisit(s: number): Call[] {
+  const o = s > size.schools - size.big ? 0 : s;
+  const org = sid("org", o);
+  const cls = sid("cl", s, pick(size.classes) - 1);
+  const base = {
+    subject: sid("pa", o),
+    school: null,
+    permission: null,
+    resource: null,
+    dispatcher: "private.api062_query",
+    input: {},
+  };
+  const inOrg = { orgId: org };
+  const calls: Call[] = [
+    { ...base, name: "portal.dashboard", operation: "dashboard", target: org },
+    { ...base, name: "portal.overview", operation: "overview", target: org },
+    { ...base, name: "portal.classes", operation: "classes", target: org },
+    {
+      ...base,
+      name: "portal.class.overview",
+      operation: "classOverview",
+      target: cls,
+      input: inOrg,
+    },
+    {
+      ...base,
+      name: "portal.class.roster",
+      operation: "roster",
+      target: cls,
+      input: inOrg,
+    },
+    {
+      ...base,
+      name: "portal.class.marks",
+      operation: "marks",
+      target: cls,
+      input: inOrg,
+    },
+    {
+      ...base,
+      name: "portal.class.attendance",
+      operation: "attendance",
+      target: cls,
+      input: inOrg,
+    },
+    {
+      ...base,
+      name: "portal.student",
+      operation: "student",
+      target: sid("st", s, pick(size.students)),
+      input: inOrg,
+    },
+  ];
+  if (Math.random() < 0.3) {
+    calls.push({
+      ...base,
+      name: "portal.reports",
+      operation: "reports",
+      target: org,
+    });
+  }
+  if (Math.random() < 0.3) {
+    calls.push(
+      { ...base, name: "portal.teachers", operation: "teachers", target: org },
+      { ...base, name: "portal.groups", operation: "groups", target: org },
+      {
+        ...base,
+        name: "portal.announcements",
+        operation: "announcements",
+        target: org,
+      },
+    );
+  }
+  return calls;
+}
+
+/** The portal's reads in the app, for a person (none without --portal). */
+function portalReads(me: string, operations: string[]): Call[] {
+  if (!portal || Math.random() >= 0.2) return [];
+  return operations.map((operation) => ({
+    name: `app.${operation}`,
+    subject: me,
+    school: null,
+    permission: null,
+    resource: null,
+    dispatcher: "private.api062_query",
+    operation,
+    target: null,
+    input: {},
+  }));
+}
+
 /** The screens one person opens in a visit, as API requests. */
 function visit(): Call[] {
   const s = pick(size.schools);
   const school = sid("school", s);
+  if (portal && Math.random() < admins) return adminVisit(s);
   const role = Math.random();
   if (role < 0.7) {
     const n = pick(size.students);
@@ -449,6 +556,7 @@ function visit(): Call[] {
       ...(classic
         ? []
         : studentStudy(s, n, school, me, (n * size.enrol) % size.classes)),
+      ...portalReads(me, ["myAnnouncements"]),
     ];
   }
   if (role < 0.9) {
@@ -493,6 +601,7 @@ function visit(): Call[] {
         operation: "getUnreadCount",
         input: {},
       },
+      ...portalReads(me, ["myAnnouncements"]),
     ];
   }
   const t = pick(size.teachers);
@@ -568,6 +677,7 @@ function visit(): Call[] {
         },
       },
     },
+    ...portalReads(me, ["myLinks", "myGroupClasses", "myAnnouncements"]),
   ];
 }
 

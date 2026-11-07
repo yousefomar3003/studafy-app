@@ -31,6 +31,10 @@ const copy: Record<"en" | "ar", Record<string, ChannelCopy>> = {
       title: "Subscription update",
       body: "There is an update about a subscription in Studafy.",
     },
+    school_portal: {
+      title: "School link update",
+      body: "There is an update about a school link in Studafy.",
+    },
     generic: {
       title: "Studafy",
       body: "You have a new notification in Studafy.",
@@ -56,6 +60,10 @@ const copy: Record<"en" | "ar", Record<string, ChannelCopy>> = {
     billing: {
       title: "تحديث الاشتراك",
       body: "يوجد تحديث حول اشتراك في Studafy.",
+    },
+    school_portal: {
+      title: "تحديث ربط مدرسة",
+      body: "يوجد تحديث حول ربط مع مدرسة في Studafy.",
     },
     generic: {
       title: "Studafy",
@@ -95,6 +103,21 @@ const templates: Record<"en" | "ar", Record<string, ChannelCopy>> = {
     "system.push_test": {
       title: "Test notification",
       body: "Notifications from Studafy are working on this device.",
+    },
+    // School Portal: which school, and what it said, only in the app.
+    "school_portal.announcement": {
+      title: "New announcement from a school",
+      body: "Open Studafy to read what the school sent.",
+    },
+    "school_portal.group_class_requested": {
+      title: "A school asked to group your class",
+      body:
+        "A school asked to add your class to a class group. Open Studafy to approve or decline.",
+    },
+    "school_portal.link_requested": {
+      title: "A school asked to link",
+      body:
+        "A school asked to see your classes. Open Studafy to accept or decline.",
     },
     // Marks for paper work: which work and which mark are shown only in
     // the app, after sign-in.
@@ -136,6 +159,19 @@ const templates: Record<"en" | "ar", Record<string, ChannelCopy>> = {
     "system.push_test": {
       title: "إشعار تجريبي",
       body: "إشعارات Studafy تعمل على هذا الجهاز.",
+    },
+    "school_portal.announcement": {
+      title: "إعلان جديد من مدرسة",
+      body: "افتح Studafy لقراءة ما أرسلته المدرسة.",
+    },
+    "school_portal.group_class_requested": {
+      title: "طلبت مدرسة إضافة صفك إلى مجموعة",
+      body:
+        "طلبت مدرسة إضافة صفك إلى مجموعة صفوف. افتح Studafy للموافقة أو الرفض.",
+    },
+    "school_portal.link_requested": {
+      title: "طلبت مدرسة الربط معك",
+      body: "طلبت مدرسة الاطلاع على صفوفك. افتح Studafy للقبول أو الرفض.",
     },
     "academic.grades_published": {
       title: "درجات جديدة",
