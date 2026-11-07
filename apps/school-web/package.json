@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && bun scripts/prerender.tsx",
+    "build": "vite build && bun --no-env-file scripts/prerender.tsx",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "e2e": "playwright test"
