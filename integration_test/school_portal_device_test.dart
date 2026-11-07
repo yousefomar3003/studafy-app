@@ -53,7 +53,7 @@ import '../test/support/localized_app.dart';
 /// Mac, which debug builds may reach over plain HTTP:
 ///
 ///   flutter test integration_test/school_portal_device_test.dart \
-///     --dart-define-from-file=<defines with 10.0.2.2> -d emulator-5554
+///     --dart-define-from-file=DEFINES_WITH_10_0_2_2 -d emulator-5554
 const _apiUrl = String.fromEnvironment('E2E_API_URL');
 const _supabaseUrl = String.fromEnvironment('E2E_SUPABASE_URL');
 const _anonKey = String.fromEnvironment('E2E_ANON_KEY');
