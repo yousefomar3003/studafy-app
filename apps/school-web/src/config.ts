@@ -13,8 +13,13 @@ function optionalUrl(value: string | undefined): string | null {
 export const config = {
   /** The public site's own address, for canonical and share links. */
   siteUrl: optionalUrl(env.VITE_SITE_URL) ?? "https://studafy.com",
-  /** Where "Open the School Portal" goes. */
-  portalUrl: optionalUrl(env.VITE_PORTAL_URL) ?? "https://school.studafy.com",
+  /**
+   * Where "Open the School Portal" and "School sign in" go. On the dev
+   * server, this copy's own portal (/portal/), so a local preview's sign-in
+   * opens something; built pages always name the real address.
+   */
+  portalUrl: optionalUrl(env.VITE_PORTAL_URL) ??
+    (import.meta.env?.DEV ? "/portal/" : "https://school.studafy.com"),
   /**
    * The School Portal page, its menu link and every sign-in button stay
    * hidden until the portal passes its release gate (plan section 11).
