@@ -1390,6 +1390,14 @@ class AppL10nEn extends AppL10n {
       'The AI Tutor is for student accounts. Sign out and sign in again through the Student door, or join a class with your teacher\'s link.';
 
   @override
+  String get joinClassAlreadyIn =>
+      'You\'re already in this class. A school\'s code joins you to every class in its group, so you\'re in all of them.';
+
+  @override
+  String get joinClassUnknownCode =>
+      'No class has this code. Check it with your teacher or school - a code can be replaced or closed.';
+
+  @override
   String get joinClassAlreadyStaff =>
       'You already teach at this school, so you cannot join one of its classes as a student. Ask a student to open the link on their own account.';
 
@@ -8747,6 +8755,10 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get schoolGroupDeclined => 'Declined.';
+
+  @override
+  String get schoolGroupLeadTeacherOnly =>
+      'Only the class\'s lead teacher can add it to a school\'s group. You can still decline.';
 
   @override
   String get schoolGroupRemoved =>

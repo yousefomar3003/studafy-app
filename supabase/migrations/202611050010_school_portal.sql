@@ -224,6 +224,16 @@ begin
 end
 $tables$;
 
+-- The portal reads these by class, all states included, where the app reads
+-- them by school or student; without these each class page and every row of
+-- the classes list scanned the whole table (docs/operations/capacity.md).
+create index school_portal_assignments_classroom_idx
+  on public.assignments (classroom_id, due_at) where deleted_at is null;
+create index school_portal_announcements_classroom_idx
+  on public.announcements (classroom_id, published_at desc) where deleted_at is null;
+create index school_portal_wellbeing_classroom_idx
+  on public.wellbeing_events (classroom_id, created_at desc);
+
 -- ---------------------------------------------------------------------------
 -- 2. Who may see what.
 -- ---------------------------------------------------------------------------
@@ -257,10 +267,24 @@ returns setof uuid language sql stable security definer set search_path = '' as 
     and (m.valid_until is null or m.valid_until > now());
 $$;
 
+-- The same rule for one class, found from the class's own teachers rather
+-- than by listing every class of the org: it runs once per row in lists.
 create or replace function private.school_portal_class_visible(p_org uuid, p_classroom uuid)
 returns boolean language sql stable security definer set search_path = '' as $$
   select p_classroom is not null and exists (
-    select 1 from private.school_portal_visible_classes(p_org) v(id) where v.id = p_classroom);
+    select 1
+    from public.classroom_staff cs
+    join private.school_portal_teacher_links l
+      on l.teacher_id = cs.user_id and l.org_id = p_org and l.status = 'linked'
+    join public.profiles p on p.id = cs.user_id and p.status = 'active'
+    join public.classrooms c on c.id = cs.classroom_id and c.archived_at is null
+    join public.memberships m
+      on m.id = cs.membership_id and m.school_id = cs.school_id and m.user_id = cs.user_id
+    where cs.classroom_id = p_classroom
+      and cs.status = 'active' and cs.role in ('lead_teacher', 'co_teacher')
+      and m.role = 'teacher' and m.active and m.status = 'active'
+      and (m.valid_from is null or m.valid_from <= now())
+      and (m.valid_until is null or m.valid_until > now()));
 $$;
 
 -- A request still waiting after 14 days counts as expired.
@@ -353,13 +377,16 @@ returns jsonb language sql stable security definer set search_path = '' as $$
 $$;
 
 -- Per (class, student): attendance over 30 days, average mark and missing
--- work, for the visible classes of an org. Shared by the overview, the
--- student's page and the reports.
-create or replace function private.school_portal_student_stats(p_org uuid)
+-- work, for the visible classes of an org, or only those of p_classes (a
+-- student's or a teacher's page, which need not pay for the whole school).
+-- Shared by the overview and the student's and teacher's pages.
+create or replace function private.school_portal_student_stats(
+  p_org uuid, p_classes uuid[] default null)
 returns table (classroom_id uuid, student_id uuid, sessions bigint,
   attended bigint, average numeric, missing bigint)
 language sql stable security definer set search_path = '' as $$
-  with vc as (select id from private.school_portal_visible_classes(p_org) v(id)),
+  with vc as (select id from private.school_portal_visible_classes(p_org) v(id)
+    where p_classes is null or v.id = any(p_classes)),
   enr as (
     select e.classroom_id, e.student_id from public.enrollments e
     join public.students s on s.id = e.student_id and s.deleted_at is null
@@ -412,19 +439,23 @@ $$;
 
 create or replace function private.school_portal_overview(p_org uuid)
 returns jsonb language sql stable security definer set search_path = '' as $$
-  with st as (select * from private.school_portal_student_stats(p_org))
+  with st as (select * from private.school_portal_student_stats(p_org)),
+  -- One pass over the stats per class, not one scan of them per class.
+  per as (
+    select st.classroom_id, count(*) as students,
+      round(sum(st.attended)::numeric / nullif(sum(st.sessions), 0), 3) as attendance_rate,
+      round(avg(st.average), 3) as average_mark, sum(st.missing) as missing
+    from st group by 1)
   select jsonb_build_object('outcome', 'ok',
     'classes', coalesce((
       select jsonb_agg(jsonb_build_object(
         'classroomId', c.id, 'name', c.name,
-        'students', (select count(*) from st where st.classroom_id = c.id),
-        'attendanceRate', (select round(sum(st.attended)::numeric
-            / nullif(sum(st.sessions), 0), 3) from st where st.classroom_id = c.id),
-        'averageMark', (select round(avg(st.average), 3) from st
-          where st.classroom_id = c.id),
-        'missing', (select coalesce(sum(st.missing), 0) from st
-          where st.classroom_id = c.id)) order by c.name)
+        'students', coalesce(per.students, 0),
+        'attendanceRate', per.attendance_rate,
+        'averageMark', per.average_mark,
+        'missing', coalesce(per.missing, 0)) order by c.name)
       from public.classrooms c
+      left join per on per.classroom_id = c.id
       where c.id in (select id from private.school_portal_visible_classes(p_org) v(id))),
       '[]'::jsonb),
     'attention', coalesce((
@@ -460,7 +491,8 @@ returns jsonb language sql stable security definer set search_path = '' as $$
     where e.status = 'active' and e.student_id in (select id from rows)
       and e.classroom_id in (select id from vc)),
   st as (
-    select st.* from private.school_portal_student_stats(p_org) st
+    select st.* from private.school_portal_student_stats(p_org,
+      (select coalesce(array_agg(distinct enr.classroom_id), '{}') from enr)) st
     where st.student_id in (select id from rows))
   select case when not exists (select 1 from enr) then null else jsonb_build_object(
     'outcome', 'ok',
@@ -528,9 +560,13 @@ returns jsonb language sql stable security definer set search_path = '' as $$
     where cs.user_id = p_teacher and cs.status = 'active'
       and cs.role in ('lead_teacher', 'co_teacher')
       and cs.classroom_id in (select id from private.school_portal_visible_classes(p_org) v(id))),
-  st as (
-    select st.* from private.school_portal_student_stats(p_org) st
-    where st.classroom_id in (select id from tc))
+  per as (
+    select st.classroom_id, count(*) as students,
+      round(sum(st.attended)::numeric / nullif(sum(st.sessions), 0), 3) as attendance_rate,
+      round(avg(st.average), 3) as average_mark, sum(st.missing) as missing
+    from private.school_portal_student_stats(p_org,
+      (select coalesce(array_agg(id), '{}') from tc)) st
+    group by 1)
   select case when not exists (select 1 from link) then null else jsonb_build_object(
     'outcome', 'ok',
     'teacher', private.school_portal_person(p_teacher) || jsonb_build_object(
@@ -538,13 +574,13 @@ returns jsonb language sql stable security definer set search_path = '' as $$
       'linkedSince', (select decided_at from link)),
     'classes', coalesce((select jsonb_agg(jsonb_build_object(
         'classroomId', c.id, 'name', c.name,
-        'students', (select count(*) from st where st.classroom_id = c.id),
-        'attendanceRate', (select round(sum(st.attended)::numeric
-            / nullif(sum(st.sessions), 0), 3) from st where st.classroom_id = c.id),
-        'averageMark', (select round(avg(st.average), 3) from st where st.classroom_id = c.id),
-        'missing', (select coalesce(sum(st.missing), 0) from st where st.classroom_id = c.id))
+        'students', coalesce(per.students, 0),
+        'attendanceRate', per.attendance_rate,
+        'averageMark', per.average_mark,
+        'missing', coalesce(per.missing, 0))
         order by c.name)
-      from public.classrooms c where c.id in (select id from tc)), '[]'::jsonb),
+      from public.classrooms c left join per on per.classroom_id = c.id
+      where c.id in (select id from tc)), '[]'::jsonb),
     'recentLessons', coalesce((select jsonb_agg(x order by x->>'startsAt' desc) from (
         select jsonb_build_object('id', ls.id, 'title', ls.title, 'className', c.name,
           'startsAt', ls.starts_at, 'status', ls.status) as x
@@ -599,36 +635,59 @@ returns jsonb language sql stable security definer set search_path = '' as $$
     join public.enrollments e on e.classroom_id = a.classroom_id and e.status = 'active'
     where a.classroom_id in (select id from vc) and a.deleted_at is null
       and a.state::text = 'published' and a.due_at < now()
+    group by 1),
+  -- Each figure once per class (and week), joined below by class, rather
+  -- than the rows above scanned again for every class and every week.
+  enrolled as (
+    select e.classroom_id, count(*) as students from public.enrollments e
+    where e.classroom_id in (select id from vc) and e.status = 'active'
+    group by 1),
+  class_att as (
+    select att.classroom_id,
+      round(sum(att.attended)::numeric / nullif(sum(att.sessions), 0), 3) as rate
+    from att group by 1),
+  class_marks as (
+    select m.classroom_id, round(avg(m.pct), 3) as average,
+      count(*) filter (where m.pct < 0.5) as below50,
+      count(*) filter (where m.pct >= 0.5 and m.pct < 0.7) as from50,
+      count(*) filter (where m.pct >= 0.7 and m.pct < 0.85) as from70,
+      count(*) filter (where m.pct >= 0.85) as from85
+    from marks m group by 1),
+  class_weeks as (
+    select v.id as classroom_id, jsonb_agg(jsonb_build_object(
+        'weekStart', to_char(wk.week_start, 'YYYY-MM-DD'),
+        'attendanceRate', round(att.attended::numeric / nullif(att.sessions, 0), 3))
+        order by wk.week_start) as weeks
+    from vc v cross join wk
+    left join att on att.classroom_id = v.id and att.week_start = wk.week_start
+    group by 1),
+  school_weeks as (
+    select wk.week_start,
+      round(sum(att.attended)::numeric / nullif(sum(att.sessions), 0), 3) as rate
+    from wk left join att on att.week_start = wk.week_start
     group by 1)
   select jsonb_build_object('outcome', 'ok',
     'weeks', (select jsonb_agg(jsonb_build_object(
-        'weekStart', to_char(wk.week_start, 'YYYY-MM-DD'),
-        'attendanceRate', (select round(sum(att.attended)::numeric
-          / nullif(sum(att.sessions), 0), 3) from att where att.week_start = wk.week_start))
-        order by wk.week_start) from wk),
+        'weekStart', to_char(sw.week_start, 'YYYY-MM-DD'), 'attendanceRate', sw.rate)
+        order by sw.week_start) from school_weeks sw),
     'classes', coalesce((select jsonb_agg(jsonb_build_object(
         'classroomId', c.id, 'name', c.name,
-        'students', (select count(*) from public.enrollments e
-          where e.classroom_id = c.id and e.status = 'active'),
-        'attendanceRate', (select round(sum(att.attended)::numeric
-          / nullif(sum(att.sessions), 0), 3) from att where att.classroom_id = c.id),
-        'averageMark', (select round(avg(m.pct), 3) from marks m where m.classroom_id = c.id),
-        'handInRate', (select round(o.handed::numeric / nullif(o.owed, 0), 3)
-          from owed o where o.classroom_id = c.id),
-        'bands', (select jsonb_build_object(
-            'below50', count(*) filter (where m.pct < 0.5),
-            'from50', count(*) filter (where m.pct >= 0.5 and m.pct < 0.7),
-            'from70', count(*) filter (where m.pct >= 0.7 and m.pct < 0.85),
-            'from85', count(*) filter (where m.pct >= 0.85))
-          from marks m where m.classroom_id = c.id),
-        'weeks', (select jsonb_agg(jsonb_build_object(
-            'weekStart', to_char(wk.week_start, 'YYYY-MM-DD'),
-            'attendanceRate', (select round(att.attended::numeric
-              / nullif(att.sessions, 0), 3) from att
-              where att.classroom_id = c.id and att.week_start = wk.week_start))
-            order by wk.week_start) from wk))
+        'students', coalesce(en.students, 0),
+        'attendanceRate', ca.rate,
+        'averageMark', cm.average,
+        'handInRate', round(o.handed::numeric / nullif(o.owed, 0), 3),
+        'bands', jsonb_build_object(
+            'below50', coalesce(cm.below50, 0), 'from50', coalesce(cm.from50, 0),
+            'from70', coalesce(cm.from70, 0), 'from85', coalesce(cm.from85, 0)),
+        'weeks', cw.weeks)
         order by c.name)
-      from public.classrooms c where c.id in (select id from vc)), '[]'::jsonb));
+      from public.classrooms c
+      left join enrolled en on en.classroom_id = c.id
+      left join class_att ca on ca.classroom_id = c.id
+      left join class_marks cm on cm.classroom_id = c.id
+      left join owed o on o.classroom_id = c.id
+      left join class_weeks cw on cw.classroom_id = c.id
+      where c.id in (select id from vc)), '[]'::jsonb));
 $$;
 
 create or replace function private.api062_query(
@@ -668,17 +727,50 @@ begin
         'invitedBy', private.school_portal_person(i.invited_by)) order by i.created_at)
       from private.school_portal_admin_invites i
       join private.school_portal_orgs o on o.id = i.org_id and o.status = 'active'
-      where i.email = lower((select u.email from auth.users u where u.id = auth.uid()))
+      where i.email = lower((select u.email from auth.users u
+          where u.id = auth.uid() and u.email_confirmed_at is not null))
         and i.accepted_at is null and i.revoked_at is null and i.expires_at > now()), '[]'::jsonb));
   elsif p_operation = 'myAnnouncements' then
-    -- What reaches the caller now, from any school, over the last year.
+    -- What reaches the caller now, from any school, over the last year:
+    -- the rule of school_portal_announcement_recipients, worked out from the
+    -- caller's own classes (as a student, a parent or a teacher) instead of
+    -- a recipients pass over every school's announcements.
     return jsonb_build_object('outcome', 'ok', 'announcements', coalesce((
+      with mine as (
+        select e.classroom_id, 'students' as via
+        from public.students s
+        join public.enrollments e on e.student_id = s.id and e.status = 'active'
+        where s.user_id = auth.uid() and s.deleted_at is null
+        union
+        select e.classroom_id, 'parents'
+        from public.guardian_links gl
+        join public.students s on s.id = gl.student_id and s.deleted_at is null
+        join public.enrollments e on e.student_id = s.id and e.status = 'active'
+        where gl.guardian_id = auth.uid() and gl.status = 'verified'
+          and (gl.expires_at is null or gl.expires_at > now())
+        union
+        select cs.classroom_id, 'teachers'
+        from public.classroom_staff cs
+        where cs.user_id = auth.uid() and cs.status = 'active'
+          and cs.role in ('lead_teacher', 'co_teacher')),
+      reach as (
+        select distinct l.org_id, m.classroom_id, m.via
+        from mine m
+        join public.classroom_staff cs on cs.classroom_id = m.classroom_id
+          and cs.status = 'active' and cs.role in ('lead_teacher', 'co_teacher')
+        join private.school_portal_teacher_links l
+          on l.teacher_id = cs.user_id and l.status = 'linked'
+        where private.school_portal_class_visible(l.org_id, m.classroom_id))
       select jsonb_agg(private.school_portal_announcement_json(a.id) order by a.created_at desc)
       from private.school_portal_announcements a
       join private.school_portal_orgs o on o.id = a.org_id and o.status = 'active'
       where a.removed_at is null and a.created_at > now() - interval '12 months'
-        and exists (select 1 from private.school_portal_announcement_recipients(a.id) r
-          where r.user_id = auth.uid())), '[]'::jsonb));
+        and a.org_id in (select r.org_id from reach r)
+        and exists (select 1 from reach r
+          where r.org_id = a.org_id
+            and (a.classroom_ids is null or r.classroom_id = any(a.classroom_ids))
+            and (r.via = a.audience or (a.audience = 'students_and_parents'
+              and r.via in ('students', 'parents'))))), '[]'::jsonb));
   elsif p_operation = 'myGroupClasses' then
     return jsonb_build_object('outcome', 'ok',
       'classes', private.school_portal_my_group_classes());
@@ -722,7 +814,8 @@ begin
           where e.status = 'active'
             and e.classroom_id in (select id from private.school_portal_visible_classes(v_org) v(id))),
         'waiting', coalesce((select jsonb_agg(jsonb_build_object('id', l.id,
-            'teacher', private.school_portal_person(l.teacher_id), 'requestedAt', l.requested_at)
+            'teacher', private.school_portal_person(l.teacher_id) || '{"email": null}'::jsonb,
+            'requestedAt', l.requested_at)
             order by l.requested_at desc)
           from private.school_portal_teacher_links l
           where l.org_id = v_org
@@ -731,7 +824,11 @@ begin
     when 'teachers' then
       perform private.school_portal_log(v_org, 'teachers');
       return jsonb_build_object('outcome', 'ok', 'teachers', coalesce((
-        select jsonb_agg(private.school_portal_person(l.teacher_id) || jsonb_build_object(
+        -- A teacher's email only while linked: never for a request they have
+        -- not accepted, nor after a decline or an unlink.
+        select jsonb_agg(private.school_portal_person(l.teacher_id)
+          || case when l.status = 'linked' then '{}'::jsonb else '{"email": null}'::jsonb end
+          || jsonb_build_object(
           'linkId', l.id,
           'studafyId', (select p.public_id from public.profiles p where p.id = l.teacher_id),
           'status', private.school_portal_link_status(l.status, l.requested_at),
@@ -747,8 +844,7 @@ begin
     when 'announcements' then
       return jsonb_build_object('outcome', 'ok', 'announcements', coalesce((
         select jsonb_agg(private.school_portal_announcement_json(a.id)
-          || jsonb_build_object('recipients', (select count(*)
-            from private.school_portal_announcement_recipients(a.id)))
+          || jsonb_build_object('recipients', a.recipient_count)
           order by a.created_at desc)
         from (select * from private.school_portal_announcements
               where org_id = v_org order by created_at desc limit 200) a), '[]'::jsonb));
@@ -1221,7 +1317,9 @@ begin
       select * into v_invite from private.school_portal_admin_invites i
       where i.id = p_resource_id and i.accepted_at is null and i.revoked_at is null
         and i.expires_at > now()
-        and i.email = lower((select u.email from auth.users u where u.id = me))
+        -- Only an address the sign-in provider confirmed.
+        and i.email = lower((select u.email from auth.users u
+          where u.id = me and u.email_confirmed_at is not null))
       for update;
       if v_invite.id is null or private.account_kind(me) is distinct from 'adult' then
         return jsonb_build_object('outcome', 'not_found');
@@ -1303,9 +1401,12 @@ begin
             and l.status in ('pending', 'linked')) then
         return jsonb_build_object('outcome', 'conflict', 'reason', 'already_requested');
       end if;
+      -- A decline holds for 30 days for this school, and for whoever asked
+      -- from any school, so a new school page is no way round it.
       if exists (select 1 from private.school_portal_teacher_links l
-          where l.org_id = p_resource_id and l.teacher_id = v_teacher
-            and l.status = 'declined' and l.decided_at > now() - interval '30 days') then
+          where l.teacher_id = v_teacher and l.status = 'declined'
+            and l.decided_at > now() - interval '30 days'
+            and (l.org_id = p_resource_id or l.requested_by = me)) then
         return jsonb_build_object('outcome', 'conflict', 'reason', 'recently_declined');
       end if;
       if (select count(*) from private.school_portal_teacher_links l
@@ -1327,8 +1428,10 @@ begin
       order by m.created_at, m.id
       limit 1;
       v_status := 201;
+      -- The name only: the teacher's email reaches the school once they accept.
       response := jsonb_build_object('linkId', v_link.id,
-        'teacher', private.school_portal_person(v_teacher), 'status', 'pending');
+        'teacher', private.school_portal_person(v_teacher) || '{"email": null}'::jsonb,
+        'status', 'pending');
 
     when 'cancelLink' then
       select * into v_link from private.school_portal_teacher_links where id = p_resource_id for update;
@@ -1416,6 +1519,13 @@ begin
         case when jsonb_typeof(body->'classroomIds') = 'array' then
           array(select x::uuid from jsonb_array_elements_text(body->'classroomIds') x) end)
       returning id into v_id;
+      select count(*) into v_live from private.school_portal_announcement_recipients(v_id);
+      if v_live = 0 then
+        -- No linked class has anyone it would reach: nothing is kept.
+        delete from private.school_portal_announcements where id = v_id;
+        return jsonb_build_object('outcome', 'conflict', 'reason', 'no_recipients');
+      end if;
+      update private.school_portal_announcements set recipient_count = v_live where id = v_id;
       -- One notice per teacher's workspace it reaches; the outbox resolves
       -- each to that workspace's recipients.
       insert into public.notification_outbox(school_id, source_event_id, idempotency_key,
@@ -1426,8 +1536,7 @@ begin
         jsonb_build_object('id', v_id)
       from private.school_portal_announcement_recipients(v_id) r;
       v_status := 201;
-      response := jsonb_build_object('id', v_id, 'recipients',
-        (select count(*) from private.school_portal_announcement_recipients(v_id)));
+      response := jsonb_build_object('id', v_id, 'recipients', v_live);
 
     when 'removeAnnouncement' then
       -- The operator's, after a report: it disappears for everyone.
@@ -1501,6 +1610,17 @@ begin
               and gc.status in ('pending', 'approved')) then
           return jsonb_build_object('outcome', 'conflict', 'reason', 'already_in_group');
         end if;
+        -- The teacher said no: not asked again for 30 days, and no class is
+        -- asked more than 5 times a day, by any school's groups.
+        if exists (select 1 from private.school_portal_group_classes gc
+            where gc.group_id = v_group.id and gc.classroom_id = v_id
+              and gc.status = 'declined' and gc.decided_at > now() - interval '30 days') then
+          return jsonb_build_object('outcome', 'conflict', 'reason', 'group_class_declined');
+        end if;
+        if (select count(*) from private.school_portal_group_classes gc
+            where gc.classroom_id = v_id and gc.requested_at > now() - interval '1 day') >= 5 then
+          return jsonb_build_object('outcome', 'rate_limited');
+        end if;
         if (select count(*) from private.school_portal_group_classes gc
             where gc.group_id = v_group.id and gc.status in ('pending', 'approved')) >= 30 then
           return jsonb_build_object('outcome', 'conflict', 'reason', 'group_full');
@@ -1537,6 +1657,14 @@ begin
       if v_entry.id is null or v_group.id is null
          or not private.school_portal_teaches(v_group.org_id, v_entry.classroom_id, me) then
         return jsonb_build_object('outcome', 'not_found');
+      end if;
+      -- Approving puts students in the class by the school's code, so it is
+      -- the lead teacher's call; a co-teacher may decline or take it out.
+      if body->>'decision' = 'approve' and v_entry.status = 'pending'
+         and not exists (select 1 from public.classroom_staff cs
+           where cs.classroom_id = v_entry.classroom_id and cs.user_id = me
+             and cs.status = 'active' and cs.role = 'lead_teacher') then
+        return jsonb_build_object('outcome', 'conflict', 'reason', 'lead_teacher_only');
       end if;
       if body->>'decision' in ('approve', 'decline') and v_entry.status = 'pending' then
         update private.school_portal_group_classes
@@ -1705,6 +1833,9 @@ create table private.school_portal_announcements (
     ('students', 'parents', 'students_and_parents', 'teachers')),
   -- Null: every linked class.
   classroom_ids uuid[] check (classroom_ids is null or cardinality(classroom_ids) between 1 and 500),
+  -- How many people it reached when it was sent, for the school's list
+  -- (counting them again on every read would cost a recipients pass each).
+  recipient_count integer not null default 0 check (recipient_count >= 0),
   created_at timestamptz not null default now(),
   removed_at timestamptz,
   removed_by uuid references public.profiles(id) on delete set null
@@ -2119,7 +2250,7 @@ begin
     'private.school_portal_log(uuid, text, uuid, uuid, uuid, uuid)',
     'private.school_portal_files(uuid[])',
     'private.school_portal_class_json(uuid, uuid)',
-    'private.school_portal_student_stats(uuid)',
+    'private.school_portal_student_stats(uuid, uuid[])',
     'private.school_portal_attention_reasons(bigint, bigint, numeric, bigint)',
     'private.school_portal_overview(uuid)',
     'private.school_portal_reports(uuid)',
@@ -2723,7 +2854,11 @@ returns jsonb language sql stable security definer set search_path = '' as $$
     'createdAt', g.created_at, 'derivationSalt', g.derivation_salt,
     'classes', coalesce((select jsonb_agg(jsonb_build_object(
         'id', gc.id, 'classroomId', gc.classroom_id, 'name', c.name,
-        'teachers', (private.school_portal_class_json(g.org_id, c.id))->'teachers',
+        'teachers', coalesce((select jsonb_agg(jsonb_build_object(
+            'id', p.id, 'name', p.display_name, 'role', cs.role) order by cs.role, p.display_name)
+          from public.classroom_staff cs join public.profiles p on p.id = cs.user_id
+          where cs.classroom_id = c.id and cs.status = 'active'
+            and cs.role in ('lead_teacher', 'co_teacher')), '[]'::jsonb),
         'status', gc.status, 'requestedAt', gc.requested_at, 'decidedAt', gc.decided_at)
         order by c.name, c.id)
       from private.school_portal_group_classes gc
@@ -2814,9 +2949,22 @@ begin
           and m.active and m.status = 'active' and m.role <> 'student') then
       continue;
     end if;
+    -- The teacher took the student out of their workspace (a membership
+    -- revoked or suspended, or their record deleted): the school's code
+    -- never brings them back. Checked before anything is written.
     v_membership := null;
     select m.id into v_membership from public.memberships m
     where m.school_id = v_class.school_id and m.user_id = me and m.role = 'student';
+    if v_membership is not null and not exists (select 1 from public.memberships m
+        where m.id = v_membership and m.active and m.status = 'active') then
+      continue;
+    end if;
+    if not exists (select 1 from public.students s
+        where s.school_id = v_class.school_id and s.user_id = me and s.deleted_at is null)
+       and exists (select 1 from public.students s
+        where s.school_id = v_class.school_id and s.user_id = me) then
+      continue;
+    end if;
     if v_membership is null then
       insert into public.memberships(school_id, user_id, role, active, status, version)
       values (v_class.school_id, me, 'student', true, 'active', 1)
@@ -2825,10 +2973,6 @@ begin
         reason, idempotency_key)
       values (v_class.school_id, v_membership, me, 'granted', 'school_group_code_redeemed',
         idem_key);
-    else
-      update public.memberships set active = true, status = 'active',
-        version = version + 1, updated_at = now()
-      where id = v_membership and (not active or status <> 'active');
     end if;
     v_student := null;
     select s.id into v_student from public.students s
@@ -2888,7 +3032,9 @@ begin
      and private.account_kind(auth.uid()) = 'adult' then
     return jsonb_build_object('outcome', 'forbidden');
   end if;
+  -- schoolGroups: the API sends it only while the School Portal is on.
   if p_operation = 'redeemClassJoinLink' and v_code_hash is not null
+     and coalesce(((p_input->'body')->>'schoolGroups')::boolean, false)
      and nullif((p_input->'body')->>'tokenHash', '') is null
      and not exists (select 1 from public.class_join_links l
        where l.code_hash = v_code_hash and l.status = 'active')
@@ -2902,7 +3048,8 @@ begin
     -- The delegate's body is strict about what it reads; the salt is this
     -- wrapper's alone.
     case when p_input ? 'body'
-      then jsonb_set(p_input, array['body'], (p_input->'body') - 'derivationSalt')
+      then jsonb_set(p_input, array['body'],
+        (p_input->'body') - 'derivationSalt' - 'schoolGroups')
       else p_input end,
     p_idempotency_id, p_idempotency_generation);
   if p_operation = 'createClassJoinLink' and v_salt is not null

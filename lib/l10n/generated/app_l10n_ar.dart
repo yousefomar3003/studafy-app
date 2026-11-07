@@ -1414,6 +1414,14 @@ class AppL10nAr extends AppL10n {
       'المعلّم الذكي لحسابات الطلاب. سجّل الخروج ثم سجّل الدخول من جديد من باب الطالب، أو انضم إلى صف برابط معلمك.';
 
   @override
+  String get joinClassAlreadyIn =>
+      'أنت في هذا الصف بالفعل. رمز المدرسة يضمّك إلى كل صفوف مجموعته، وأنت فيها كلها.';
+
+  @override
+  String get joinClassUnknownCode =>
+      'لا يوجد صف بهذا الرمز. تحقّق منه مع معلمك أو مدرستك، فقد يُستبدل الرمز أو يُغلق.';
+
+  @override
   String get joinClassAlreadyStaff =>
       'أنت معلم في هذه المدرسة، لذا لا يمكنك الانضمام إلى أحد صفوفها كطالب. اطلب من طالب فتح الرابط من حسابه.';
 
@@ -8750,6 +8758,10 @@ class AppL10nAr extends AppL10n {
 
   @override
   String get schoolGroupDeclined => 'تم الرفض.';
+
+  @override
+  String get schoolGroupLeadTeacherOnly =>
+      'يستطيع المعلم الرئيسي للصف وحده إضافته إلى مجموعة المدرسة. ما زال بإمكانك الرفض.';
 
   @override
   String get schoolGroupRemoved =>

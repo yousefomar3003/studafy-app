@@ -598,6 +598,9 @@ jobs:
       - name: Verify paper gradebook, attendance and deadline query plans
         run: bun run test:plans:coursework
 
+      - name: Verify School Portal query plans and read bounds at school scale
+        run: bun run test:plans:school-portal
+
       - name: Verify FILE-050 quota, status, expiry, and outbox query plans
         run: bun run test:plans:uploads
 

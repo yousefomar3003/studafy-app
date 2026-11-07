@@ -135,6 +135,20 @@ void main() {
     expect(find.text('Grade 7 Mathematics'), findsOne);
   });
 
+  testWidgets('already in, or a code nothing answers to, is said plainly', (
+    tester,
+  ) async {
+    await tester.pumpWidget(page(_Recording(fail: ClassJoinRefusal.alreadyIn)));
+    await tester.pumpAndSettle();
+    await submit(tester, 'K7QM-4XTR');
+    expect(find.textContaining("You're already in this class"), findsOne);
+
+    await tester.pumpWidget(page(_Recording(fail: ClassJoinRefusal.unknown)));
+    await tester.pumpAndSettle();
+    await submit(tester, 'K7QM-4XTR');
+    expect(find.textContaining('No class has this code'), findsOne);
+  });
+
   testWidgets('a code with a misreadable character is refused unsent', (
     tester,
   ) async {

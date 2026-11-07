@@ -397,6 +397,10 @@ export const portalEn = {
     ALREADY_IN_GROUP:
       "This class is already in the group, or waiting for its teacher.",
     GROUP_CODES_UNAVAILABLE: "Group codes can't be made on this server yet.",
+    SCHOOL_ANNOUNCEMENT_NO_RECIPIENTS:
+      "Nobody would receive this yet: no linked class has students, parents or teachers it reaches.",
+    GROUP_CLASS_RECENTLY_DECLINED:
+      "This class's teacher declined less than 30 days ago.",
     generic: "Something went wrong. Try again.",
   } as Record<string, string>,
 };

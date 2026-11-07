@@ -45,7 +45,8 @@ primary_region = "fra"
   DATABASE_POOLER_MODE = "session"
   # Behaviour switches the production app needs (secrets are separate).
   TURNSTILE_ENABLED = "true"
-  TURNSTILE_HOSTNAMES = "api.studafy.com"
+  # The app's challenge page, and the School Portal's website.
+  TURNSTILE_HOSTNAMES = "api.studafy.com,school.studafy.com"
   FILE050_NEW_INTENTS_ENABLED = "true"
   FILE051_PUBLISH_ENABLED = "true"
   FILE051_DELIVERY_ENABLED = "true"

@@ -2786,6 +2786,30 @@ export const V1_ROUTE_CATALOGUE = [
     200,
     portalParams("orgId"),
   ),
+  // Studafy's operator only (the SQL checks is_platform_operator()):
+  // docs/security/school-portal-operator-runbook.md.
+  cataloguePost(
+    "suspendSchoolPortalOrg",
+    "/v1/school-portal/orgs/{orgId}/suspend",
+    "school_portal.manage",
+    SchoolPortal.V1SuspendSchoolPortalOrgRequest,
+    "V1SuspendSchoolPortalOrgRequest",
+    SchoolPortal.V1SchoolPortalOrgRef,
+    "V1SchoolPortalOrgRef",
+    200,
+    portalParams("orgId"),
+  ),
+  cataloguePost(
+    "removeSchoolPortalAnnouncement",
+    "/v1/school-portal/announcements/{announcementId}/remove",
+    "school_portal.manage",
+    SchoolPortal.V1SchoolPortalEmptyRequest,
+    "V1SchoolPortalEmptyRequest",
+    SchoolPortal.V1SchoolPortalAnnouncementRemoved,
+    "V1SchoolPortalAnnouncementRemoved",
+    200,
+    portalParams("announcementId"),
+  ),
 ] as const satisfies readonly V1RouteContract[];
 
 function params(key: string) {

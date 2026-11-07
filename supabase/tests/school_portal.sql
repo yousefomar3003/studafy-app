@@ -11,7 +11,7 @@ begin;
 \unset auth031_fixture_only
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(143);
+select plan(159);
 select set_config('studafy.request_id', 'school-portal-test', true);
 
 \set admin1 'f0000000-0000-4000-8000-000000000001'
@@ -101,7 +101,8 @@ begin
     md5('pnonce' || seq) || md5('pnonce:' || seq));
 end $$;
 -- A student typing a code in "Join a class" (the API sends its HMAC).
-create function pg_temp.redeem(actor uuid, code_hash text)
+-- schoolGroups: the API sends it while the School Portal is switched on.
+create function pg_temp.redeem(actor uuid, code_hash text, portal_on boolean default true)
 returns jsonb language plpgsql as $$
 declare r jsonb;
 begin
@@ -109,7 +110,8 @@ begin
   r := private.api_idempotency_reserve(null, 'v1.redeemClassJoinLink', gen_random_uuid()::text,
     encode(extensions.digest(gen_random_uuid()::text, 'sha256'), 'hex'), 3600, 60);
   return private.api044_command('redeemClassJoinLink', null,
-    jsonb_build_object('body', jsonb_build_object('codeHash', code_hash)),
+    jsonb_build_object('body', jsonb_build_object('codeHash', code_hash)
+      || case when portal_on then '{"schoolGroups": true}'::jsonb else '{}'::jsonb end),
     (r->>'id')::uuid, (r->>'generation')::bigint);
 end $$;
 create function pg_temp.hash(code text) returns text language sql as $$
@@ -171,6 +173,11 @@ select is(pg_temp.cmd(:'stranger', 'acceptInvite', (select id from private.schoo
 select is(pg_temp.cmd(:'admin2', 'acceptInvite', (select id from private.school_portal_admin_invites
   where email = 'deputy@cedar.synthetic.studafy.test'), '{}')->>'outcome',
   'invalid', 'an invite is not accepted without the School Agreement');
+update auth.users set email_confirmed_at = null where id = :'admin2';
+select is(pg_temp.cmd(:'admin2', 'acceptInvite', (select id from private.school_portal_admin_invites
+  where email = 'deputy@cedar.synthetic.studafy.test'), '{"agreementVersion":"2026-11-06"}')->>'outcome',
+  'not_found', 'nor by an address the sign-in provider has not confirmed');
+update auth.users set email_confirmed_at = now() where id = :'admin2';
 select is(pg_temp.cmd(:'admin2', 'acceptInvite', (select id from private.school_portal_admin_invites
   where email = 'deputy@cedar.synthetic.studafy.test'), '{"agreementVersion":"2026-11-06"}')->>'outcome',
   'ok', 'the invited person accepts');
@@ -206,6 +213,9 @@ select is(pg_temp.cmd(:'admin1', 'requestLink', current_setting('test.org')::uui
 select is(pg_temp.cmd(:'admin1', 'requestLink', current_setting('test.org')::uuid,
   jsonb_build_object('studafyId', 'tc-' || (select public_id from public.profiles where id = :'teacher_user')))
   ->'response'->>'status', 'pending', 'a teacher is found and asked, by the ID as their app shows it');
+select is(pg_temp.q(:'admin1', 'dashboard', current_setting('test.org')::uuid)
+  ->'waiting'->0->'teacher'->'email', 'null'::jsonb,
+  'the school sees a waiting teacher''s name, never their email');
 select is((select count(*)::int from private.school_portal_lookups where admin_id = :'admin1'), 3,
   'every lookup is counted, found or not');
 select is(pg_temp.cmd(:'admin2', 'requestLink', current_setting('test.org')::uuid,
@@ -232,6 +242,16 @@ select is(pg_temp.cmd(:'teacher_user', 'decideLink', (select id from private.sch
 select is(pg_temp.cmd(:'admin1', 'requestLink', current_setting('test.org')::uuid,
   jsonb_build_object('studafyId', (select public_id from public.profiles where id = :'teacher_user')))
   ->>'reason', 'recently_declined', 'the school cannot ask again for 30 days');
+select ok((select bool_and(t->'email' = 'null'::jsonb) from jsonb_array_elements(
+    pg_temp.q(:'admin1', 'teachers', current_setting('test.org')::uuid)->'teachers') t),
+  'and keeps no email of a teacher who declined');
+insert into private.school_portal_admins (org_id, user_id, job_title, agreement_version)
+values (current_setting('test.org2')::uuid, :'admin1', 'Visitor', private.school_portal_agreement_version());
+select is(pg_temp.cmd(:'admin1', 'requestLink', current_setting('test.org2')::uuid,
+  jsonb_build_object('studafyId', (select public_id from public.profiles where id = :'teacher_user')))
+  ->>'reason', 'recently_declined', 'nor can whoever asked, from another school page');
+delete from private.school_portal_admins
+where org_id = current_setting('test.org2')::uuid and user_id = :'admin1';
 update private.school_portal_teacher_links set decided_at = now() - interval '31 days'
 where teacher_id = :'teacher_user';
 select is(pg_temp.cmd(:'admin1', 'requestLink', current_setting('test.org')::uuid,
@@ -250,6 +270,10 @@ select is((select private.api061_notification_recipients(o.school_id, o.template
   array[:'teacher_user'::uuid], 'it reaches the teacher, and nobody else');
 select is(pg_temp.cmd(:'teacher_user', 'decideLink', current_setting('test.link')::uuid,
   '{"decision":"accept"}')->'response'->>'status', 'linked', 'the teacher accepts');
+select is((select t->>'email' from jsonb_array_elements(
+    pg_temp.q(:'admin1', 'teachers', current_setting('test.org')::uuid)->'teachers') t
+  where t->>'status' = 'linked'), (select email::text from auth.users where id = :'teacher_user'),
+  'once linked, the school has the teacher''s email');
 select is((select private.api061_notification_recipients(o.school_id, o.template_key,
     o.source_event_id, o.audience) from public.notification_outbox o
   where o.source_event_id = current_setting('test.link')),
@@ -410,6 +434,11 @@ select is(pg_temp.cmd(:'admin1', 'recordExport', current_setting('test.org')::uu
 select is(pg_temp.cmd(:'admin1', 'sendAnnouncement', current_setting('test.org')::uuid,
   '{"title":"Sports day","body":"Friday from 9.","audience":"students_and_parents"}')->>'status',
   '201', 'an administrator sends an announcement to every linked class');
+select is(pg_temp.cmd(:'admin4', 'sendAnnouncement', current_setting('test.org2')::uuid,
+  '{"title":"Hello","body":"Anyone?","audience":"students"}')->>'reason', 'no_recipients',
+  'an announcement that would reach nobody is refused');
+select is((select count(*)::int from private.school_portal_announcements
+  where org_id = current_setting('test.org2')::uuid), 0, 'and nothing is kept');
 select set_config('test.ann', (select id::text from private.school_portal_announcements
   where title = 'Sports day'), true);
 select ok((select bool_and(u = any(array(select r.user_id from private.school_portal_announcement_recipients(
@@ -421,6 +450,10 @@ select ok(not exists (select 1 from private.school_portal_announcement_recipient
 select is((select count(*)::int from public.notification_outbox
   where template_key = 'school_portal.announcement' and source_event_id = current_setting('test.ann')), 1,
   'one notice for the teacher''s workspace it reaches');
+select is((pg_temp.q(:'admin1', 'announcements', current_setting('test.org')::uuid)
+    ->'announcements'->0->>'recipients')::int,
+  (select count(*)::int from private.school_portal_announcement_recipients(current_setting('test.ann')::uuid)),
+  'the school sees how many people it reached');
 select is(pg_temp.q(:'student_user', 'myAnnouncements', null)->'announcements'->0->>'title', 'Sports day',
   'the student reads it in the app');
 select is(pg_temp.cmd(:'admin1', 'sendAnnouncement', current_setting('test.org')::uuid,
@@ -495,6 +528,8 @@ select is(pg_temp.redeem(:'kid', pg_temp.hash('GROUPONE'))->>'outcome', 'not_fou
   'before the teacher approves, the code joins nothing');
 select is(pg_temp.cmd(:'teacher_user', 'decideGroupClass', current_setting('test.gc')::uuid,
   '{"decision":"approve"}')->'response'->>'status', 'approved', 'the teacher approves');
+select is(pg_temp.redeem(:'kid', pg_temp.hash('GROUPONE'), false)->>'outcome', 'not_found',
+  'with the School Portal switched off, a group code joins nothing');
 select is(pg_temp.cmd(:'admin1', 'addGroupClass', current_setting('test.group')::uuid,
   jsonb_build_object('classroomId', :'later_class'))->>'status', '201', 'a second class is added');
 select is(pg_temp.cmd(:'teacher_user', 'decideGroupClass', (select id from private.school_portal_group_classes
@@ -522,6 +557,13 @@ from public.students st
 where st.id = e.student_id and st.user_id = :'kid2' and e.classroom_id = :'later_class';
 select is(pg_temp.redeem(:'kid2', pg_temp.hash('GROUPNEW'))->>'outcome', 'invalid_state',
   'a student the teacher removed is never put back by the code');
+update public.memberships set active = false, status = 'revoked'
+where user_id = :'kid2' and school_id = :'school_id' and role = 'student';
+select is(pg_temp.redeem(:'kid2', pg_temp.hash('GROUPNEW'))->>'outcome', 'invalid_state',
+  'nor one the teacher took out of their workspace');
+select is((select status::text from public.memberships
+  where user_id = :'kid2' and school_id = :'school_id' and role = 'student'), 'revoked',
+  'whose membership stays revoked');
 select is(pg_temp.cmd(:'teacher_user', 'decideGroupClass', (select id from private.school_portal_group_classes
   where classroom_id = :'later_class'), '{"decision":"remove"}')->'response'->>'status', 'removed',
   'the teacher takes a class out');
@@ -535,6 +577,24 @@ select is(pg_temp.cmd(:'admin1', 'createGroup', current_setting('test.org')::uui
 select is(pg_temp.cmd(:'admin1', 'addGroupClass', (select id from private.school_portal_groups
   where name = 'Grade 6 - B'), jsonb_build_object('classroomId', :'classroom_id'))->>'status', '201',
   'with a class waiting for the teacher');
+select is(pg_temp.cmd(:'admin1', 'addGroupClass', (select id from private.school_portal_groups
+  where name = 'Grade 6 - B'), jsonb_build_object('classroomId', :'later_class'))->>'status', '201',
+  'and another');
+update public.classroom_staff set role = 'co_teacher'
+where classroom_id = :'later_class' and user_id = :'teacher_user';
+select is(pg_temp.cmd(:'teacher_user', 'decideGroupClass', (select gc.id
+    from private.school_portal_group_classes gc join private.school_portal_groups g on g.id = gc.group_id
+    where g.name = 'Grade 6 - B' and gc.classroom_id = :'later_class'), '{"decision":"approve"}')
+  ->>'reason', 'lead_teacher_only', 'only the lead teacher puts a class in a group');
+update public.classroom_staff set role = 'lead_teacher'
+where classroom_id = :'later_class' and user_id = :'teacher_user';
+select is(pg_temp.cmd(:'teacher_user', 'decideGroupClass', (select gc.id
+    from private.school_portal_group_classes gc join private.school_portal_groups g on g.id = gc.group_id
+    where g.name = 'Grade 6 - B' and gc.classroom_id = :'later_class'), '{"decision":"decline"}')
+  ->'response'->>'status', 'declined', 'the teacher says no');
+select is(pg_temp.cmd(:'admin1', 'addGroupClass', (select id from private.school_portal_groups
+  where name = 'Grade 6 - B'), jsonb_build_object('classroomId', :'later_class'))->>'reason',
+  'group_class_declined', 'and the school cannot ask again for 30 days');
 
 -- 7. Never: messages, AI Tutor material, students' own notes and practice.
 select ok(pg_get_functiondef('private.api062_query(text, uuid, jsonb)'::regprocedure)
@@ -581,8 +641,9 @@ select is((select row(c.org_id, c.reason)::text
   from private.school_portal_alerts_claim(10, 60) c),
   row(current_setting('test.org2')::uuid, 'pressure')::text,
   'the operator is alerted with the school and the reason, never the teacher''s words');
-update private.school_portal_orgs set status = 'suspended', suspended_at = now()
-where id = current_setting('test.org2')::uuid;
+select is(pg_temp.cmd(:'stranger', 'suspendOrg', current_setting('test.org2')::uuid,
+  '{"suspend":true,"reason":"Reported by a teacher"}')->'response'->>'status', 'suspended',
+  'Studafy suspends a reported school');
 select is(pg_temp.q(:'admin4', 'dashboard', current_setting('test.org2')::uuid)->>'outcome',
   'not_found', 'a suspended school sees nothing');
 select is(pg_temp.cmd(:'admin4', 'suspendOrg', current_setting('test.org2')::uuid, '{"suspend":false}')

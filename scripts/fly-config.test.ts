@@ -440,9 +440,10 @@ describe("production Fly apps (launch plan A6, C11)", () => {
     expect(env.MARKING_SUGGESTIONS_ENABLED).toBe("true");
     // Real Turnstile keys (C9) are checked against the API's own host,
     // where the widget page (/auth/bot-check) is served - the same host the
-    // delivery links use.
+    // delivery links use - and on the School Portal's website, where its
+    // own widget runs.
     expect(env.TURNSTILE_ENABLED).toBe("true");
-    expect(env.TURNSTILE_HOSTNAMES).toBe("api.studafy.com");
+    expect(env.TURNSTILE_HOSTNAMES).toBe("api.studafy.com,school.studafy.com");
     expect(env.FILE051_DELIVERY_PUBLIC_BASE_URL).toBe(
       "https://api.studafy.com",
     );

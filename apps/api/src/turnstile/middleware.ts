@@ -11,6 +11,7 @@ import {
 export function requireStudentLookupChallenge(
   options: TurnstileOptions,
   fetcher?: SiteverifyFetch,
+  action = "student_lookup",
 ): MiddlewareHandler<AuthorizationEnv> {
   return async (c, next) => {
     let token: unknown;
@@ -22,7 +23,7 @@ export function requireStudentLookupChallenge(
     if (typeof token !== "string" || token.length === 0) {
       return problem(c, "CAPTCHA_REQUIRED", 403);
     }
-    if (!await verifyTurnstile(options, token, fetcher)) {
+    if (!await verifyTurnstile(options, token, fetcher, action)) {
       return problem(c, "FORBIDDEN", 403);
     }
     await next();

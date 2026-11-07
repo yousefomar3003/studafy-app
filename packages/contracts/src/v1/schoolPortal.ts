@@ -150,6 +150,16 @@ export const V1RemoveSchoolPortalAdminRequest = z.strictObject({
 export const V1RevokeSchoolPortalInviteRequest = z.strictObject({
   inviteId: Id,
 });
+/** Studafy's operator, after a report (plan 9.5): suspend or restore. */
+export const V1SuspendSchoolPortalOrgRequest = z.strictObject({
+  suspend: z.boolean(),
+  reason: z.string().trim().min(1).max(500).optional(),
+});
+/** Studafy's operator removes a school's announcement after a report. */
+export const V1SchoolPortalAnnouncementRemoved = z.object({
+  id: Id,
+  removed: z.literal(true),
+});
 
 // ---------------------------------------------------------------------------
 // Links with teachers.

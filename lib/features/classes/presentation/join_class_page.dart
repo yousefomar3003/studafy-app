@@ -82,9 +82,12 @@ class _JoinClassPageState extends State<JoinClassPage> {
         // your own class roster. The generic "no access" wording sent a
         // teacher checking their own link looking for a permissions fault
         // that does not exist, so it is named here.
-        _error = failure.code == Failure.forbiddenCode
-            ? AppL10n.of(context).joinClassAlreadyStaff
-            : failure.message;
+        _error = switch (failure.code) {
+          Failure.forbiddenCode => AppL10n.of(context).joinClassAlreadyStaff,
+          'ALREADY_IN_CLASS' => AppL10n.of(context).joinClassAlreadyIn,
+          'CLASS_CODE_UNKNOWN' => AppL10n.of(context).joinClassUnknownCode,
+          _ => failure.message,
+        };
       }),
     );
   }

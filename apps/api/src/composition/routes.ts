@@ -237,6 +237,7 @@ export function buildRoutes(platform: Platform) {
         repository: new PostgresClassJoinRepository(
           sql,
           env.CLASS_JOIN_CODE_KEY,
+          env.SCHOOL_PORTAL_ENABLED,
         ),
         cursorSigningKey: env.API_CURSOR_SIGNING_KEY,
         enabledSlices: { classJoin: true },

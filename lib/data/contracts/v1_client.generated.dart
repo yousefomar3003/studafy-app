@@ -3643,6 +3643,34 @@ class V1ApiClient {
       requiresIdempotency: true,
     ),
   );
+
+  Future<V1SchoolPortalOrgRefDto> suspendSchoolPortalOrg(
+    V1SuspendSchoolPortalOrgRequestDto request, {
+    required String orgId,
+    String? idempotencyKey,
+  }) async => V1SchoolPortalOrgRefDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/school-portal/orgs/{orgId}/suspend', {'orgId': orgId}, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
+
+  Future<V1SchoolPortalAnnouncementRemovedDto> removeSchoolPortalAnnouncement(
+    V1SchoolPortalEmptyRequestDto request, {
+    required String announcementId,
+    String? idempotencyKey,
+  }) async => V1SchoolPortalAnnouncementRemovedDto.fromJson(
+    await _transport.post(
+      _v1Path('/v1/school-portal/announcements/{announcementId}/remove', {
+        'announcementId': announcementId,
+      }, {}),
+      request.toJson(),
+      idempotencyKey: idempotencyKey,
+      requiresIdempotency: true,
+    ),
+  );
 }
 
 String _v1Path(
@@ -13912,6 +13940,25 @@ class V1SchoolPortalAdminDto {
   };
 }
 
+class V1SchoolPortalAnnouncementRemovedDto {
+  const V1SchoolPortalAnnouncementRemovedDto({
+    required this.id,
+    required this.removed,
+  });
+
+  factory V1SchoolPortalAnnouncementRemovedDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1SchoolPortalAnnouncementRemovedDto(
+    id: json['id'] as String,
+    removed: json['removed'] as bool,
+  );
+
+  final String id;
+  final bool removed;
+
+  Map<String, Object?> toJson() => {'id': id, 'removed': removed};
+}
+
 class V1SchoolPortalAnnouncementsDto {
   const V1SchoolPortalAnnouncementsDto({required this.announcements});
 
@@ -15857,6 +15904,25 @@ class V1SupportAccessLifecycleRequestDto {
   final int expectedVersion;
 
   Map<String, Object?> toJson() => {'expectedVersion': expectedVersion};
+}
+
+class V1SuspendSchoolPortalOrgRequestDto {
+  const V1SuspendSchoolPortalOrgRequestDto({
+    required this.suspend,
+    this.reason,
+  });
+
+  factory V1SuspendSchoolPortalOrgRequestDto.fromJson(
+    Map<String, dynamic> json,
+  ) => V1SuspendSchoolPortalOrgRequestDto(
+    suspend: json['suspend'] as bool,
+    reason: json['reason'] as String?,
+  );
+
+  final bool suspend;
+  final String? reason;
+
+  Map<String, Object?> toJson() => {'suspend': suspend, 'reason': ?reason};
 }
 
 class V1TermDto {

@@ -28,6 +28,7 @@ String schoolLinkFailureText(AppL10n l10n, Failure failure) =>
     switch (failure.code) {
       'SCHOOL_UNAVAILABLE' => l10n.schoolLinkErrorUnavailable,
       'ALREADY_REPORTED' => l10n.schoolLinkErrorAlreadyReported,
+      'LEAD_TEACHER_ONLY' => l10n.schoolGroupLeadTeacherOnly,
       'INVALID_STATE' || 'NOT_FOUND' => l10n.schoolLinkNoLongerWaiting,
       _ when failure.code == Failure.network.code =>
         l10n.schoolLinkErrorNetwork,

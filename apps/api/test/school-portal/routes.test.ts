@@ -356,6 +356,71 @@ describe("commands", () => {
     }]);
   });
 
+  test("Studafy's operator suspends a school and removes an announcement", async () => {
+    const seen = calls();
+    const routes = app({
+      calls: seen,
+      command: {
+        suspendOrg: {
+          outcome: "ok",
+          response: { orgId: ORG, status: "suspended" },
+        },
+        removeAnnouncement: {
+          outcome: "ok",
+          response: { id: LINK, removed: true },
+        },
+      },
+    });
+    const suspended = await post(
+      routes,
+      `/v1/school-portal/orgs/${ORG}/suspend`,
+      { suspend: true, reason: "Reported by a teacher" },
+    );
+    expect(suspended.status).toBe(200);
+    expect(await suspended.json()).toEqual({ orgId: ORG, status: "suspended" });
+    const removed = await post(
+      routes,
+      `/v1/school-portal/announcements/${LINK}/remove`,
+      {},
+    );
+    expect(removed.status).toBe(200);
+    expect(seen.commands).toEqual([
+      {
+        operation: "suspendOrg",
+        resourceId: ORG,
+        body: { suspend: true, reason: "Reported by a teacher" },
+      },
+      { operation: "removeAnnouncement", resourceId: LINK, body: {} },
+    ]);
+  });
+
+  test("anyone else is refused by the database, as the operator check says", async () => {
+    const response = await post(
+      app({
+        calls: calls(),
+        command: { suspendOrg: { outcome: "forbidden" } },
+      }),
+      `/v1/school-portal/orgs/${ORG}/suspend`,
+      { suspend: true },
+    );
+    expect(response.status).toBe(403);
+  });
+
+  test("an announcement that reaches nobody is refused with its own code", async () => {
+    const response = await post(
+      app({
+        calls: calls(),
+        command: {
+          sendAnnouncement: { outcome: "conflict", reason: "no_recipients" },
+        },
+      }),
+      `/v1/school-portal/orgs/${ORG}/announcements`,
+      { title: "Hello", body: "Anyone?", audience: "students" },
+    );
+    expect(response.status).toBe(409);
+    expect(await code(response)).toBe("SCHOOL_ANNOUNCEMENT_NO_RECIPIENTS");
+  });
+
   test("a teacher is asked by a ten-digit Studafy ID only", async () => {
     const seen = calls();
     const routes = app({ calls: seen });

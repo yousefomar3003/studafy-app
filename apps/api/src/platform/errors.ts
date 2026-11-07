@@ -314,6 +314,18 @@ const DEFINITIONS: Record<
     title: "Group codes unavailable",
     detail: "Group codes can't be made on this server yet.",
   },
+  SCHOOL_ANNOUNCEMENT_NO_RECIPIENTS: {
+    title: "Nobody to send to",
+    detail: "No linked class has anyone this announcement would reach.",
+  },
+  GROUP_CLASS_RECENTLY_DECLINED: {
+    title: "Recently declined",
+    detail: "This class's teacher declined less than 30 days ago.",
+  },
+  LEAD_TEACHER_ONLY: {
+    title: "Lead teacher only",
+    detail: "Only the class's lead teacher can add it to a school's group.",
+  },
   SCHOOL_ADMIN_LIMIT: {
     title: "Administrator limit reached",
     detail: "A school can have up to three administrators.",

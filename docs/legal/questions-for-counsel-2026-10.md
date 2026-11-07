@@ -327,3 +327,23 @@ still lists the right to object. Please advise:
   (DPIA measure M22), now that they cannot turn it off;
 - whether the wording in policy 1.9 §6.1 and terms 1.7 §4, §5 and §8 is
   acceptable.
+
+## 12. The School Portal (branch `feat/school-admin-web`, not yet released)
+
+A school's administrators read, on a website, the classes of teachers who
+accept the school's request (docs/planning/school-portal.md). The draft
+School Agreement (`docs/legal/school-agreement.md`) carries six questions
+of its own in its TODO(legal) notes: the roles, the school's lawful basis
+without a notice to families, unchecked schools, incident timings,
+liability and law, and click-to-accept. One more, found in the security
+review of 2026-11-07:
+
+12.1 **The activity record when an administrator deletes their account.**
+The portal records every page and file an administrator opens (kept 12
+months, policy §3.13). Policy §9 says deleting an administrator's account
+deletes their activity record, and the code does that. So an administrator
+could read every class and then delete their account, and the record of
+what they read would be gone. Please advise whether the record should
+instead be kept for its 12 months with the administrator's identity
+removed (or kept, as the school's accountability record), and how the
+policy should say it.

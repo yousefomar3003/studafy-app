@@ -2438,6 +2438,18 @@ abstract class AppL10n {
   /// **'The AI Tutor is for student accounts. Sign out and sign in again through the Student door, or join a class with your teacher\'s link.'**
   String get studyHelperNeedsClassBody;
 
+  /// No description provided for @joinClassAlreadyIn.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re already in this class. A school\'s code joins you to every class in its group, so you\'re in all of them.'**
+  String get joinClassAlreadyIn;
+
+  /// No description provided for @joinClassUnknownCode.
+  ///
+  /// In en, this message translates to:
+  /// **'No class has this code. Check it with your teacher or school - a code can be replaced or closed.'**
+  String get joinClassUnknownCode;
+
   /// Shown when redeeming a class link is refused because the account already holds a non-student role at that school - typically a teacher opening their own link.
   ///
   /// In en, this message translates to:
@@ -14850,6 +14862,12 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Declined.'**
   String get schoolGroupDeclined;
+
+  /// No description provided for @schoolGroupLeadTeacherOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the class\'s lead teacher can add it to a school\'s group. You can still decline.'**
+  String get schoolGroupLeadTeacherOnly;
 
   /// No description provided for @schoolGroupRemoved.
   ///

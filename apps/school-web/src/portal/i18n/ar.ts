@@ -395,6 +395,9 @@ export const portalAr: PortalCopy = {
     SCHOOL_GROUP_FULL: "يمكن أن تضم المجموعة 30 صفًا كحد أقصى.",
     ALREADY_IN_GROUP: "هذا الصف في المجموعة، أو بانتظار موافقة معلمه.",
     GROUP_CODES_UNAVAILABLE: "لا يمكن إنشاء رموز المجموعات على هذا الخادم بعد.",
+    SCHOOL_ANNOUNCEMENT_NO_RECIPIENTS:
+      "لن يصل هذا الإعلان إلى أحد بعد: لا يوجد في الصفوف المرتبطة طلاب أو أولياء أمور أو معلمون يصلهم.",
+    GROUP_CLASS_RECENTLY_DECLINED: "رفض معلم هذا الصف قبل أقل من 30 يومًا.",
     generic: "حدث خطأ ما. حاول مرة أخرى.",
   },
 };

@@ -1118,6 +1118,13 @@ a real sign-in or staging (there is no staging yet).
 1. Suspend / restore a school (existing operator path, `/internal/...`).
 2. A list of teachers' reports, and the alert from step 3.
 
+**Status (2026-11-07):** suspend and restore, and removing an announcement,
+are API routes for platform operators only (`suspendSchoolPortalOrg`,
+`removeSchoolPortalAnnouncement`; the SQL checks `is_platform_operator()`),
+under `/v1/school-portal/` rather than `/internal/`, like the app's own
+`suspendSchool`. How to use them: `docs/security/school-portal-operator-runbook.md`.
+Reports are read in the database for now; the Telegram alert is step 3's.
+
 ### Step 7: Legal and docs
 
 1. Privacy policy and terms updates (section 9), new consent version with
@@ -1156,6 +1163,47 @@ a real sign-in or staging (there is no staging yet).
 2. Full test on staging with fake schools, teachers, students and
    parents, including the "try to see another school's class" test.
 3. Fix what it shows.
+
+**Status (2026-11-07):** the review ran on `origin/main...HEAD`. No critical
+or high findings; every cross-school, read-only, file-link, grant and
+"never sees" check held. Fixed:
+
+- **A school got a teacher's email before the teacher agreed** (request
+  response, waiting list, declined rows). Now the name only until linked.
+- **A group code could bring back a student the teacher removed from the
+  workspace** (a revoked or suspended membership was reactivated; a deleted
+  record re-made). Now those workspaces are skipped before anything is
+  written.
+- **No way to suspend a school or remove an announcement** without SQL:
+  the operator routes above.
+- **A decline held for one school only**: now also for whoever asked, from
+  any school page.
+- **A school could ask about a declined class again and again**: refused
+  for 30 days, and at most 5 asks a day per class.
+- **A co-teacher could put the lead teacher's class in a group**: approving
+  is the lead teacher's (`LEAD_TEACHER_ONLY`); a co-teacher can still
+  decline or take it out.
+- **An announcement reaching nobody was kept**: refused
+  (`SCHOOL_ANNOUNCEMENT_NO_RECIPIENTS`), and nothing is stored.
+- **Invites accepted by an unconfirmed address**: now only a confirmed one.
+- **Group codes kept working with the portal switched off**: the API now
+  marks a code as a possible group's only while `SCHOOL_PORTAL_ENABLED`.
+- **Turnstile would have refused every real request**: the website's widget
+  sends its own action (`school_portal`, never the app's `student_lookup`),
+  and `school.studafy.com` is an allowed hostname.
+
+Left for counsel: an administrator's activity record is deleted with their
+account, as policy §9 says (questions for counsel, 12.1).
+
+Also on 2026-11-07, the portal at volume (`docs/operations/capacity.md`,
+"The School Portal"): the app's announcements read went from 68 s to under
+15 ms and the classes list from 4.7 s to 0.2 s at a 300-class school; three
+indexes added; a CI check holds them. And a device test,
+`integration_test/school_portal_device_test.dart`, runs the teacher's,
+student's and parent's real screens against a local API: link, accept,
+group approval, joining by a group code, an announcement to parents,
+unlink, decline and the 30-day block. A teacher using the app as a parent
+now opens a school's request from its notification too.
 
 ---
 
@@ -1290,6 +1338,7 @@ This does **not** merge anything into `main`.
    answers are written, and a lawyer has read them (`TODO(legal)`
    removed).
 4. ✅ `/security-review` has been run and every finding is fixed.
+   (Run 2026-11-07, findings fixed; run it again on the final branch.)
 5. ✅ All CI jobs pass on the branch, including the website job.
 6. ✅ The owner says, in their own words, that it may be merged.
 

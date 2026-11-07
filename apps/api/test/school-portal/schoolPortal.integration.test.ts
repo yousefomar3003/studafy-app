@@ -170,7 +170,7 @@ function build(enabled: boolean): Hono<AuthorizationEnv> {
     "/",
     createClassJoinRoutes(
       {
-        repository: new PostgresClassJoinRepository(sql, CODE_KEY),
+        repository: new PostgresClassJoinRepository(sql, CODE_KEY, enabled),
         cursorSigningKey: "synthetic-cursor-key-not-a-secret-0000000000",
         enabledSlices: { classJoin: true },
       },

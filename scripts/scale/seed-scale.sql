@@ -142,10 +142,12 @@ insert into public.assessments (id, school_id, classroom_id, title, category, ma
 select pg_temp.sid('am', s, c * 1000 + a), pg_temp.sid('school', s), pg_temp.sid('cl', s, c),
   'Quiz ' || a, 'quiz', 100, 'published', now(), pg_temp.sid('tu', s, 1 + c % :teachers)
 from generate_series(1, :schools) s, generate_series(0, :classes - 1) c, generate_series(1, :assessments) a;
-insert into public.grade_results (assessment_id, student_id, school_id, score, state, reviewed_by,
-  reviewed_at, published_at, published_by)
+-- Marked as scored, as the app saves a score (the School Portal's averages
+-- and the reports read only scored marks).
+insert into public.grade_results (assessment_id, student_id, school_id, score, mark, state,
+  reviewed_by, reviewed_at, published_at, published_by)
 select pg_temp.sid('am', s, e.c * 1000 + a), pg_temp.sid('st', s, e.n), pg_temp.sid('school', s),
-  60 + (e.n % 40), 'published', pg_temp.sid('tu', s, 1 + e.c % :teachers), now(), now(),
+  60 + (e.n % 40), 'scored', 'published', pg_temp.sid('tu', s, 1 + e.c % :teachers), now(), now(),
   pg_temp.sid('tu', s, 1 + e.c % :teachers)
 from generate_series(1, :schools) s
 cross join lateral (

@@ -232,6 +232,8 @@ export function Turnstile(
       if (!live || !ref.current || !turnstile) return;
       widget = turnstile.render(ref.current, {
         sitekey: portalConfig.turnstileSiteKey,
+        // The API accepts this action only on the portal's routes.
+        action: "school_portal",
         language: lang,
         callback: (token: string) => onToken(token),
         "expired-callback": () => onToken(null),

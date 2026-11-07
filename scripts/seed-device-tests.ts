@@ -11,6 +11,7 @@
  *              Device Student (dev.student2, …-e3)
  *              "Device worksheet", a published assignment
  *   dev.parent: the verified parent of Dev Student only
+ *   dev.principal: no membership; the School Portal's administrator
  *
  * All four accounts are at synthetic.studafy.test and share the password
  * in E2E_PASSWORD.
@@ -80,6 +81,13 @@ export const DEVICE_SCHOOL = {
       id: "7e570000-0000-4000-8000-0000000000a4",
       email: "dev.student2@synthetic.studafy.test",
       name: "Device Student",
+    },
+    // The School Portal's administrator (school_portal_device_test.dart):
+    // an adult with no membership anywhere, as on the website.
+    principal: {
+      id: "7e570000-0000-4000-8000-0000000000a5",
+      email: "dev.principal@synthetic.studafy.test",
+      name: "Dev Principal",
     },
   },
   assignmentTitle: "Device worksheet",
@@ -277,7 +285,7 @@ async function main(): Promise<void> {
     // 2. The school, mirroring createTeacherWorkspace, class join and
     //    guardian link verification. Fixed ids, so every insert is a no-op
     //    on a re-run.
-    const { teacher, student, parent, student2 } = s.users;
+    const { teacher, student, parent, student2, principal } = s.users;
     await sql.begin(async (tx) => {
       await tx`
         update public.profiles p set
@@ -288,7 +296,8 @@ async function main(): Promise<void> {
           (${teacher.id}::uuid, ${teacher.name}, 'adult'),
           (${parent.id}::uuid, ${parent.name}, 'adult'),
           (${student.id}::uuid, ${student.name}, 'student'),
-          (${student2.id}::uuid, ${student2.name}, 'student')
+          (${student2.id}::uuid, ${student2.name}, 'student'),
+          (${principal.id}::uuid, ${principal.name}, 'adult')
         ) as v(id, name, kind)
         where p.id = v.id
       `;

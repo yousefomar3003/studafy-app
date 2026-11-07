@@ -76,7 +76,9 @@ type CommandOperation =
   | "addGroupClass"
   | "removeGroupClass"
   | "decideGroupClass"
-  | "revokeInvite";
+  | "revokeInvite"
+  | "suspendOrg"
+  | "removeAnnouncement";
 
 /**
  * Studafy School Portal (api062, docs/planning/school-portal.md). Every call
@@ -284,6 +286,9 @@ const PORTAL_REFUSALS: OutcomeTable = {
   group_full: ["SCHOOL_GROUP_FULL", 409],
   already_in_group: ["ALREADY_IN_GROUP", 409],
   codes_unavailable: ["GROUP_CODES_UNAVAILABLE", 409],
+  no_recipients: ["SCHOOL_ANNOUNCEMENT_NO_RECIPIENTS", 409],
+  group_class_declined: ["GROUP_CLASS_RECENTLY_DECLINED", 409],
+  lead_teacher_only: ["LEAD_TEACHER_ONLY", 409],
   preview_unavailable: ["NOT_FOUND", 404],
 };
 
@@ -316,7 +321,12 @@ export function createSchoolPortalRoutes(
   routes.use("/v1/me/school-group-classes", switchedOn);
   routes.use("/v1/me/school-group-classes/*", switchedOn);
   if (deps.turnstile) {
-    const challenge = requireStudentLookupChallenge(deps.turnstile);
+    // The portal's own widget action, never the app's student lookup.
+    const challenge = requireStudentLookupChallenge(
+      deps.turnstile,
+      undefined,
+      "school_portal",
+    );
     routes.post("/v1/school-portal/orgs", challenge);
     routes.post("/v1/school-portal/orgs/:orgId/link-requests", challenge);
   }
@@ -738,6 +748,21 @@ export function createSchoolPortalRoutes(
     "revokeInvite",
     manage,
     "orgId",
+  );
+  // Studafy's operator, after a report; anyone else is refused in SQL.
+  post(
+    "suspendSchoolPortalOrg",
+    `${ORG}/suspend`,
+    "suspendOrg",
+    manage,
+    "orgId",
+  );
+  post(
+    "removeSchoolPortalAnnouncement",
+    "/v1/school-portal/announcements/:announcementId/remove",
+    "removeAnnouncement",
+    manage,
+    "announcementId",
   );
 
   return routes;
