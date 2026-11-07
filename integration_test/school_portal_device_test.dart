@@ -47,6 +47,13 @@ import '../test/support/localized_app.dart';
 ///   flutter drive --driver test_driver/iphone_smoke.dart \
 ///     --target integration_test/school_portal_device_test.dart \
 ///     --dart-define-from-file=build/device-tests/defines.json -d DEVICE_ID
+///
+/// On an Android emulator, run it with `flutter test` (flutter drive does not
+/// attach there) and the two URLs on 10.0.2.2, the emulator's address for the
+/// Mac, which debug builds may reach over plain HTTP:
+///
+///   flutter test integration_test/school_portal_device_test.dart \
+///     --dart-define-from-file=<defines with 10.0.2.2> -d emulator-5554
 const _apiUrl = String.fromEnvironment('E2E_API_URL');
 const _supabaseUrl = String.fromEnvironment('E2E_SUPABASE_URL');
 const _anonKey = String.fromEnvironment('E2E_ANON_KEY');
