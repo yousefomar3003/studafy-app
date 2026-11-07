@@ -80,10 +80,41 @@ function NewGroup({ org, onMade }: { org: string; onMade: () => void }) {
   );
 }
 
+/**
+ * A class as the picker offers it. A teacher may teach the same subject to
+ * several grades and sections, so the name alone is not enough to choose
+ * the right one: grade, section and teacher are shown too.
+ */
+export interface PickableClass {
+  id: string;
+  name: string;
+  grade?: string | null;
+  section?: string | null;
+  teachers?: { name: string }[];
+}
+
+/** "Arabic · 8 B · Ahmad Saleh": what tells two "Arabic" classes apart. */
+export function pickLabel(c: PickableClass): string {
+  const gradeSection = [c.grade, c.section].filter(Boolean).join(" ");
+  const teachers = (c.teachers ?? []).map((t) => t.name).join(", ");
+  return [c.name, gradeSection, teachers].filter(Boolean).join(" · ");
+}
+
+/** One grade and section's classes together, then by name. */
+function bySection(a: PickableClass, b: PickableClass): number {
+  const key = (c: PickableClass) => [c.grade ?? "", c.section ?? "", c.name];
+  const [x, y] = [key(a), key(b)];
+  for (let i = 0; i < x.length; i++) {
+    const order = x[i]!.localeCompare(y[i]!, undefined, { numeric: true });
+    if (order !== 0) return order;
+  }
+  return 0;
+}
+
 export function GroupsView({ data, org, classes, onChange }: {
   data: Data;
   org: string;
-  classes: { id: string; name: string }[];
+  classes: PickableClass[];
   onChange: () => void;
 }) {
   const copy = useCopy();
@@ -107,7 +138,7 @@ export function GroupsView({ data, org, classes, onChange }: {
 function GroupCard({ group, org, classes, onChange }: {
   group: Group;
   org: string;
-  classes: { id: string; name: string }[];
+  classes: PickableClass[];
   onChange: () => void;
 }) {
   const copy = useCopy();
@@ -120,7 +151,7 @@ function GroupCard({ group, org, classes, onChange }: {
       c.classroomId
     ),
   );
-  const addable = classes.filter((c) => !inGroup.has(c.id));
+  const addable = classes.filter((c) => !inGroup.has(c.id)).sort(bySection);
 
   async function act(run: () => Promise<unknown>, done?: string) {
     setBusy(true);
@@ -250,7 +281,7 @@ function GroupCard({ group, org, classes, onChange }: {
           >
             <option value="">{copy.groups.chooseClass}</option>
             {addable.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
+              <option key={c.id} value={c.id}>{pickLabel(c)}</option>
             ))}
           </select>
           <button

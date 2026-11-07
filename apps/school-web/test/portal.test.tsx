@@ -919,6 +919,47 @@ describe("class groups", () => {
     expect(html).not.toContain(portalEn.groups.add);
   });
 
+  test("the picker tells one teacher's same-named classes apart", () => {
+    const html = render(
+      <GroupsView
+        data={{ groups: [{ ...group, classes: [] }] }}
+        org={ORG}
+        classes={[
+          {
+            id: "c-9a",
+            name: "Arabic",
+            grade: "9",
+            section: "A",
+            teachers: [{ name: "Ahmad Saleh" }],
+          },
+          {
+            id: "c-8b",
+            name: "Arabic",
+            grade: "8",
+            section: "B",
+            teachers: [{ name: "Ahmad Saleh" }],
+          },
+          {
+            id: "c-8b-math",
+            name: "Math",
+            grade: "8",
+            section: "B",
+            teachers: [{ name: "Khalid Omar" }],
+          },
+        ]}
+        onChange={() => {}}
+      />,
+    );
+    // Grade 8 B's classes first, together, each with its teacher.
+    const options = [...html.matchAll(/<option value="c-[^"]+">([^<]+)</g)]
+      .map((m) => m[1]);
+    expect(options).toEqual([
+      "Arabic · 8 B · Ahmad Saleh",
+      "Math · 8 B · Khalid Omar",
+      "Arabic · 9 A · Ahmad Saleh",
+    ]);
+  });
+
   test("without a code key the code is never guessed at", () => {
     const html = render(
       <GroupsView
