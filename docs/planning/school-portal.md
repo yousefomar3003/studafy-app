@@ -205,9 +205,11 @@ and the domain move are in `docs/deployment/studafy-web.md`.
    when ready; take attendance.
 4. **Study help:** the AI Tutor, Studafy Plus and Studafy Max, with the
    line "The AI Tutor's answers can be wrong, so check them."
-5. **Privacy, built in:** no ads; we never sell your data; marks reach
-   students and parents only when the teacher publishes them; download
-   your data or delete your account from inside the app.
+5. **Getting started** (owner, 2026-11-07, replacing "Privacy, built
+   in"): three numbered steps - a teacher creates a class, students join
+   with the code, parents follow along. Where data is kept and the "no
+   ads, no selling" cards were taken off the home page; the legal pages
+   and the features page's questions still answer them.
 6. **English and Arabic:** the same screen side by side in both languages,
    with the right-to-left layout.
 7. **For schools** (switch on only): one band about the School Portal with

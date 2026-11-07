@@ -32,6 +32,13 @@ function Header(
       {label(copy, item)}
     </a>
   ));
+  // The School Portal's sign-in, for school administrators; shown with the
+  // rest of the portal once it passes its release gate (config.portalPublic).
+  const signIn = config.portalPublic && (
+    <a className="button small ghost sign-in" href={config.portalUrl}>
+      {copy.nav.signIn}
+    </a>
+  );
   const language = (
     <a
       className="lang"
@@ -52,6 +59,7 @@ function Header(
         <nav className="nav" aria-label={copy.nav.menu}>{links}</nav>
         <div className="bar-end">
           {language}
+          {signIn}
           <a className="button small" href={`${pathFor("home", lang)}#get`}>
             {copy.nav.getApp}
           </a>
@@ -62,6 +70,9 @@ function Header(
             <nav className="menu-panel" aria-label={copy.nav.menu}>
               <a href={pathFor("home", lang)}>{copy.nav.home}</a>
               {links}
+              {config.portalPublic && (
+                <a href={config.portalUrl}>{copy.nav.signIn}</a>
+              )}
               {language}
             </nav>
           </details>

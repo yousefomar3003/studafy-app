@@ -45,6 +45,7 @@ export const en: Copy = {
     about: "About",
     contact: "Contact",
     getApp: "Get the app",
+    signIn: "School sign in",
     menu: "Menu",
     otherLanguage: "Arabic",
     otherLanguageName: "العربية",
@@ -227,32 +228,26 @@ export const en: Copy = {
       note:
         "AI answers can be wrong, so check them. Email addresses and marks are never sent to the AI service, and names are replaced first.",
     },
-    privacy: {
-      eyebrow: "Privacy",
-      title: "Private by design.",
-      text: "A class's work is personal. We treat it that way.",
-      cards: [
+    start: {
+      eyebrow: "Getting started",
+      title: "Up and running in minutes.",
+      text:
+        "No setup day and no IT department. A class is ready the moment a teacher creates it.",
+      steps: [
         {
-          icon: "shield",
-          title: "No ads. No selling data.",
-          text: "Studafy is paid for by optional plans, never by advertising.",
-        },
-        {
-          icon: "lock",
-          title: "Stored in Frankfurt",
-          text: "Your data is stored in Frankfurt, Germany.",
-        },
-        {
-          icon: "download",
-          title: "Yours to take or delete",
+          title: "A teacher creates a class",
           text:
-            "Download a copy of your data or delete your account from inside the app.",
+            "Free, in a few taps. Studafy gives the class its own code and link to share.",
         },
         {
-          icon: "family",
-          title: "Children come first",
+          title: "Students join with the code",
           text:
-            "Students approve every parent link, and parents can create accounts for younger children.",
+            "They type the code in the app or open the link, and they're in: lessons, homework and marks in one place.",
+        },
+        {
+          title: "Parents follow along",
+          text:
+            "A parent links with their child's Studafy ID. Once the child approves, marks, homework and attendance are a tap away.",
         },
       ],
     },

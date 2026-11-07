@@ -134,18 +134,16 @@ export function Home({ copy, lang }: { copy: Copy; lang: Lang }) {
       </Wrap>
 
       <Wrap>
-        <SectionHead section={home.privacy} center />
-        <ul className="grid four">
-          {home.privacy.cards.map((card) => (
-            <li key={card.title} className="card reveal">
-              <span className="tile-icon">
-                <Icon name={card.icon} />
-              </span>
-              <h3>{card.title}</h3>
-              <p>{card.text}</p>
+        <SectionHead section={home.start} center />
+        <ol className="grid three steps">
+          {home.start.steps.map((step, index) => (
+            <li key={step.title} className="card reveal">
+              <span className="step-num" aria-hidden="true">{index + 1}</span>
+              <h3>{step.title}</h3>
+              <p>{step.text}</p>
             </li>
           ))}
-        </ul>
+        </ol>
       </Wrap>
 
       <Wrap className="tint">

@@ -769,3 +769,18 @@
     border-radius: 28px;
   }
 }
+
+/* Getting started: three numbered steps. */
+.steps .step-num {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-block-end: 18px;
+  border-radius: 14px;
+  background: linear-gradient(140deg, var(--indigo), #5b57d6);
+  color: var(--white);
+  font-size: 1.15rem;
+  font-weight: 800;
+  box-shadow: 0 10px 22px -10px rgb(52 49 154 / 0.6);
+}

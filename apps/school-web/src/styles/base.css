@@ -436,7 +436,8 @@ html[lang="ar"] .eyebrow {
 
 @media (max-width: 900px) {
   .nav,
-  .bar-end > .lang {
+  .bar-end > .lang,
+  .bar-end > .sign-in {
     display: none;
   }
 

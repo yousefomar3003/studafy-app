@@ -21,7 +21,7 @@ import {
   formatPercent,
   ofTotal,
 } from "../format";
-import { Meter, Stat } from "./Dashboard";
+import { Stat } from "./Dashboard";
 import { errorText, useCopy } from "../i18n";
 import { useLoad } from "../load";
 import {
@@ -49,8 +49,9 @@ export function ClassPage({ org, classroom, tab }: {
     : undefined;
   return (
     <>
-      <p>
+      <p className="back-row">
         <a
+          className="back"
           href={hrefFor({ name: "classes", org })}
           onClick={(e) => {
             e.preventDefault();
@@ -233,7 +234,7 @@ export function ClassOverviewTab({ data, org, classroom }: {
           )}
         />
       </div>
-      <p className="muted">
+      <p className="muted summary-line">
         {o.since.replace("{date}", formatDay(data.monthStart, lang))}{" "}
         {data.attendance.records > 0 && o.attended.replace(
           "{count}",
@@ -244,7 +245,6 @@ export function ClassOverviewTab({ data, org, classroom }: {
             formatNumber(data.markedStudents, lang),
           )}
       </p>
-      <Meter value={data.attendance.rate} lang={lang} />
       <section className="card">
         <h2>{o.work}</h2>
         {data.upcomingAssignments.length === 0

@@ -84,6 +84,7 @@ export interface Copy {
     about: string;
     contact: string;
     getApp: string;
+    signIn: string;
     menu: string;
     otherLanguage: string;
     otherLanguageName: string;
@@ -117,7 +118,7 @@ export interface Copy {
     everyday: Section & { cards: Card[] };
     marks: Section & { points: Card[]; screenAlt: string };
     ai: Section & { cards: (Card & { tag: string })[]; note: string };
-    privacy: Section & { cards: Card[] };
+    start: Section & { steps: { title: string; text: string }[] };
     bilingual: Section & { enAlt: string; arAlt: string };
     plans: Section & { free: string; list: Plan[]; note: string };
     cta: { title: string; text: string };

@@ -1,24 +1,45 @@
-/* Studafy School Portal: a quiet working tool in the site's colours.
-   Logical properties only, so English and Arabic share every rule. */
+/* Studafy School Portal: a quiet, modern working tool in the site's colours.
+   Logical properties only, so English and Arabic share every rule. The
+   public site reads at 17px; a tool full of tables reads better at 15px. */
+
+.portal,
+.signin,
+.narrow {
+  --p-border: #e3e8f0;
+  --p-border-strong: #cfd8e3;
+  --p-surface: #ffffff;
+  --p-page: #f6f8fb;
+  --p-hover: #f1f4f9;
+  --p-accent: var(--indigo);
+  --p-accent-soft: #ecebfb;
+  --p-radius: 12px;
+  --p-shadow: 0 1px 2px rgb(16 24 40 / 0.04), 0 1px 3px rgb(16 24 40 / 0.04);
+  font-size: 15px;
+  line-height: 1.55;
+}
 
 body {
-  background: var(--canvas);
+  background: var(--p-page, var(--canvas));
 }
 
 h1 {
-  font-size: clamp(1.6rem, 3vw, 2.1rem);
-  letter-spacing: -0.02em;
-  margin-block-end: 16px;
+  font-size: 1.75rem;
+  font-weight: 750;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+  margin-block-end: 20px;
 }
 
 h2 {
-  font-size: 1.2rem;
+  font-size: 1.02rem;
+  font-weight: 650;
   letter-spacing: -0.01em;
-  margin-block-end: 12px;
+  margin-block-end: 14px;
 }
 
 h3 {
-  font-size: 1.05rem;
+  font-size: 0.95rem;
+  font-weight: 650;
   margin-block-end: 6px;
 }
 
@@ -110,57 +131,63 @@ h3 {
   filter: brightness(0.96);
 }
 
-/* Layout */
+/* Layout: a light side menu, a slim top bar, roomy content. */
 
 .portal {
   display: grid;
-  grid-template-columns: 240px 1fr;
+  grid-template-columns: 248px 1fr;
   min-height: 100vh;
+  background: var(--p-page);
 }
 
 .side {
   position: sticky;
   top: 0;
   height: 100vh;
-  padding: 24px 16px;
-  background: var(--ink);
-  color: var(--white);
+  display: flex;
+  flex-direction: column;
+  padding: 20px 14px;
+  background: var(--p-surface);
+  border-inline-end: 1px solid var(--p-border);
 }
 
-.side-logo img {
-  filter: brightness(0) invert(1);
-  margin-block-end: 32px;
+.side-logo {
+  display: block;
+  padding: 4px 10px 22px;
 }
 
 .side-nav {
   display: grid;
-  gap: 4px;
+  gap: 2px;
 }
 
 .side-nav a {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  color: rgb(255 255 255 / 0.75);
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: var(--muted);
   text-decoration: none;
-  font-weight: 600;
+  font-size: 0.93rem;
+  font-weight: 550;
+  transition: background 0.15s var(--ease), color 0.15s var(--ease);
 }
 
 .side-nav a:hover {
-  background: rgb(255 255 255 / 0.08);
-  color: var(--white);
+  background: var(--p-hover);
+  color: var(--ink);
 }
 
 .side-nav a[aria-current="page"] {
-  background: rgb(123 189 232 / 0.18);
-  color: var(--white);
+  background: var(--p-accent-soft);
+  color: var(--p-accent);
+  font-weight: 650;
 }
 
 .side-nav svg {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   flex: none;
 }
 
@@ -169,13 +196,18 @@ h3 {
 }
 
 .topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 14px 28px;
-  border-block-end: 1px solid var(--hairline);
-  background: var(--white);
+  min-height: 60px;
+  padding: 10px 40px;
+  border-block-end: 1px solid var(--p-border);
+  background: rgb(255 255 255 / 0.86);
+  backdrop-filter: saturate(1.4) blur(10px);
 }
 
 .school {
@@ -183,20 +215,27 @@ h3 {
   align-items: center;
   gap: 10px;
   min-width: 0;
+  font-size: 0.95rem;
+}
+
+.school strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .school select {
-  max-width: 260px;
+  max-width: 280px;
 }
 
 .topbar-actions {
   display: flex;
-  gap: 6px;
+  gap: 8px;
 }
 
 .content {
-  padding: 28px;
-  max-width: 1200px;
+  padding: 32px 40px 56px;
+  max-width: 1240px;
 }
 
 @media (max-width: 820px) {
@@ -211,7 +250,10 @@ h3 {
     top: auto;
     height: auto;
     z-index: 20;
-    padding: 6px 8px;
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+    border-inline-end: 0;
+    border-block-start: 1px solid var(--p-border);
+    box-shadow: 0 -4px 16px rgb(16 24 40 / 0.05);
   }
 
   .side-logo {
@@ -225,9 +267,13 @@ h3 {
   .side-nav a {
     flex-direction: column;
     gap: 2px;
-    padding: 6px 4px;
-    font-size: 0.75rem;
+    padding: 6px 2px;
+    font-size: 0.72rem;
     text-align: center;
+  }
+
+  .side-nav a[aria-current="page"] {
+    background: transparent;
   }
 
   .content {
@@ -235,18 +281,23 @@ h3 {
   }
 
   .topbar {
-    padding: 12px 16px;
+    padding: 10px 16px;
   }
 }
 
 /* Building blocks */
 
 .card {
-  padding: 20px;
+  padding: 20px 22px;
   margin-block-end: 16px;
-  border-radius: 18px;
-  background: var(--white);
-  border: 1px solid var(--hairline);
+  border-radius: var(--p-radius);
+  background: var(--p-surface);
+  border: 1px solid var(--p-border);
+  box-shadow: var(--p-shadow);
+}
+
+.card > h2:first-child {
+  margin-block-start: 0;
 }
 
 .stack {
@@ -257,27 +308,36 @@ h3 {
 .stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  gap: 16px;
   margin-block-end: 16px;
 }
 
+/* The label reads first, the number below it, as in most dashboards. */
 .stat {
-  display: grid;
-  padding: 18px;
-  border-radius: 18px;
-  background: var(--white);
-  border: 1px solid var(--hairline);
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 18px 20px;
+  border-radius: var(--p-radius);
+  background: var(--p-surface);
+  border: 1px solid var(--p-border);
+  box-shadow: var(--p-shadow);
 }
 
 .stat-value {
-  font-size: 1.8rem;
-  font-weight: 800;
-  color: var(--navy);
+  font-size: 1.85rem;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
 }
 
 .stat-label {
   color: var(--muted);
-  font-weight: 600;
+  font-size: 0.85rem;
+  font-weight: 550;
 }
 
 @media (max-width: 520px) {
@@ -290,19 +350,30 @@ h3 {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 42px;
-  padding: 8px 18px;
-  border-radius: 999px;
-  border: 1px solid var(--navy);
-  background: var(--navy);
+  gap: 6px;
+  min-height: 38px;
+  padding: 0 16px;
+  border-radius: 10px;
+  border: 1px solid var(--p-accent);
+  background: var(--p-accent);
   color: var(--white);
   font: inherit;
-  font-weight: 650;
+  font-size: 0.93rem;
+  font-weight: 600;
+  white-space: nowrap;
   cursor: pointer;
+  box-shadow: 0 1px 2px rgb(16 24 40 / 0.08);
+  transition: background 0.15s var(--ease), border-color 0.15s var(--ease);
 }
 
 .btn:hover:not(:disabled) {
-  background: var(--indigo);
+  background: var(--navy);
+  border-color: var(--navy);
+}
+
+.btn:focus-visible {
+  outline: 3px solid rgb(52 49 154 / 0.3);
+  outline-offset: 2px;
 }
 
 .btn:disabled {
@@ -311,19 +382,21 @@ h3 {
 }
 
 .btn.ghost {
-  background: transparent;
-  color: var(--navy);
-  border-color: var(--hairline);
+  background: var(--p-surface);
+  color: var(--ink);
+  border-color: var(--p-border-strong);
 }
 
 .btn.ghost:hover:not(:disabled) {
-  background: var(--wash);
+  background: var(--p-hover);
+  border-color: var(--p-border-strong);
 }
 
 .btn.small {
-  min-height: 34px;
-  padding: 4px 12px;
-  font-size: 0.9rem;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 8px;
+  font-size: 0.87rem;
 }
 
 .btn.danger {
@@ -334,36 +407,39 @@ h3 {
 
 .btn.danger:hover:not(:disabled) {
   background: #8c1d18;
+  border-color: #8c1d18;
 }
 
 .pill {
-  display: inline-block;
-  padding: 2px 10px;
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 9px;
   border-radius: 999px;
-  font-size: 0.8rem;
-  font-weight: 700;
-  background: var(--wash);
+  font-size: 0.76rem;
+  font-weight: 600;
+  line-height: 1.6;
+  background: var(--p-hover);
   color: var(--steel);
   white-space: nowrap;
 }
 
 .pill.good {
-  background: #e3f4ea;
-  color: #1e6b3c;
+  background: #e6f6ec;
+  color: #1a6638;
 }
 
 .pill.warn {
-  background: #fdf0d9;
-  color: #8a5300;
+  background: #fdf1dc;
+  color: #84500a;
 }
 
 .pill.muted {
   background: #eef0f3;
-  color: #5a6573;
+  color: #536070;
 }
 
 .state {
-  padding: 32px 0;
+  padding: 40px 0;
   color: var(--muted);
 }
 
@@ -377,17 +453,18 @@ h3 {
 .notice {
   padding: 10px 14px;
   margin-block: 10px;
-  border-radius: 12px;
-  font-weight: 600;
+  border-radius: 10px;
+  font-size: 0.93rem;
+  font-weight: 550;
 }
 
 .notice.good {
-  background: #e3f4ea;
-  color: #1e6b3c;
+  background: #e6f6ec;
+  color: #1a6638;
 }
 
 .notice.bad {
-  background: #fde8e7;
+  background: #fdebea;
   color: #8c1d18;
 }
 
@@ -399,12 +476,14 @@ h3 {
 }
 
 .readonly {
-  display: inline-block;
-  padding: 6px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
   border-radius: 999px;
-  background: var(--wash);
+  background: var(--p-hover);
   color: var(--steel);
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 600;
 }
 
@@ -418,14 +497,14 @@ h3 {
 .narrow {
   max-width: 640px;
   margin: 0 auto;
-  padding: 40px 16px;
+  padding: 48px 16px;
 }
 
 label {
   display: grid;
   gap: 6px;
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.88rem;
 }
 
 label.check {
@@ -438,19 +517,28 @@ label.check {
 input:not([type="checkbox"]):not([type="radio"]),
 select {
   width: 100%;
-  min-height: 44px;
+  min-height: 40px;
   padding: 8px 12px;
   border-radius: 10px;
-  border: 1px solid #c9d6e2;
+  border: 1px solid var(--p-border-strong, #cfd8e3);
   background: var(--white);
   font: inherit;
+  font-size: 0.95rem;
+  font-weight: 400;
   color: var(--ink);
+  transition: border-color 0.15s var(--ease), box-shadow 0.15s var(--ease);
+}
+
+input:not([type="checkbox"]):not([type="radio"]):hover,
+select:hover {
+  border-color: #b5c2d1;
 }
 
 input:focus,
 select:focus {
-  outline: 3px solid var(--sky);
-  outline-offset: 1px;
+  outline: none;
+  border-color: var(--indigo);
+  box-shadow: 0 0 0 3px rgb(52 49 154 / 0.18);
 }
 
 .row {
@@ -488,10 +576,10 @@ select:focus {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  padding: 12px 14px;
-  border-radius: 12px;
-  background: var(--canvas);
-  border: 1px solid var(--hairline);
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: var(--p-surface);
+  border: 1px solid var(--p-border);
 }
 
 .list li > div {
@@ -513,31 +601,47 @@ select:focus {
 
 .table-wrap {
   overflow-x: auto;
-  border-radius: 16px;
-  border: 1px solid var(--hairline);
-  background: var(--white);
+  border-radius: 10px;
+  border: 1px solid var(--p-border);
+  background: var(--p-surface);
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
+  font-variant-numeric: tabular-nums;
 }
 
 th,
 td {
-  padding: 10px 14px;
+  padding: 11px 16px;
   text-align: start;
-  border-block-end: 1px solid var(--hairline);
-  vertical-align: top;
+  border-block-end: 1px solid var(--p-border);
+  vertical-align: middle;
 }
 
 thead th {
-  background: var(--wash);
-  color: var(--steel);
-  font-size: 0.82rem;
-  font-weight: 700;
+  background: #f9fafc;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   white-space: nowrap;
+}
+
+html[lang="ar"] thead th {
+  letter-spacing: 0;
+  font-size: 0.8rem;
+}
+
+tbody tr {
+  transition: background 0.12s var(--ease);
+}
+
+tbody tr:hover {
+  background: #fafbfd;
 }
 
 tbody th {
@@ -547,6 +651,28 @@ tbody th {
 
 tbody tr:last-child > * {
   border-block-end: 0;
+}
+
+/* A link that is a whole cell or list entry reads as a name, not a URL;
+   it is underlined on hover and focus. Links inside sentences keep their
+   underline. */
+td > a:only-child,
+td > a:first-child:last-child,
+.list li a,
+.back {
+  color: var(--p-accent, var(--indigo));
+  font-weight: 600;
+  text-decoration: none;
+}
+
+td > a:only-child:hover,
+td > a:only-child:focus-visible,
+.list li a:hover,
+.list li a:focus-visible,
+.back:hover,
+.back:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .unpublished {
@@ -560,7 +686,7 @@ td.att {
 }
 
 td.att.present {
-  color: #1e6b3c;
+  color: #1a6638;
 }
 
 td.att.absent {
@@ -569,7 +695,7 @@ td.att.absent {
 }
 
 td.att.late {
-  color: #8a5300;
+  color: #84500a;
 }
 
 td.att.excused {
@@ -585,24 +711,32 @@ td.totals {
 
 .tabs {
   display: flex;
-  gap: 4px;
+  gap: 2px;
   overflow-x: auto;
-  margin-block: 16px;
-  border-block-end: 1px solid var(--hairline);
+  margin-block: 20px;
+  border-block-end: 1px solid var(--p-border);
+  scrollbar-width: none;
 }
 
 .tabs a {
-  padding: 10px 14px;
+  padding: 10px 12px;
+  margin-block-end: -1px;
   color: var(--muted);
-  font-weight: 650;
+  font-size: 0.92rem;
+  font-weight: 600;
   text-decoration: none;
   white-space: nowrap;
-  border-block-end: 3px solid transparent;
+  border-block-end: 2px solid transparent;
+  transition: color 0.15s var(--ease), border-color 0.15s var(--ease);
+}
+
+.tabs a:hover {
+  color: var(--ink);
 }
 
 .tabs a[aria-current="page"] {
-  color: var(--navy);
-  border-block-end-color: var(--navy);
+  color: var(--p-accent);
+  border-block-end-color: var(--p-accent);
 }
 
 .file {
@@ -1049,4 +1183,45 @@ textarea:focus {
 
 .group-add select {
   flex: 1 1 220px;
+}
+
+/* "← Classes" above a page's title. */
+.back-row {
+  margin-block-end: 6px;
+  font-size: 0.88rem;
+}
+
+/* A field and its button on one line: the button keeps its own width. */
+.row.end:has(> button:last-child) {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+@media (max-width: 520px) {
+  .row.end:has(> button:last-child) {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* A line of context under a page's figures. */
+.summary-line {
+  margin-block: -4px 20px;
+  font-size: 0.88rem;
+}
+
+/* A form's button keeps its own width, as buttons do elsewhere. */
+.form > .btn,
+.form > button,
+.form > .dialog-actions {
+  justify-self: start;
+}
+
+/* A link that looks like a button is never underlined. */
+a.btn {
+  text-decoration: none;
+}
+
+.list + h2,
+.list + h3,
+.list + form {
+  margin-block-start: 20px;
 }

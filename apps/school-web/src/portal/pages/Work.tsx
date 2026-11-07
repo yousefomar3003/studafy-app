@@ -13,8 +13,9 @@ function Back({ org, classroom, tab }: {
   const copy = useCopy();
   const back = useBack(org, classroom, tab);
   return (
-    <p>
+    <p className="back-row">
       <a
+        className="back"
         href={back.href}
         onClick={(e) => {
           e.preventDefault();
