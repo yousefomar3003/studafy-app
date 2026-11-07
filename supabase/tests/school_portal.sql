@@ -11,7 +11,7 @@ begin;
 \unset auth031_fixture_only
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(159);
+select plan(175);
 select set_config('studafy.request_id', 'school-portal-test', true);
 
 \set admin1 'f0000000-0000-4000-8000-000000000001'
@@ -595,6 +595,84 @@ select is(pg_temp.cmd(:'teacher_user', 'decideGroupClass', (select gc.id
 select is(pg_temp.cmd(:'admin1', 'addGroupClass', (select id from private.school_portal_groups
   where name = 'Grade 6 - B'), jsonb_build_object('classroomId', :'later_class'))->>'reason',
   'group_class_declined', 'and the school cannot ask again for 30 days');
+
+-- 6f. One code across two teachers' classes, each in their own workspace:
+--     Mr. Ahmad's Arabic (teacher_user, Seed School) and Mr. Khalid's Math
+--     (other_school_user, Seed School B), both Grade 8 Section B.
+\set math 'f0000000-0000-4000-8000-000000000031'
+\set kid3 'f0000000-0000-4000-8000-000000000023'
+\set kid4 'f0000000-0000-4000-8000-000000000024'
+insert into auth.users (id, email, encrypted_password, aud, role, email_confirmed_at,
+  created_at, updated_at, instance_id, raw_app_meta_data, raw_user_meta_data)
+select id::uuid, email, 'synthetic-not-a-secret', 'authenticated', 'authenticated', now(),
+  now(), now(), '00000000-0000-0000-0000-000000000000', '{}'::jsonb,
+  jsonb_build_object('full_name', name)
+from (values (:'kid3', 'kid3@synthetic.studafy.test', 'Kid Three'),
+  (:'kid4', 'kid4@synthetic.studafy.test', 'Kid Four')) v(id, email, name);
+update public.profiles set account_kind = 'student' where id in (:'kid3', :'kid4');
+\set math_term 'f0000000-0000-4000-8000-000000000032'
+insert into public.terms (id, school_id, name, starts_on, ends_on, active)
+values (:'math_term', :'other_school_id', '2026-27', current_date - 60, current_date + 200, true);
+insert into public.classrooms (id, school_id, term_id, name, grade, section, teacher_id)
+values (:'math', :'other_school_id', :'math_term', 'Math 8B', 'G8', 'B', :'other_school_user');
+insert into public.classroom_staff (school_id, classroom_id, membership_id, user_id, role)
+select :'other_school_id', :'math', m.id, :'other_school_user', 'lead_teacher'
+from public.memberships m
+where m.school_id = :'other_school_id' and m.user_id = :'other_school_user' and m.role = 'teacher';
+select is(pg_temp.cmd(:'admin2', 'requestLink', current_setting('test.org')::uuid,
+  jsonb_build_object('studafyId', (select public_id from public.profiles where id = :'other_school_user')))
+  ->'response'->>'status', 'pending', 'the school asks a second teacher, from another workspace');
+select set_config('test.khalid', (select id::text from private.school_portal_teacher_links
+  where teacher_id = :'other_school_user' and org_id = current_setting('test.org')::uuid
+    and status = 'pending'), true);
+select is(pg_temp.cmd(:'other_school_user', 'decideLink', current_setting('test.khalid')::uuid,
+  '{"decision":"accept"}')->'response'->>'status', 'linked', 'who accepts');
+select is(pg_temp.cmd(:'admin1', 'createGroup', current_setting('test.org')::uuid,
+  jsonb_build_object('name', 'Grade 8 - Section B', 'codeHash', pg_temp.hash('GRADE8B1'),
+    'derivationSalt', 'abcdefghijklmnopqrstuvwxyz05'))->>'status', '201',
+  'a group for one section');
+select set_config('test.g8', (select id::text from private.school_portal_groups
+  where name = 'Grade 8 - Section B'), true);
+select is(pg_temp.cmd(:'admin1', 'addGroupClass', current_setting('test.g8')::uuid,
+  jsonb_build_object('classroomId', :'classroom_id'))->>'status', '201', 'with the first teacher''s class');
+select is(pg_temp.cmd(:'admin1', 'addGroupClass', current_setting('test.g8')::uuid,
+  jsonb_build_object('classroomId', :'math'))->>'status', '201', 'and the second teacher''s');
+select is((select private.api061_notification_recipients(o.school_id, o.template_key,
+    o.source_event_id, o.audience) from public.notification_outbox o
+  where o.source_event_id = (select id::text from private.school_portal_group_classes
+    where group_id = current_setting('test.g8')::uuid and classroom_id = :'math')),
+  array[:'other_school_user'::uuid], 'each teacher is asked about their own class only');
+select is(pg_temp.cmd(:'other_school_user', 'decideGroupClass', (select id from private.school_portal_group_classes
+  where group_id = current_setting('test.g8')::uuid and classroom_id = :'classroom_id'),
+  '{"decision":"approve"}')->>'outcome', 'not_found', 'and cannot answer for the other''s');
+select is(pg_temp.cmd(:'teacher_user', 'decideGroupClass', (select id from private.school_portal_group_classes
+  where group_id = current_setting('test.g8')::uuid and classroom_id = :'classroom_id'),
+  '{"decision":"approve"}')->'response'->>'status', 'approved', 'the first teacher approves');
+select is(jsonb_array_length(pg_temp.redeem(:'kid3', pg_temp.hash('GRADE8B1'))
+  ->'response'->'group'->'classrooms'), 1,
+  'until the second approves, the code joins only the approved class');
+select is(pg_temp.cmd(:'other_school_user', 'decideGroupClass', (select id from private.school_portal_group_classes
+  where group_id = current_setting('test.g8')::uuid and classroom_id = :'math'),
+  '{"decision":"approve"}')->'response'->>'status', 'approved', 'the second teacher approves');
+select is((select array_agg(c->>'classroomName' order by c->>'classroomName')
+  from jsonb_array_elements(pg_temp.redeem(:'kid4', pg_temp.hash('GRADE8B1'))
+    ->'response'->'group'->'classrooms') c),
+  array['Math 8B', 'Seed Classroom'], 'one code joins a student to both teachers'' classes');
+select is((select array_agg(distinct m.school_id order by m.school_id) from public.memberships m
+  where m.user_id = :'kid4' and m.role = 'student' and m.active),
+  array[:'school_id'::uuid, :'other_school_id'::uuid],
+  'as a student of each teacher''s workspace');
+select is(jsonb_array_length(pg_temp.redeem(:'kid3', pg_temp.hash('GRADE8B1'))
+  ->'response'->'group'->'classrooms'), 1,
+  'a student who joined early gets the class approved since');
+select is(pg_temp.cmd(:'other_school_user', 'endLink', current_setting('test.khalid')::uuid, '{}')
+  ->'response'->>'status', 'unlinked', 'the second teacher unlinks');
+select is((select array_agg(x) from private.school_portal_group_live_classes(
+  current_setting('test.g8')::uuid) x), array[:'classroom_id'::uuid],
+  'and their class leaves the group at once; the first teacher''s stays');
+select is((select count(*)::int from public.enrollments
+  where classroom_id = :'math' and status = 'active'), 2,
+  'students who joined stay in the class; only the school stops seeing it');
 
 -- 7. Never: messages, AI Tutor material, students' own notes and practice.
 select ok(pg_get_functiondef('private.api062_query(text, uuid, jsonb)'::regprocedure)

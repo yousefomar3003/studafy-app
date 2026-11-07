@@ -27,9 +27,13 @@ import '../test/support/localized_app.dart';
 ///
 ///   1. A school asks dev.teacher to link by their Studafy ID; the teacher
 ///      reads the request and accepts it. The school sees both classes.
-///   2. The school groups both classes; the teacher approves each.
+///   2. A second teacher, dev.teacher2, with Math 10B in their own
+///      workspace, links too. The school groups all three classes - two
+///      teachers' - under one code; each teacher approves their own.
 ///   3. dev.student2 (in Science) types the group's code in "Join a class"
-///      and joins Physics 10A; typing it again joins nothing more.
+///      and joins Physics 10A and Math 10B; typing it again joins nothing
+///      more. The Math teacher unlinks: Math leaves the group, and the
+///      code joins dev.student to Science only.
 ///   4. The school writes to parents: dev.parent reads it, dev.student not.
 ///   5. The teacher unlinks: the school sees nothing, and the code joins
 ///      nobody into anything.
@@ -50,6 +54,7 @@ const _password = String.fromEnvironment('E2E_PASSWORD');
 
 const _physics = '7e570000-0000-4000-8000-0000000000d1';
 const _science = '7e570000-0000-4000-8000-0000000000d2';
+const _math = '7e570000-0000-4000-8000-0000000000d3';
 
 Future<String> _signIn(String who) async {
   final client = HttpClient();
@@ -210,6 +215,7 @@ void main() {
 
     final principal = await _signIn('principal');
     final teacher = await _signIn('teacher');
+    final mathTeacher = await _signIn('teacher2');
     final student2 = await _signIn('student2');
     final student = await _signIn('student');
     final parent = await _signIn('parent');
@@ -309,6 +315,43 @@ void main() {
     await _waitFor(tester, find.textContaining('Your classes are visible to'));
     await binding.takeScreenshot('portal-04-banner');
 
+    // The second teacher, in their own workspace, links as well.
+    final (_, mathProfile) = await _call(
+      mathTeacher,
+      'GET',
+      '/v1/account/profile',
+    );
+    final (mathAsked, mathBody) = await _call(
+      principal,
+      'POST',
+      '$orgPath/link-requests',
+      {'studafyId': 'TC-${mathProfile['publicId']}'},
+    );
+    expect(mathAsked, 201, reason: '$mathBody');
+    _actAs(
+      '7e570000-0000-4000-8000-0000000000a6',
+      'Dev Math Teacher',
+      StudafyRole.teacher,
+    );
+    await _open(tester, SchoolsPage(links: _links(mathTeacher)));
+    await _waitFor(tester, find.text('Review'));
+    await _tap(tester, find.text('Review'));
+    await _waitFor(tester, find.text('What the school will see'));
+    await tester.scrollUntilVisible(find.text('Accept'), 250);
+    await _tap(tester, find.text('Accept'));
+    await _waitFor(tester, find.widgetWithText(FilledButton, 'Accept'));
+    await _tap(tester, find.widgetWithText(FilledButton, 'Accept').last);
+    await _waitFor(
+      tester,
+      find.text('Linked. The school can now see your classes.'),
+    );
+    (_, classes) = await _call(principal, 'GET', '$orgPath/classes');
+    expect(
+      [for (final c in classes['classes'] as List) (c as Map)['name']]..sort(),
+      ['Math 10B', 'Physics 10A', 'Science'],
+      reason: 'the school sees both teachers\' classes',
+    );
+
     // 2. A group with both classes; the teacher approves each.
     final (groupMade, group) = await _call(
       principal,
@@ -318,7 +361,7 @@ void main() {
     );
     expect(groupMade, 201, reason: '$group');
     final groupPath = '$orgPath/groups/${group['id']}';
-    for (final id in [_physics, _science]) {
+    for (final id in [_physics, _science, _math]) {
       final (added, body) = await _call(
         principal,
         'POST',
@@ -348,6 +391,20 @@ void main() {
     }
     expect(find.text('Take out of the group'), findsNWidgets(2));
     await binding.takeScreenshot('portal-06-groups-approved');
+    // The Math teacher is asked about Math only, and approves it.
+    _actAs(
+      '7e570000-0000-4000-8000-0000000000a6',
+      'Dev Math Teacher',
+      StudafyRole.teacher,
+    );
+    await _open(tester, SchoolsPage(links: _links(mathTeacher)));
+    await _waitFor(tester, find.text('Class groups'));
+    expect(find.text('Approve'), findsOneWidget);
+    expect(find.text('Math 10B'), findsOneWidget);
+    expect(find.text('Physics 10A'), findsNothing);
+    await _tap(tester, find.text('Approve'));
+    await _waitFor(tester, find.text('Take out of the group'));
+    await binding.takeScreenshot('portal-06b-second-teacher-approves-math');
 
     // 3. One code, typed by a student in Science only.
     _actAs(
@@ -370,9 +427,20 @@ void main() {
     await tester.enterText(find.byType(TextField), code);
     await tester.pump(const Duration(milliseconds: 300));
     await _tap(tester, find.text('Join class'));
-    await _waitFor(tester, find.textContaining('You joined 1 class in'));
+    await _waitFor(tester, find.textContaining('You joined 2 classes in'));
     expect(find.text('Physics 10A'), findsWidgets);
+    expect(find.text('Math 10B'), findsWidgets);
     await binding.takeScreenshot('portal-07-student-joined-by-group-code');
+    final (_, mathNow) = await _call(
+      principal,
+      'GET',
+      '$orgPath/classes/$_math/roster',
+    );
+    expect(
+      [for (final s in mathNow['students'] as List) (s as Map)['name']],
+      contains('Device Student'),
+      reason: 'joined in the second teacher\'s workspace too',
+    );
     final (_, physicsNow) = await _call(
       principal,
       'GET',
@@ -392,6 +460,55 @@ void main() {
     await _waitFor(tester, find.textContaining("You're already in this class"));
     expect(find.textContaining('You joined'), findsNothing);
     await binding.takeScreenshot('portal-08-code-again-joins-nothing');
+
+    // The Math teacher unlinks: Math leaves the group, the rest stays.
+    _actAs(
+      '7e570000-0000-4000-8000-0000000000a6',
+      'Dev Math Teacher',
+      StudafyRole.teacher,
+    );
+    await _open(tester, SchoolsPage(links: _links(mathTeacher)));
+    await _waitFor(tester, find.text('Linked now'));
+    await _tap(tester, find.text('Unlink'));
+    await _waitFor(tester, find.widgetWithText(FilledButton, 'Unlink'));
+    await _tap(tester, find.widgetWithText(FilledButton, 'Unlink'));
+    await _waitFor(
+      tester,
+      find.text('Unlinked. The school can no longer see your classes.'),
+    );
+    (_, classes) = await _call(principal, 'GET', '$orgPath/classes');
+    expect(
+      [for (final c in classes['classes'] as List) (c as Map)['name']]..sort(),
+      ['Physics 10A', 'Science'],
+    );
+    // Dev Student, in Physics only, now joins Science - not Math.
+    _actAs(
+      '7e570000-0000-4000-8000-0000000000a2',
+      'Dev Student',
+      StudafyRole.student,
+      adult: false,
+    );
+    await _open(
+      tester,
+      JoinClassPage(
+        classes: ClassListInteractor(
+          repository: ApiClassroomRepository(
+            _client(student),
+            context: ActiveContextController.instance,
+          ),
+          telemetry: const NoopTelemetry(),
+        ),
+      ),
+    );
+    await _waitFor(tester, find.byType(TextField));
+    await tester.enterText(find.byType(TextField), code);
+    await _tap(tester, find.text('Join class'));
+    await _waitFor(tester, find.textContaining('You joined 1 class in'));
+    expect(find.text('Science'), findsWidgets);
+    expect(find.text('Math 10B'), findsNothing);
+    await binding.takeScreenshot(
+      'portal-08b-after-math-unlinks-code-joins-science',
+    );
 
     // 4. To parents: the parent reads it, the student does not.
     final (sent, sentBody) = await _call(

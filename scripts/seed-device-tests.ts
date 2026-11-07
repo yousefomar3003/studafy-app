@@ -12,6 +12,7 @@
  *              "Device worksheet", a published assignment
  *   dev.parent: the verified parent of Dev Student only
  *   dev.principal: no membership; the School Portal's administrator
+ *   dev.teacher2: "Math 10B" (…-d3) in their own workspace (…-b2)
  *
  * All four accounts are at synthetic.studafy.test and share the password
  * in E2E_PASSWORD.
@@ -58,6 +59,11 @@ export const DEVICE_SCHOOL = {
   termId: "7e570000-0000-4000-8000-0000000000c1",
   examClassId: "7e570000-0000-4000-8000-0000000000d1",
   filesClassId: "7e570000-0000-4000-8000-0000000000d2",
+  // A second teacher's own workspace (school_portal_device_test.dart): one
+  // school's group can hold classes of several teachers.
+  mathSchoolId: "7e570000-0000-4000-8000-0000000000b2",
+  mathTermId: "7e570000-0000-4000-8000-0000000000c2",
+  mathClassId: "7e570000-0000-4000-8000-0000000000d3",
   devStudentId: "7e570000-0000-4000-8000-0000000000e1",
   absenteeId: "7e570000-0000-4000-8000-0000000000e2",
   deviceStudentId: "7e570000-0000-4000-8000-0000000000e3",
@@ -88,6 +94,12 @@ export const DEVICE_SCHOOL = {
       id: "7e570000-0000-4000-8000-0000000000a5",
       email: "dev.principal@synthetic.studafy.test",
       name: "Dev Principal",
+    },
+    // Teaches "Math 10B" in their own workspace.
+    teacher2: {
+      id: "7e570000-0000-4000-8000-0000000000a6",
+      email: "dev.teacher2@synthetic.studafy.test",
+      name: "Dev Math Teacher",
     },
   },
   assignmentTitle: "Device worksheet",
@@ -208,7 +220,8 @@ async function main(): Promise<void> {
   try {
     // A throwaway stack holds nothing but this school.
     const others = await sql<{ n: number }[]>`
-      select count(*)::int as n from public.schools where id <> ${s.schoolId}
+      select count(*)::int as n from public.schools
+      where id not in (${s.schoolId}, ${s.mathSchoolId})
     `;
     if ((others[0]?.n ?? 0) > 0) {
       throw new Error(
@@ -285,7 +298,7 @@ async function main(): Promise<void> {
     // 2. The school, mirroring createTeacherWorkspace, class join and
     //    guardian link verification. Fixed ids, so every insert is a no-op
     //    on a re-run.
-    const { teacher, student, parent, student2, principal } = s.users;
+    const { teacher, student, parent, student2, principal, teacher2 } = s.users;
     await sql.begin(async (tx) => {
       await tx`
         update public.profiles p set
@@ -297,7 +310,8 @@ async function main(): Promise<void> {
           (${parent.id}::uuid, ${parent.name}, 'adult'),
           (${student.id}::uuid, ${student.name}, 'student'),
           (${student2.id}::uuid, ${student2.name}, 'student'),
-          (${principal.id}::uuid, ${principal.name}, 'adult')
+          (${principal.id}::uuid, ${principal.name}, 'adult'),
+          (${teacher2.id}::uuid, ${teacher2.name}, 'adult')
         ) as v(id, name, kind)
         where p.id = v.id
       `;
@@ -338,6 +352,41 @@ async function main(): Promise<void> {
           (${s.filesClassId}, ${s.schoolId}, ${s.termId}, 'Science', '10', 'B',
             ${teacher.id}, 'active')
         on conflict (id) do nothing
+      `;
+      await tx`
+        insert into public.schools (id, name, timezone, locale, status, version)
+        values (${s.mathSchoolId}, 'Dev Math Teacher''s classes', 'Asia/Amman', 'en',
+          'active', 1)
+        on conflict (id) do nothing
+      `;
+      await tx`
+        insert into public.terms (id, school_id, name, starts_on, ends_on, active, status)
+        values (${s.mathTermId}, ${s.mathSchoolId}, 'Device Test Year',
+          current_date - 30, current_date + 365, true, 'active')
+        on conflict (id) do nothing
+      `;
+      await tx`
+        insert into public.memberships (school_id, user_id, role, active, status, version)
+        values (${s.mathSchoolId}, ${teacher2.id}, 'teacher', true, 'active', 1)
+        on conflict (school_id, user_id, role) do nothing
+      `;
+      await tx`
+        insert into public.classrooms (
+          id, school_id, term_id, name, grade, section, teacher_id, status)
+        values (${s.mathClassId}, ${s.mathSchoolId}, ${s.mathTermId}, 'Math 10B', '10',
+          'B', ${teacher2.id}, 'active')
+        on conflict (id) do nothing
+      `;
+      await tx`
+        insert into public.classroom_staff (
+          school_id, classroom_id, membership_id, user_id, role)
+        select ${s.mathSchoolId}, ${s.mathClassId}, m.id, ${teacher2.id}, 'lead_teacher'
+        from public.memberships m
+        where m.school_id = ${s.mathSchoolId} and m.user_id = ${teacher2.id}
+          and m.role = 'teacher'
+          and not exists (
+            select 1 from public.classroom_staff cs
+            where cs.classroom_id = ${s.mathClassId} and cs.user_id = ${teacher2.id})
       `;
       await tx`
         insert into public.classroom_staff (
